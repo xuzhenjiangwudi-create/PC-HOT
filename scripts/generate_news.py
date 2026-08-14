@@ -5,15 +5,19 @@ PC HOT - 完整版生成脚本（支持本地 Ollama Qwen 增强）
 1. 从多源 RSS 抓取 PC 相关新闻
 2. 可选：调用本地 Ollama (Qwen) 生成高质量中文推荐理由
 3. 生成带搜索、分类标签的中文页面
+4. 将历史数据按稳定 ID 保存到 data/news_history.jsonl
 """
 
 import feedparser
 import requests
+import hashlib
+import json
+import os
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 import re
 import html
-from collections import defaultdict
+from collections import Counter, defaultdict
 
 # ==================== 配置区 ====================
 # Ollama 设置
@@ -21,6 +25,13 @@ USE_OLLAMA = True                    # 是否启用本地大模型增强
 OLLAMA_URL = "http://localhost:11434/api/generate"
 MODEL_NAME = "qwen2.5:7b"            # 改成你的模型名
 MAX_ENHANCE = 12                     # 最多增强多少条（避免太慢）
+MAX_ITEMS = 45                       # 页面显示及单次抓取上限
+
+# 路径设置：假定本文件位于 scripts/generate_news.py
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+OUTPUT_PATH = PROJECT_ROOT / "index.html"
+HISTORY_FILE = PROJECT_ROOT / "data" / "news_history.jsonl"
+HISTORY_RETENTION_DAYS = 0           # 0=永久保留；365=只保留最近一年
 
 # RSS 源
 RSS_SOURCES = [
@@ -182,6 +193,149 @@ def fetch_entries(max_items: int = 45):
         if len(unique) >= max_items:
             break
     return unique
+
+
+def generate_news_id(entry: dict) -> str:
+    """生成稳定新闻 ID：优先使用原文链接，否则使用来源和规范化标题。"""
+    link = entry.get("link", "").strip()
+    raw_key = link or "|".join([
+        entry.get("source", "").strip().lower(),
+        re.sub(r'[^a-z0-9\u4e00-\u9fff]', '', entry.get("title", "").lower())[:100],
+    ])
+    return hashlib.sha256(raw_key.encode("utf-8")).hexdigest()[:20]
+
+
+def entry_to_history_record(entry: dict) -> dict:
+    """把当次抓取结果转换为历史记录。"""
+    dt = entry.get("dt")
+    published_at = dt.isoformat() if isinstance(dt, datetime) else str(dt or "")
+    now_text = datetime.now(timezone(timedelta(hours=8))).isoformat()
+    return {
+        "id": generate_news_id(entry),
+        "title": entry.get("title", ""),
+        "summary": entry.get("summary", ""),
+        "link": entry.get("link", ""),
+        "source": entry.get("source", ""),
+        "published_at": published_at,
+        "first_collected_at": now_text,
+        "last_seen_at": now_text,
+        "category": entry.get("category", "综合"),
+        "reason": entry.get("reason") or default_reason(entry.get("category", "综合")),
+        "ai_enhanced": bool(entry.get("reason")),
+    }
+
+
+def load_history() -> list[dict]:
+    """读取 JSONL 历史文件。单行损坏只跳过该行。"""
+    if not HISTORY_FILE.exists():
+        return []
+    records = []
+    try:
+        with HISTORY_FILE.open("r", encoding="utf-8") as file:
+            for line_number, line in enumerate(file, start=1):
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    record = json.loads(line)
+                    if isinstance(record, dict) and record.get("id"):
+                        records.append(record)
+                    else:
+                        print(f"历史文件第 {line_number} 行缺少有效 ID，已跳过")
+                except json.JSONDecodeError as exc:
+                    print(f"历史文件第 {line_number} 行解析失败，已跳过: {exc}")
+    except OSError as exc:
+        print(f"读取历史文件失败: {exc}")
+    return records
+
+
+def parse_iso_datetime(value: str):
+    if not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+    except (TypeError, ValueError):
+        return None
+
+
+def prune_history(records: list[dict]) -> list[dict]:
+    """根据 HISTORY_RETENTION_DAYS 清理旧数据；0 表示永久保留。"""
+    if HISTORY_RETENTION_DAYS <= 0:
+        return records
+    cutoff = datetime.now(timezone.utc) - timedelta(days=HISTORY_RETENTION_DAYS)
+    retained = []
+    for record in records:
+        published = parse_iso_datetime(record.get("published_at", ""))
+        if published is None or published.astimezone(timezone.utc) >= cutoff:
+            retained.append(record)
+    return retained
+
+
+def save_history(entries: list[dict]) -> dict:
+    """按稳定 ID 合并新闻，并通过临时文件原子写入 JSONL。"""
+    HISTORY_FILE.parent.mkdir(parents=True, exist_ok=True)
+    existing = load_history()
+    records_by_id = {r["id"]: r for r in existing if r.get("id")}
+    added = updated = unchanged = 0
+
+    for entry in entries:
+        new_record = entry_to_history_record(entry)
+        record_id = new_record["id"]
+        old_record = records_by_id.get(record_id)
+        if old_record is None:
+            records_by_id[record_id] = new_record
+            added += 1
+            continue
+
+        new_record["first_collected_at"] = old_record.get(
+            "first_collected_at", old_record.get("collected_at", new_record["first_collected_at"])
+        )
+        # 旧记录已经由 AI 增强，而本次没有增强时，保留旧的 AI 推荐理由。
+        if old_record.get("ai_enhanced") and not new_record.get("ai_enhanced"):
+            new_record["reason"] = old_record.get("reason", new_record["reason"])
+            new_record["ai_enhanced"] = True
+
+        compare_fields = ["title", "summary", "link", "source", "published_at", "category", "reason", "ai_enhanced"]
+        changed = any(old_record.get(k) != new_record.get(k) for k in compare_fields)
+        records_by_id[record_id] = {**old_record, **new_record}
+        if changed:
+            updated += 1
+        else:
+            unchanged += 1
+
+    records = prune_history(list(records_by_id.values()))
+    records.sort(key=lambda r: r.get("published_at", ""), reverse=True)
+
+    temp_path = HISTORY_FILE.with_suffix(".jsonl.tmp")
+    try:
+        with temp_path.open("w", encoding="utf-8") as file:
+            for record in records:
+                file.write(json.dumps(record, ensure_ascii=False, separators=(",", ":")) + "\n")
+            file.flush()
+            os.fsync(file.fileno())
+        os.replace(temp_path, HISTORY_FILE)
+    finally:
+        if temp_path.exists():
+            temp_path.unlink(missing_ok=True)
+
+    return {"total": len(records), "added": added, "updated": updated, "unchanged": unchanged}
+
+
+def get_history_stats(days: int = 30) -> dict:
+    """提供最近 N 天统计，供未来趋势图或简报调用。"""
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+    recent = []
+    for record in load_history():
+        published = parse_iso_datetime(record.get("published_at", ""))
+        if published and published.astimezone(timezone.utc) >= cutoff:
+            recent.append(record)
+    return {
+        "days": days,
+        "total": len(recent),
+        "categories": Counter(r.get("category", "综合") for r in recent).most_common(),
+        "sources": Counter(r.get("source", "") for r in recent if r.get("source")).most_common(),
+    }
 
 
 def heat_score(rank: int) -> int:
@@ -370,7 +524,7 @@ def main():
             print("将使用默认推荐理由继续生成")
             globals()["USE_OLLAMA"] = False
 
-    entries = fetch_entries(45)
+    entries = fetch_entries(MAX_ITEMS)
     print(f"\n共获取 {len(entries)} 条相关资讯")
 
     if USE_OLLAMA and entries:
@@ -380,10 +534,20 @@ def main():
             e["reason"] = enhance_reason(e["title"], e["summary"], e["category"])
             print(f"      → {e['reason']}")
 
-    html = render_html(entries)
-    Path("index.html").write_text(html, encoding="utf-8")
-    print(f"\n已生成 index.html（共 {len(entries)} 条）")
-    print("接下来执行: git add index.html && git commit -m \"update with Qwen\" && git push")
+    history_result = save_history(entries)
+    print(
+        "\n历史数据保存完成："
+        f"新增 {history_result['added']} 条，"
+        f"更新 {history_result['updated']} 条，"
+        f"未变化 {history_result['unchanged']} 条，"
+        f"累计 {history_result['total']} 条"
+    )
+    print(f"历史文件：{HISTORY_FILE}")
+
+    output_html = render_html(entries)
+    OUTPUT_PATH.write_text(output_html, encoding="utf-8")
+    print(f"\n已生成 {OUTPUT_PATH}（本次展示 {len(entries)} 条）")
+    print('接下来执行: git add index.html data/news_history.jsonl && git commit -m "update PC HOT history" && git push')
 
 
 if __name__ == "__main__":
