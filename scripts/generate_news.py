@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """
-PC HOT - 新闻生成脚本（中文增强版）
-支持中英文源、搜索、分类标签，界面全中文
+PC HOT - 完整版生成脚本（支持本地 Ollama Qwen 增强）
+功能：
+1. 从多源 RSS 抓取 PC 相关新闻
+2. 可选：调用本地 Ollama (Qwen) 生成高质量中文推荐理由
+3. 生成带搜索、分类标签的中文页面
 """
 
 import feedparser
@@ -12,10 +15,16 @@ import re
 import html
 from collections import defaultdict
 
+# ==================== 配置区 ====================
+# Ollama 设置
+USE_OLLAMA = True                    # 是否启用本地大模型增强
+OLLAMA_URL = "http://localhost:11434/api/generate"
+MODEL_NAME = "qwen2.5:7b"            # 改成你的模型名
+MAX_ENHANCE = 12                     # 最多增强多少条（避免太慢）
+
+# RSS 源
 RSS_SOURCES = [
-    # 中文源
     ("IT之家", "https://www.ithome.com/rss/"),
-    # 英文源
     ("HotHardware", "https://hothardware.com/rss"),
     ("Tom's Hardware", "https://www.tomshardware.com/feeds/all"),
     ("TechSpot", "https://www.techspot.com/backend.xml"),
@@ -26,10 +35,9 @@ RSS_SOURCES = [
     ("TechPowerUp", "https://www.techpowerup.com/rss/news"),
 ]
 
-# 分类关键词
 CATEGORIES = {
     "处理器": ["cpu", "ryzen", "intel", "core ultra", "snapdragon", "qualcomm", "处理器", "锐龙", "酷睿", "骁龙"],
-    "显卡": ["gpu", "rtx", "radeon", "rx ", "graphics", "显卡", "黑井", "blackwell"],
+    "显卡": ["gpu", "rtx", "radeon", "rx ", "graphics", "显卡", "blackwell"],
     "内存存储": ["memory", "ram", "ddr", "ssd", "nvme", "存储", "内存", "固态"],
     "笔记本": ["laptop", "notebook", "ai pc", "macbook", "笔记本", "轻薄本", "游戏本"],
     "主板机箱": ["motherboard", "chipset", "case", "主板", "机箱"],
@@ -46,10 +54,13 @@ KEYWORDS = [
     "电脑", "笔记本", "显卡", "处理器", "内存", "固态", "主板", "华硕", "微星", "技嘉",
     "联想", "戴尔", "惠普", "苹果", "锐龙", "酷睿", "骁龙"
 ]
+# ================================================
+
 
 def is_relevant(title: str, summary: str = "") -> bool:
     text = (title + " " + summary).lower()
     return any(kw.lower() in text for kw in KEYWORDS)
+
 
 def get_category(title: str, summary: str = "") -> str:
     text = (title + " " + summary).lower()
@@ -57,6 +68,7 @@ def get_category(title: str, summary: str = "") -> str:
         if any(kw.lower() in text for kw in kws):
             return cat
     return "综合"
+
 
 def clean_text(text: str, max_len: int = 200) -> str:
     if not text:
@@ -68,34 +80,83 @@ def clean_text(text: str, max_len: int = 200) -> str:
         text = text[:max_len].rsplit(' ', 1)[0] + "…"
     return text
 
+
+def call_qwen(prompt: str, max_tokens: int = 150) -> str:
+    try:
+        resp = requests.post(
+            OLLAMA_URL,
+            json={
+                "model": MODEL_NAME,
+                "prompt": prompt,
+                "stream": False,
+                "options": {"temperature": 0.35, "num_predict": max_tokens}
+            },
+            timeout=90
+        )
+        resp.raise_for_status()
+        return resp.json().get("response", "").strip()
+    except Exception as e:
+        print(f"    模型调用失败: {e}")
+        return ""
+
+
+def enhance_reason(title: str, summary: str, category: str) -> str:
+    prompt = f"""你是一名专业的 PC 硬件媒体编辑。请根据新闻写 1-2 句中文「推荐理由」。
+
+要求：
+- 不要复述标题
+- 指出为什么值得关注（价格、性能、生态、供应链等）
+- 客观专业，不超过 55 字
+- 直接输出理由，不要加任何前缀
+
+标题：{title}
+摘要：{summary or '无'}
+分类：{category}
+
+推荐理由："""
+    result = call_qwen(prompt, 100)
+    if not result:
+        return default_reason(category)
+    result = result.replace("推荐理由：", "").replace("推荐理由", "").strip()
+    return result[:90] if result else default_reason(category)
+
+
+def default_reason(category: str) -> str:
+    return {
+        "处理器": "处理器相关动态，Intel/AMD/Qualcomm/Nvidia 竞争值得关注。",
+        "显卡": "显卡动态，受 AI 与内存短缺影响较大，关注价格与供应。",
+        "内存存储": "内存与存储新闻，DRAM/NAND 价格是当前市场关键变量。",
+        "笔记本": "笔记本/AI PC 方向，本地 AI 能力成为新定义标准。",
+        "主板机箱": "主板与机箱相关更新。",
+        "市场动态": "市场出货、价格与供应链消息，反映行业走势。",
+        "综合": "来自公开源聚合，点击标题可阅读原文。",
+    }.get(category, "来自公开源聚合，点击标题可阅读原文。")
+
+
 def fetch_entries(max_items: int = 45):
     entries = []
-    headers = {"User-Agent": "Mozilla/5.0 (compatible; PC-HOT-Bot/1.2; +https://github.com)"}
+    headers = {"User-Agent": "Mozilla/5.0 (compatible; PC-HOT-Bot/1.3)"}
 
     for source_name, url in RSS_SOURCES:
         try:
-            print(f"Fetching {source_name} ...")
+            print(f"抓取 {source_name} ...")
             resp = requests.get(url, headers=headers, timeout=18)
             resp.raise_for_status()
             feed = feedparser.parse(resp.content)
-
             count = 0
             for entry in feed.entries[:18]:
                 title = entry.get("title", "").strip()
                 summary = entry.get("summary", entry.get("description", ""))
                 link = entry.get("link", "")
                 published = entry.get("published_parsed") or entry.get("updated_parsed")
-
                 if not title or not is_relevant(title, summary):
                     continue
-
                 dt = None
                 if published:
                     try:
                         dt = datetime(*published[:6], tzinfo=timezone.utc)
                     except Exception:
                         pass
-
                 cat = get_category(title, summary)
                 entries.append({
                     "title": title,
@@ -104,13 +165,13 @@ def fetch_entries(max_items: int = 45):
                     "source": source_name,
                     "dt": dt or datetime.now(timezone.utc),
                     "category": cat,
+                    "reason": "",
                 })
                 count += 1
-            print(f"  → {count} relevant items")
+            print(f"  → {count} 条")
         except Exception as e:
-            print(f"  Failed {source_name}: {e}")
+            print(f"  失败: {e}")
 
-    # 去重
     seen = set()
     unique = []
     for e in sorted(entries, key=lambda x: x["dt"], reverse=True):
@@ -122,31 +183,27 @@ def fetch_entries(max_items: int = 45):
             break
     return unique
 
+
 def heat_score(rank: int) -> int:
     base = [238, 201, 168, 135, 112, 94, 80, 68, 58, 50, 44, 39, 34, 30, 27, 24]
-    if rank < len(base):
-        return base[rank]
-    return max(16, 28 - rank)
+    return base[rank] if rank < len(base) else max(16, 28 - rank)
+
 
 def render_html(entries):
     now = datetime.now(timezone(timedelta(hours=8)))
     weekday = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"][now.weekday()]
 
-    # 热榜
     hot = entries[:8]
     hot_html = ""
     for i, e in enumerate(hot):
         rank_class = "top3" if i < 3 else ""
         hot_html += f"""
-      <div class="hot-item" data-cat="{html.escape(e['category'])}">
+      <div class="hot-item">
         <div class="hot-rank {rank_class}">{i+1}</div>
-        <div class="hot-content">
-          <div class="hot-title">{html.escape(e['title'])}</div>
-        </div>
+        <div class="hot-content"><div class="hot-title">{html.escape(e['title'])}</div></div>
         <div class="hot-heat">{heat_score(i)} 热度</div>
       </div>"""
 
-    # 分类统计
     cat_count = defaultdict(int)
     for e in entries:
         cat_count[e["category"]] += 1
@@ -155,7 +212,6 @@ def render_html(entries):
         for c, n in sorted(cat_count.items(), key=lambda x: -x[1])
     )
 
-    # 分组
     today = now.date()
     yesterday = today - timedelta(days=1)
     groups = defaultdict(list)
@@ -186,46 +242,32 @@ def render_html(entries):
             time_str = e["dt"].astimezone(timezone(timedelta(hours=8))).strftime("%H:%M")
             heat = heat_score(global_rank)
             global_rank += 1
-            cat = e["category"]
-
-            reason_map = {
-                "处理器": "处理器相关动态。Intel / AMD / Qualcomm / Nvidia 竞争加剧，值得关注新品与价格。",
-                "显卡": "显卡/GPU 动态。当前受 AI 与内存短缺影响较大，价格与供应是关键。",
-                "内存存储": "内存与存储新闻。DRAM/NAND 价格是当前 PC 市场最重要的变量之一。",
-                "笔记本": "笔记本 / AI PC 方向。本地 AI 能力与续航成为新的产品定义标准。",
-                "主板机箱": "主板与机箱相关更新。",
-                "市场动态": "市场出货、价格与供应链消息，反映行业整体走势。",
-                "综合": "来自公开源聚合，点击标题可阅读原文。",
-            }
-            reason = reason_map.get(cat, reason_map["综合"])
+            reason = e.get("reason") or default_reason(e["category"])
 
             feed_sections += f"""
-      <article class="feed-item" data-cat="{html.escape(cat)}" data-title="{html.escape(e['title'].lower())}">
+      <article class="feed-item" data-cat="{html.escape(e['category'])}" data-title="{html.escape(e['title'].lower())}">
         <div class="feed-meta">
           <span class="feed-time">{time_str}</span>
           <span class="feed-source">{html.escape(e['source'])}</span>
-          <span class="cat-tag">{html.escape(cat)}</span>
+          <span class="cat-tag">{html.escape(e['category'])}</span>
           <span class="feed-heat">{heat} 热度</span>
         </div>
         <div class="feed-title"><a href="{html.escape(e['link'])}" target="_blank" rel="noopener">{html.escape(e['title'])}</a></div>
-        <div class="feed-summary">{html.escape(e['summary']) or '（暂无摘要，点击标题查看原文）'}</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>{reason}</div>
+        <div class="feed-summary">{html.escape(e['summary']) or '（暂无摘要）'}</div>
+        <div class="feed-reason"><strong>推荐理由：</strong>{html.escape(reason)}</div>
       </article>"""
         feed_sections += "\n</div>\n"
 
-    html_content = f"""<!DOCTYPE html>
+    return f"""<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PC HOT — PC 行业动态聚合 · 每日精选</title>
   <style>
-    :root {{
-      --bg: #f7f8fa; --card: #fff; --text: #1a1a1a; --text2: #555; --muted: #888;
-      --border: #e8e8e8; --accent: #2563eb; --hot: #ef4444;
-    }}
+    :root {{ --bg:#f7f8fa; --card:#fff; --text:#1a1a1a; --text2:#555; --muted:#888; --border:#e8e8e8; --accent:#2563eb; --hot:#ef4444; }}
     * {{ margin:0; padding:0; box-sizing:border-box; }}
-    body {{ font-family: -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--text); line-height:1.6; }}
+    body {{ font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--text); line-height:1.6; }}
     a {{ color:inherit; text-decoration:none; }} a:hover {{ color:var(--accent); }}
     header {{ background:var(--card); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:50; }}
     .header-inner {{ max-width:900px; margin:0 auto; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; gap:16px; }}
@@ -239,7 +281,7 @@ def render_html(entries):
     .section-header h2 {{ font-size:1.1rem; font-weight:700; }}
     .section-header .date {{ font-size:.85rem; color:var(--muted); }}
     .tags {{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px; }}
-    .tag-btn {{ background:var(--card); border:1px solid var(--border); padding:5px 12px; border-radius:20px; font-size:.8rem; cursor:pointer; color:var(--text2); transition:.15s; }}
+    .tag-btn {{ background:var(--card); border:1px solid var(--border); padding:5px 12px; border-radius:20px; font-size:.8rem; cursor:pointer; color:var(--text2); }}
     .tag-btn:hover, .tag-btn.active {{ background:var(--accent); color:#fff; border-color:var(--accent); }}
     .hot-list {{ background:var(--card); border:1px solid var(--border); border-radius:12px; padding:6px 0; margin-bottom:24px; }}
     .hot-item {{ display:flex; align-items:flex-start; gap:12px; padding:10px 16px; }}
@@ -264,54 +306,34 @@ def render_html(entries):
     .feed-reason {{ font-size:.82rem; color:var(--muted); background:#f8fafc; border-radius:8px; padding:8px 10px; border-left:3px solid var(--accent); }}
     .feed-reason strong {{ color:var(--text2); }}
     footer {{ max-width:900px; margin:0 auto; padding:20px; border-top:1px solid var(--border); text-align:center; font-size:.8rem; color:var(--muted); }}
-    footer p {{ margin-bottom:3px; }}
   </style>
 </head>
 <body>
   <header>
     <div class="header-inner">
-      <div class="logo">
-        <span class="logo-badge">PC</span>
-        <span>PC HOT</span>
-      </div>
-      <div class="search-box">
-        <input type="text" id="searchInput" placeholder="搜索标题..." oninput="filterItems()">
-      </div>
+      <div class="logo"><span class="logo-badge">PC</span><span>PC HOT</span></div>
+      <div class="search-box"><input type="text" id="searchInput" placeholder="搜索标题..." oninput="filterItems()"></div>
     </div>
   </header>
-
   <main>
-    <div class="section-header">
-      <h2>精选热榜</h2>
-      <span class="date">{now.strftime('%m月%d日')} · {weekday}</span>
-    </div>
-
-    <div class="hot-list" id="hotList">
-{hot_html}
-    </div>
-
-    <div class="stats">本次共聚合 <strong>{len(entries)}</strong> 条资讯 · 来自 <strong>{len(set(e['source'] for e in entries))}</strong> 个来源</div>
-
+    <div class="section-header"><h2>精选热榜</h2><span class="date">{now.strftime('%m月%d日')} · {weekday}</span></div>
+    <div class="hot-list">{hot_html}</div>
+    <div class="stats">本次共聚合 <strong>{len(entries)}</strong> 条资讯 · 来自 <strong>{len(set(e['source'] for e in entries))}</strong> 个来源{' · 已用本地 Qwen 增强' if USE_OLLAMA else ''}</div>
     <div class="tags" id="tagBar">
       <button class="tag-btn active" data-filter="all">全部</button>
       {cat_tags}
     </div>
-
     <div class="section-header"><h2>最新精选</h2></div>
-{feed_sections}
+    {feed_sections}
   </main>
-
   <footer>
     <p><strong>PC HOT</strong> — PC 行业动态聚合 · 每日精选</p>
-    <p>自动更新于 {now.strftime('%Y-%m-%d %H:%M')} (北京时间) · 数据来自公开 RSS</p>
-    <p>支持搜索与分类筛选 · 由 GitHub Actions 定时生成</p>
+    <p>更新于 {now.strftime('%Y-%m-%d %H:%M')} (北京时间)</p>
   </footer>
-
   <script>
     const searchInput = document.getElementById('searchInput');
     const tagBtns = document.querySelectorAll('.tag-btn');
     let currentFilter = 'all';
-
     tagBtns.forEach(btn => {{
       btn.addEventListener('click', () => {{
         tagBtns.forEach(b => b.classList.remove('active'));
@@ -320,32 +342,49 @@ def render_html(entries):
         filterItems();
       }});
     }});
-
     function filterItems() {{
       const q = (searchInput.value || '').trim().toLowerCase();
       document.querySelectorAll('.feed-item').forEach(item => {{
         const cat = item.dataset.cat || '';
         const title = item.dataset.title || '';
-        const matchCat = currentFilter === 'all' || cat === currentFilter;
-        const matchSearch = !q || title.includes(q);
-        item.classList.toggle('hidden', !(matchCat && matchSearch));
+        item.classList.toggle('hidden', !((currentFilter === 'all' || cat === currentFilter) && (!q || title.includes(q))));
       }});
     }}
   </script>
 </body>
 </html>"""
-    return html_content
+
 
 def main():
-    print("PC HOT 中文增强版启动...")
-    entries = fetch_entries(max_items=45)
-    print(f"共获取 {len(entries)} 条相关资讯")
-    if not entries:
-        print("未获取到内容，保留现有页面")
-        return
+    print("=" * 50)
+    print("PC HOT 完整版生成（支持本地 Qwen）")
+    print("=" * 50)
+
+    if USE_OLLAMA:
+        try:
+            r = requests.get("http://localhost:11434/api/tags", timeout=5)
+            models = [m["name"] for m in r.json().get("models", [])]
+            print(f"检测到模型: {models}")
+        except Exception as e:
+            print(f"无法连接 Ollama: {e}")
+            print("将使用默认推荐理由继续生成")
+            globals()["USE_OLLAMA"] = False
+
+    entries = fetch_entries(45)
+    print(f"\n共获取 {len(entries)} 条相关资讯")
+
+    if USE_OLLAMA and entries:
+        print(f"\n开始用 {MODEL_NAME} 增强前 {min(MAX_ENHANCE, len(entries))} 条推荐理由...")
+        for i, e in enumerate(entries[:MAX_ENHANCE]):
+            print(f"  [{i+1}/{min(MAX_ENHANCE, len(entries))}] {e['title'][:40]}...")
+            e["reason"] = enhance_reason(e["title"], e["summary"], e["category"])
+            print(f"      → {e['reason']}")
+
     html = render_html(entries)
     Path("index.html").write_text(html, encoding="utf-8")
-    print("已生成 index.html")
+    print(f"\n已生成 index.html（共 {len(entries)} 条）")
+    print("接下来执行: git add index.html && git commit -m \"update with Qwen\" && git push")
+
 
 if __name__ == "__main__":
     main()
