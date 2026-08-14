@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PC HOT — PC 行业动态聚合 · 每日精选与硬件日报</title>
+  <style>
+    :root {
+      --bg: #fafafa;
+      --card: #ffffff;
+      --text: #1a1a1a;
+      --text-secondary: #666;
+      --text-muted: #999;
+      --border: #eee;
+      --accent: #2563eb;
+      --hot: #ef4444;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    a { color: inherit; text-decoration: none; }
+    a:hover { color: var(--accent); }
+    header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 50;
+    }
+    .header-inner {
+      max-width: 860px; margin: 0 auto; padding: 16px 20px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .logo {
+      display: flex; align-items: center; gap: 10px;
+      font-weight: 700; font-size: 1.25rem; letter-spacing: -0.02em;
+    }
+    .logo-badge {
+      background: linear-gradient(135deg, #2563eb, #7c3aed);
+      color: white; font-size: 0.7rem; font-weight: 700;
+      padding: 3px 8px; border-radius: 6px; letter-spacing: 0.05em;
+    }
+    .header-right { font-size: 0.8rem; color: var(--text-muted); }
+    main { max-width: 860px; margin: 0 auto; padding: 24px 20px 60px; }
+    .section-header {
+      display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 16px;
+    }
+    .section-header h2 { font-size: 1.15rem; font-weight: 700; }
+    .section-header .date { font-size: 0.85rem; color: var(--text-muted); }
+    .hot-list {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 8px 0; margin-bottom: 32px;
+    }
+    .hot-item {
+      display: flex; align-items: flex-start; gap: 12px; padding: 12px 18px;
+      transition: background 0.15s;
+    }
+    .hot-item:hover { background: #f8fafc; }
+    .hot-rank { font-weight: 700; font-size: 1rem; color: var(--text-muted); min-width: 22px; text-align: center; }
+    .hot-rank.top3 { color: var(--hot); }
+    .hot-content { flex: 1; min-width: 0; }
+    .hot-title { font-size: 0.95rem; font-weight: 500; }
+    .hot-heat { font-size: 0.8rem; color: var(--hot); font-weight: 600; white-space: nowrap; }
+    .day-block { margin-bottom: 36px; }
+    .day-title {
+      font-size: 1.05rem; font-weight: 700; margin-bottom: 16px;
+      padding-bottom: 8px; border-bottom: 1px solid var(--border);
+    }
+    .feed-item {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 16px 18px; margin-bottom: 12px;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .feed-item:hover { border-color: #d1d5db; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+    .feed-meta {
+      display: flex; align-items: center; gap: 10px; font-size: 0.8rem;
+      color: var(--text-muted); margin-bottom: 8px; flex-wrap: wrap;
+    }
+    .feed-source { color: var(--accent); font-weight: 500; }
+    .feed-heat { margin-left: auto; color: var(--hot); font-weight: 600; }
+    .feed-title { font-size: 1.02rem; font-weight: 600; margin-bottom: 8px; line-height: 1.4; }
+    .feed-summary { font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 10px; line-height: 1.55; }
+    .feed-reason {
+      font-size: 0.85rem; color: var(--text-muted); background: #f8fafc;
+      border-radius: 8px; padding: 10px 12px; border-left: 3px solid var(--accent);
+    }
+    .feed-reason strong { color: var(--text-secondary); font-weight: 600; }
+    footer {
+      max-width: 860px; margin: 0 auto; padding: 24px 20px;
+      border-top: 1px solid var(--border); text-align: center;
+      font-size: 0.8rem; color: var(--text-muted);
+    }
+    footer p { margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-badge">PC</span>
+        <span>PC HOT</span>
+      </div>
+      <div class="header-right">PC 行业动态聚合 · 每日精选</div>
+    </div>
+  </header>
+
+  <main>
+    <div class="section-header">
+      <h2>精选</h2>
+      <span class="date">08月14日 · 周五</span>
+    </div>
+
+    <div class="hot-list">
+
+      <div class="hot-item">
+        <div class="hot-rank top3">1</div>
+        <div class="hot-content">
+          <div class="hot-title">Disgruntled security researcher just dropped another Windows zero-day, right on schedule</div>
+        </div>
+        <div class="hot-heat">220 热度</div>
+      </div>
+      <div class="hot-item">
+        <div class="hot-rank top3">2</div>
+        <div class="hot-content">
+          <div class="hot-title">Hawk 370 Slotket Breathes New Life Into Intel’s Legendary 440BX Chipset</div>
+        </div>
+        <div class="hot-heat">185 热度</div>
+      </div>
+      <div class="hot-item">
+        <div class="hot-rank top3">3</div>
+        <div class="hot-content">
+          <div class="hot-title">Qualcomm&#x27;s Snapdragon C wants to be the Arm chip for $300 laptops</div>
+        </div>
+        <div class="hot-heat">140 热度</div>
+      </div>
+      <div class="hot-item">
+        <div class="hot-rank ">4</div>
+        <div class="hot-content">
+          <div class="hot-title">Pixel Buds Pro 2 And 2A Gain Sweet New Features And Big Discounts</div>
+        </div>
+        <div class="hot-heat">110 热度</div>
+      </div>
+      <div class="hot-item">
+        <div class="hot-rank ">5</div>
+        <div class="hot-content">
+          <div class="hot-title">Windows 11&#x27;s new CPU-boosting speed trick is rolling out to all apps</div>
+        </div>
+        <div class="hot-heat">90 热度</div>
+      </div>
+    </div>
+
+    <div class="section-header">
+      <h2>最新精选</h2>
+    </div>
+
+    <div class="day-block">
+      <div class="day-title">今天 08月14日 周五</div>
+
+      <article class="feed-item">
+        <div class="feed-meta">
+          <span class="feed-time">05:53</span>
+          <span class="feed-source">TechSpot</span>
+          <span class="feed-heat">220 热度</span>
+        </div>
+        <div class="feed-title"><a href="https://www.techspot.com/news/113477-disgruntled-security-researcher-dropped-another-windows-zero-day.html" target="_blank" rel="noopener">Disgruntled security researcher just dropped another Windows zero-day, right on schedule</a></div>
+        <div class="feed-summary">NightmareEclipse and Microsoft keep clashing over zero-day vulnerabilities in Windows. The researcher, who pledged to give Redmond security hell, is back with ShieldBreak, a new…</div>
+        <div class="feed-reason">
+          <strong>推荐理由：</strong>来自公开 RSS 聚合，自动生成。实际热度与重要性请结合原文判断。
+        </div>
+      </article>
+      <article class="feed-item">
+        <div class="feed-meta">
+          <span class="feed-time">04:30</span>
+          <span class="feed-source">HotHardware</span>
+          <span class="feed-heat">185 热度</span>
+        </div>
+        <div class="feed-title"><a href="https://hothardware.com/news/hawk-370-slotket-supports-tualatins-slot-1-motherboards" target="_blank" rel="noopener">Hawk 370 Slotket Breathes New Life Into Intel’s Legendary 440BX Chipset</a></div>
+        <div class="feed-summary">If you&#x27;re an enthusiast of a certain age, you may recall that there was a weird diversion between the Socket 7 platform used by the original Pentium and the Socket 370 platform…</div>
+        <div class="feed-reason">
+          <strong>推荐理由：</strong>来自公开 RSS 聚合，自动生成。实际热度与重要性请结合原文判断。
+        </div>
+      </article>
+      <article class="feed-item">
+        <div class="feed-meta">
+          <span class="feed-time">03:47</span>
+          <span class="feed-source">TechSpot</span>
+          <span class="feed-heat">140 热度</span>
+        </div>
+        <div class="feed-title"><a href="https://www.techspot.com/news/113466-qualcomm-snapdragon-c-wants-arm-chip-300-laptops.html" target="_blank" rel="noopener">Qualcomm&#x27;s Snapdragon C wants to be the Arm chip for $300 laptops</a></div>
+        <div class="feed-summary">The processor has eight Qualcomm Kryo CPU cores. Qualcomm lists a maximum clock speed of 3 GHz for single-core workloads and 2 GHz for multi-core workloads, along with 2 MB of…</div>
+        <div class="feed-reason">
+          <strong>推荐理由：</strong>来自公开 RSS 聚合，自动生成。实际热度与重要性请结合原文判断。
+        </div>
+      </article>
+      <article class="feed-item">
+        <div class="feed-meta">
+          <span class="feed-time">03:09</span>
+          <span class="feed-source">HotHardware</span>
+          <span class="feed-heat">110 热度</span>
+        </div>
+        <div class="feed-title"><a href="https://hothardware.com/news/pixel-buds-pro-2-and-2a-new-features" target="_blank" rel="noopener">Pixel Buds Pro 2 And 2A Gain Sweet New Features And Big Discounts</a></div>
+        <div class="feed-summary">Google delivered its excellent Pixel Buds 2a and Pixel Buds Pro 2 last year, and the company is continuing to put in the work to make these earbuds even better. An upcoming…</div>
+        <div class="feed-reason">
+          <strong>推荐理由：</strong>来自公开 RSS 聚合，自动生成。实际热度与重要性请结合原文判断。
+        </div>
+      </article>
+      <article class="feed-item">
+        <div class="feed-meta">
+          <span class="feed-time">03:02</span>
+          <span class="feed-source">TechSpot</span>
+          <span class="feed-heat">90 热度</span>
+        </div>
+        <div class="feed-title"><a href="https://www.techspot.com/news/113459-microsoft-expands-cpu-boosting-feature-all-windows-11.html" target="_blank" rel="noopener">Windows 11&#x27;s new CPU-boosting speed trick is rolling out to all apps</a></div>
+        <div class="feed-summary">Microsoft began rolling out the new Low Latency Profile (LLP) feature to all Windows 11 users earlier this week. The change is part of KB5121003, this month&#x27;s Patch Tuesday update…</div>
+        <div class="feed-reason">
+          <strong>推荐理由：</strong>来自公开 RSS 聚合，自动生成。实际热度与重要性请结合原文判断。
+        </div>
+      </article>
+      <article class="feed-item">
+        <div class="feed-meta">
+          <span class="feed-time">02:15</span>
+          <span class="feed-source">HotHardware</span>
+          <span class="feed-heat">75 热度</span>
+        </div>
+        <div class="feed-title"><a href="https://hothardware.com/news/asus-fixes-another-severe-armoury-crate-flaw" target="_blank" rel="noopener">ASUS Fixes Another Severe Security Flaw In Armoury Crate, Update ASAP</a></div>
+        <div class="feed-summary">ASUS has patched another serious security vulnerability in Armoury Crate and several other hardware-management utilities that could let an unprivileged application gain…</div>
+        <div class="feed-reason">
+          <strong>推荐理由：</strong>来自公开 RSS 聚合，自动生成。实际热度与重要性请结合原文判断。
+        </div>
+      </article>
+      <article class="feed-item">
+        <div class="feed-meta">
+          <span class="feed-time">02:03</span>
+          <span class="feed-source">TechSpot</span>
+          <span class="feed-heat">65 热度</span>
+        </div>
+        <div class="feed-title"><a href="https://www.techspot.com/downloads/7794-comet.html" target="_blank" rel="noopener">Comet gets you a free AI assistant directly into your web browser</a></div>
+        <div class="feed-summary">Comet combines a familiar Chromium browsing experience with Perplexity&#x27;s AI assistant that can summarize pages, answer questions, and help with tasks across tabs. For more browser…</div>
+        <div class="feed-reason">
+          <strong>推荐理由：</strong>来自公开 RSS 聚合，自动生成。实际热度与重要性请结合原文判断。
+        </div>
+      </article>
+      <article class="feed-item">
+        <div class="feed-meta">
+          <span class="feed-time">01:36</span>
+          <span class="feed-source">Tom&#x27;s Hardware</span>
+          <span class="feed-heat">55 热度</span>
+        </div>
+        <div class="feed-title"><a href="https://www.tomshardware.com/tech-industry/cyber-security/microsofts-nemesis-drops-new-zero-day-privilege-escalation-vulnerability-attack-grants-system-level-privileges-but-it-could-already-be-patched" target="_blank" rel="noopener">Microsoft&#x27;s nemesis drops new zero-day privilege escalation vulnerability — attack grants system-level privileges, but it could already be patched</a></div>
+        <div class="feed-summary">Nightmare Eclipse drops ShieldBreak, another Windows zero-day privilege escalation vulnerability, but Microsoft has rushed quickly to block it with Defender</div>
+        <div class="feed-reason">
+          <strong>推荐理由：</strong>来自公开 RSS 聚合，自动生成。实际热度与重要性请结合原文判断。
+        </div>
+      </article>
+      <article class="feed-item">
+        <div class="feed-meta">
+          <span class="feed-time">23:33</span>
+          <span class="feed-source">TechSpot</span>
+          <span class="feed-heat">48 热度</span>
+        </div>
+        <div class="feed-title"><a href="https://www.techspot.com/news/113460-nvidia-raises-rtx-pro-6000-blackwell-price-staggering.html" target="_blank" rel="noopener">Nvidia raises RTX Pro 6000 Blackwell price to a staggering $16,000</a></div>
+        <div class="feed-summary">The RTX Pro 6000 has gone through multiple price revisions since its launch, driven by the AI-fueled memory crunch. It originally went on pre-order for just over $7,600 in early…</div>
+        <div class="feed-reason">
+          <strong>推荐理由：</strong>来自公开 RSS 聚合，自动生成。实际热度与重要性请结合原文判断。
+        </div>
+      </article>
+      <article class="feed-item">
+        <div class="feed-meta">
+          <span class="feed-time">22:13</span>
+          <span class="feed-source">HotHardware</span>
+          <span class="feed-heat">42 热度</span>
+        </div>
+        <div class="feed-title"><a href="https://hothardware.com/news/amd-ryzen-9-9900x-bundle-mobo-ram-aio-cooler-drops-659" target="_blank" rel="noopener">AMD Ryzen 9 9900X Bundle With Mobo, RAM And AIO Cooler Drops To $659</a></div>
+        <div class="feed-summary">Building a high-end desktop usually entails picking up parts in piecemeal fashion and, in today&#x27;s market, watching costs quickly stack up. Before you skip your next build, though,…</div>
+        <div class="feed-reason">
+          <strong>推荐理由：</strong>来自公开 RSS 聚合，自动生成。实际热度与重要性请结合原文判断。
+        </div>
+      </article>
+      <article class="feed-item">
+        <div class="feed-meta">
+          <span class="feed-time">21:27</span>
+          <span class="feed-source">Tom&#x27;s Hardware</span>
+          <span class="feed-heat">30 热度</span>
+        </div>
+        <div class="feed-title"><a href="https://www.tomshardware.com/tech-industry/cxmt-overtakes-tencent-to-become-chinas-most-valuable-company-17-days-after-its-ipo" target="_blank" rel="noopener">Memory maker CXMT overtakes Tencent to become China&#x27;s most valuable company 17 days after its IPO — now worth $524 billion</a></div>
+        <div class="feed-summary">ChangXin Memory Technologies (CXMT) is now the world&#x27;s most valuable Chinese company after passing Tencent.</div>
+        <div class="feed-reason">
+          <strong>推荐理由：</strong>来自公开 RSS 聚合，自动生成。实际热度与重要性请结合原文判断。
+        </div>
+      </article>
+      <article class="feed-item">
+        <div class="feed-meta">
+          <span class="feed-time">21:23</span>
+          <span class="feed-source">TechSpot</span>
+          <span class="feed-heat">30 热度</span>
+        </div>
+        <div class="feed-title"><a href="https://www.techspot.com/news/113473-memory-crisis-killing-off-sub-100-smartphones-us.html" target="_blank" rel="noopener">The memory crisis is killing off sub-$100 smartphones as US sales plunge 64%</a></div>
+        <div class="feed-summary">Counterpoint Research writes that US smartphone sales fell by 5% YoY in Q2 2026, with memory price increases the main culprit alongside other macroeconomic factors weakening…</div>
+        <div class="feed-reason">
+          <strong>推荐理由：</strong>来自公开 RSS 聚合，自动生成。实际热度与重要性请结合原文判断。
+        </div>
+      </article>
+    </div>
+  </main>
+
+  <footer>
+    <p><strong>PC HOT</strong> — PC 行业动态聚合 · 每日精选与硬件日报</p>
+    <p>自动更新于 2026-08-14 13:47 (CST) · 数据来自公开 RSS</p>
+    <p>本页面由 GitHub Actions 定时生成</p>
+  </footer>
+</body>
+</html>
