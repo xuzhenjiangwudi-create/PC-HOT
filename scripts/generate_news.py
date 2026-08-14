@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """
-PC HOT - 简单新闻生成脚本
-从几个公开 RSS 源抓取最新 PC/硬件相关新闻，生成 index.html
-注意：RSS 源质量和反爬情况会变化，实际使用中可继续完善。
+PC HOT - 新闻生成脚本（增强版）
+从多个公开 RSS 源抓取 PC/硬件相关新闻，生成更丰富的 index.html
 """
 
 import feedparser
@@ -11,31 +10,39 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 import re
 import html
+from collections import defaultdict
 
-# 可继续添加更多 RSS 源
+# 扩展的 RSS 源列表
 RSS_SOURCES = [
     ("HotHardware", "https://hothardware.com/rss"),
     ("Tom's Hardware", "https://www.tomshardware.com/feeds/all"),
     ("TechSpot", "https://www.techspot.com/backend.xml"),
     ("AnandTech", "https://www.anandtech.com/rss/"),
+    ("PC Perspective", "https://pcper.com/feed/"),
+    ("PCWorld", "https://www.pcworld.com/feed"),
+    ("PC Gamer Hardware", "https://www.pcgamer.com/feeds/tag/hardware"),
+    ("Windows Central", "https://www.windowscentral.com/feeds.xml"),
+    ("TechPowerUp", "https://www.techpowerup.com/rss/news"),
+    ("VideoCardz", "https://videocardz.com/feed"),
 ]
 
-# 简单关键词过滤，只保留更相关的 PC/硬件内容
+# 关键词过滤（更宽松一点，让内容更丰富）
 KEYWORDS = [
-    "pc", "laptop", "notebook", "cpu", "gpu", "rtx", "ryzen", "intel", "amd",
-    "nvidia", "memory", "ram", "ddr", "ssd", "motherboard", "chipset",
-    "asus", "msi", "gigabyte", "lenovo", "dell", "hp", "apple", "macbook",
-    "windows", "ai pc", "snapdragon", "qualcomm", "computex"
+    "pc", "laptop", "notebook", "desktop", "cpu", "gpu", "rtx", "rx ", "ryzen", "intel", "amd",
+    "nvidia", "memory", "ram", "ddr5", "ddr4", "ssd", "nvme", "motherboard", "chipset",
+    "asus", "msi", "gigabyte", "asrock", "lenovo", "dell", "hp", "apple", "macbook",
+    "windows", "ai pc", "snapdragon", "qualcomm", "computex", "processor", "graphics",
+    "gaming pc", "mini pc", "nuc", "handheld", "steam deck", "rog", "legion",
+    "core ultra", "zen ", "blackwell", "rdna", "panther lake", "nova lake"
 ]
 
 def is_relevant(title: str, summary: str = "") -> bool:
     text = (title + " " + summary).lower()
     return any(kw in text for kw in KEYWORDS)
 
-def clean_text(text: str, max_len: int = 180) -> str:
+def clean_text(text: str, max_len: int = 220) -> str:
     if not text:
         return ""
-    # 去掉 HTML 标签
     text = re.sub(r'<[^>]+>', '', text)
     text = html.unescape(text).strip()
     text = re.sub(r'\s+', ' ', text)
@@ -43,18 +50,21 @@ def clean_text(text: str, max_len: int = 180) -> str:
         text = text[:max_len].rsplit(' ', 1)[0] + "…"
     return text
 
-def fetch_entries(max_items: int = 25):
+def fetch_entries(max_items: int = 40):
     entries = []
-    headers = {"User-Agent": "PC-HOT-Bot/1.0 (+https://github.com)"}
+    headers = {
+        "User-Agent": "Mozilla/5.0 (compatible; PC-HOT-Bot/1.1; +https://github.com)"
+    }
 
     for source_name, url in RSS_SOURCES:
         try:
             print(f"Fetching {source_name} ...")
-            resp = requests.get(url, headers=headers, timeout=15)
+            resp = requests.get(url, headers=headers, timeout=18)
             resp.raise_for_status()
             feed = feedparser.parse(resp.content)
 
-            for entry in feed.entries[:12]:
+            count = 0
+            for entry in feed.entries[:15]:
                 title = entry.get("title", "").strip()
                 summary = entry.get("summary", entry.get("description", ""))
                 link = entry.get("link", "")
@@ -77,14 +87,16 @@ def fetch_entries(max_items: int = 25):
                     "source": source_name,
                     "dt": dt or datetime.now(timezone.utc),
                 })
+                count += 1
+            print(f"  → {count} relevant items")
         except Exception as e:
             print(f"  Failed {source_name}: {e}")
 
-    # 去重（按标题相似度简单处理）
+    # 去重
     seen = set()
     unique = []
     for e in sorted(entries, key=lambda x: x["dt"], reverse=True):
-        key = e["title"].lower()[:60]
+        key = re.sub(r'[^a-z0-9]', '', e["title"].lower())[:50]
         if key not in seen:
             seen.add(key)
             unique.append(e)
@@ -94,20 +106,17 @@ def fetch_entries(max_items: int = 25):
     return unique
 
 def heat_score(rank: int) -> int:
-    # 简单模拟热度
-    base = [220, 185, 140, 110, 90, 75, 65, 55, 48, 42]
+    base = [235, 198, 162, 128, 105, 88, 76, 65, 56, 49, 43, 38, 34, 30, 27]
     if rank < len(base):
         return base[rank]
-    return max(30, 40 - rank)
+    return max(18, 30 - rank)
 
 def render_html(entries):
-    now = datetime.now(timezone(timedelta(hours=8)))  # 北京时间大概
-    today_str = now.strftime("%Y年%m月%d日")
+    now = datetime.now(timezone(timedelta(hours=8)))
     weekday = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"][now.weekday()]
 
-    # 热榜取前 5
-    hot = entries[:5]
-
+    # 热榜前 8 条
+    hot = entries[:8]
     hot_html = ""
     for i, e in enumerate(hot):
         rank_class = "top3" if i < 3 else ""
@@ -120,13 +129,55 @@ def render_html(entries):
         <div class="hot-heat">{heat_score(i)} 热度</div>
       </div>"""
 
-    # 按日期分组（简化：全部放在“今天”）
-    feed_html = ""
-    for i, e in enumerate(entries[:12]):
-        time_str = e["dt"].astimezone(timezone(timedelta(hours=8))).strftime("%H:%M") if e["dt"] else "--:--"
-        heat = heat_score(i)
-        reason = "来自公开 RSS 聚合，自动生成。实际热度与重要性请结合原文判断。"
-        feed_html += f"""
+    # 按日期简单分组
+    today = now.date()
+    yesterday = today - timedelta(days=1)
+
+    groups = defaultdict(list)
+    for e in entries:
+        d = e["dt"].astimezone(timezone(timedelta(hours=8))).date()
+        if d == today:
+            groups["今天"].append(e)
+        elif d == yesterday:
+            groups["昨天"].append(e)
+        else:
+            groups["更早"].append(e)
+
+    # 保证顺序
+    ordered_groups = []
+    for label in ["今天", "昨天", "更早"]:
+        if groups[label]:
+            ordered_groups.append((label, groups[label]))
+
+    feed_sections = ""
+    global_rank = 0
+    for label, items in ordered_groups:
+        if label == "今天":
+            day_title = f"今天 {now.strftime('%m月%d日')} {weekday}"
+        elif label == "昨天":
+            day_title = f"昨天 {(now - timedelta(days=1)).strftime('%m月%d日')}"
+        else:
+            day_title = "更早内容"
+
+        feed_sections += f'<div class="day-block">\n<div class="day-title">{day_title}</div>\n'
+
+        for e in items:
+            time_str = e["dt"].astimezone(timezone(timedelta(hours=8))).strftime("%H:%M")
+            heat = heat_score(global_rank)
+            global_rank += 1
+
+            # 简单推荐理由模板（后续可接 LLM）
+            reason = "来自公开 RSS 聚合。点击标题可阅读原文。"
+            if any(k in e["title"].lower() for k in ["rtx", "gpu", "graphics"]):
+                reason = "显卡/GPU 相关动态，当前受内存与 AI 需求影响较大，值得关注价格与供应变化。"
+            elif any(k in e["title"].lower() for k in ["memory", "ram", "ddr", "ssd"]):
+                reason = "存储相关新闻。内存与 SSD 价格是当前 PC 市场最关键的变量之一。"
+            elif any(k in e["title"].lower() for k in ["laptop", "notebook", "ai pc"]):
+                reason = "笔记本 / AI PC 方向。处理器竞争与本地 AI 能力正在重塑产品定位。"
+            elif any(k in e["title"].lower() for k in ["cpu", "ryzen", "intel", "core ultra", "snapdragon"]):
+                reason = "处理器相关。Intel / AMD / Qualcomm / Nvidia 四强竞争格局正在形成。"
+
+            feed_sections += f"""
       <article class="feed-item">
         <div class="feed-meta">
           <span class="feed-time">{time_str}</span>
@@ -134,11 +185,12 @@ def render_html(entries):
           <span class="feed-heat">{heat} 热度</span>
         </div>
         <div class="feed-title"><a href="{html.escape(e['link'])}" target="_blank" rel="noopener">{html.escape(e['title'])}</a></div>
-        <div class="feed-summary">{html.escape(e['summary']) or '（无摘要）'}</div>
+        <div class="feed-summary">{html.escape(e['summary']) or '（暂无摘要，点击标题查看原文）'}</div>
         <div class="feed-reason">
           <strong>推荐理由：</strong>{reason}
         </div>
       </article>"""
+        feed_sections += "\n</div>\n"
 
     html_content = f"""<!DOCTYPE html>
 <html lang="zh-CN">
@@ -173,7 +225,7 @@ def render_html(entries):
       position: sticky; top: 0; z-index: 50;
     }}
     .header-inner {{
-      max-width: 860px; margin: 0 auto; padding: 16px 20px;
+      max-width: 880px; margin: 0 auto; padding: 16px 20px;
       display: flex; align-items: center; justify-content: space-between;
     }}
     .logo {{
@@ -186,7 +238,7 @@ def render_html(entries):
       padding: 3px 8px; border-radius: 6px; letter-spacing: 0.05em;
     }}
     .header-right {{ font-size: 0.8rem; color: var(--text-muted); }}
-    main {{ max-width: 860px; margin: 0 auto; padding: 24px 20px 60px; }}
+    main {{ max-width: 880px; margin: 0 auto; padding: 24px 20px 60px; }}
     .section-header {{
       display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 16px;
     }}
@@ -197,7 +249,7 @@ def render_html(entries):
       border-radius: 12px; padding: 8px 0; margin-bottom: 32px;
     }}
     .hot-item {{
-      display: flex; align-items: flex-start; gap: 12px; padding: 12px 18px;
+      display: flex; align-items: flex-start; gap: 12px; padding: 11px 18px;
       transition: background 0.15s;
     }}
     .hot-item:hover {{ background: #f8fafc; }}
@@ -231,11 +283,14 @@ def render_html(entries):
     }}
     .feed-reason strong {{ color: var(--text-secondary); font-weight: 600; }}
     footer {{
-      max-width: 860px; margin: 0 auto; padding: 24px 20px;
+      max-width: 880px; margin: 0 auto; padding: 24px 20px;
       border-top: 1px solid var(--border); text-align: center;
       font-size: 0.8rem; color: var(--text-muted);
     }}
     footer p {{ margin-bottom: 4px; }}
+    .stats {{
+      font-size: 0.8rem; color: var(--text-muted); margin-bottom: 20px;
+    }}
   </style>
 </head>
 <body>
@@ -259,14 +314,13 @@ def render_html(entries):
 {hot_html}
     </div>
 
+    <div class="stats">本次聚合共 {len(entries)} 条相关资讯 · 来自 {len(set(e['source'] for e in entries))} 个来源</div>
+
     <div class="section-header">
       <h2>最新精选</h2>
     </div>
 
-    <div class="day-block">
-      <div class="day-title">今天 {now.strftime('%m月%d日')} {weekday}</div>
-{feed_html}
-    </div>
+{feed_sections}
   </main>
 
   <footer>
@@ -279,8 +333,8 @@ def render_html(entries):
     return html_content
 
 def main():
-    print("PC HOT news generator starting...")
-    entries = fetch_entries()
+    print("PC HOT news generator (enhanced) starting...")
+    entries = fetch_entries(max_items=40)
     print(f"Got {len(entries)} relevant entries")
 
     if not entries:
@@ -290,7 +344,7 @@ def main():
     html = render_html(entries)
     out = Path("index.html")
     out.write_text(html, encoding="utf-8")
-    print(f"Wrote {out.resolve()}")
+    print(f"Wrote {out.resolve()} with {len(entries)} items")
 
 if __name__ == "__main__":
     main()
