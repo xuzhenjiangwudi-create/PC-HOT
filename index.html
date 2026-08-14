@@ -3,635 +3,1054 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PC HOT — PC 行业动态聚合 · 每日精选</title>
+  <meta name="description" content="PC HOT：自动聚合 PC 行业动态，并通过本地 Qwen 生成竞争情报洞察。">
+  <title>PC HOT - PC 行业竞争情报与每日精选</title>
   <style>
-    :root { --bg:#f7f8fa; --card:#fff; --text:#1a1a1a; --text2:#555; --muted:#888; --border:#e8e8e8; --accent:#2563eb; --hot:#ef4444; }
+    :root {
+      --bg:#f5f7fb; --card:#fff; --text:#172033; --text2:#4b5565; --muted:#8791a5;
+      --border:#e4e8f0; --accent:#2563eb; --accent-light:#eff5ff; --hot:#ef4444;
+      --purple:#7c3aed; --orange:#f59e0b; --shadow:0 8px 30px rgba(31,42,68,.06);
+    }
     * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--text); line-height:1.6; }
-    a { color:inherit; text-decoration:none; } a:hover { color:var(--accent); }
-    header { background:var(--card); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:50; }
-    .header-inner { max-width:900px; margin:0 auto; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; gap:16px; }
-    .logo { display:flex; align-items:center; gap:10px; font-weight:700; font-size:1.2rem; }
-    .logo-badge { background:linear-gradient(135deg,#2563eb,#7c3aed); color:#fff; font-size:.7rem; font-weight:700; padding:3px 8px; border-radius:6px; }
-    .search-box { flex:1; max-width:280px; }
-    .search-box input { width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:8px; font-size:.9rem; outline:none; }
-    .search-box input:focus { border-color:var(--accent); }
-    main { max-width:900px; margin:0 auto; padding:20px 20px 50px; }
-    .section-header { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:14px; }
-    .section-header h2 { font-size:1.1rem; font-weight:700; }
-    .section-header .date { font-size:.85rem; color:var(--muted); }
-    .tags { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px; }
-    .tag-btn { background:var(--card); border:1px solid var(--border); padding:5px 12px; border-radius:20px; font-size:.8rem; cursor:pointer; color:var(--text2); }
-    .tag-btn:hover, .tag-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); }
-    .hot-list { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:6px 0; margin-bottom:24px; }
-    .hot-item { display:flex; align-items:flex-start; gap:12px; padding:10px 16px; }
-    .hot-item:hover { background:#f8fafc; }
-    .hot-rank { font-weight:700; font-size:1rem; color:var(--muted); min-width:22px; text-align:center; }
+    html { scroll-behavior:smooth; }
+    body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--text); line-height:1.65; }
+    a { color:inherit; text-decoration:none; }
+    a:hover { color:var(--accent); }
+    header { background:rgba(255,255,255,.94); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:50; backdrop-filter:blur(12px); }
+    .header-inner { max-width:1080px; margin:0 auto; padding:14px 22px; display:flex; align-items:center; justify-content:space-between; gap:18px; }
+    .logo { display:flex; align-items:center; gap:10px; font-weight:800; font-size:1.22rem; white-space:nowrap; }
+    .logo-badge { background:linear-gradient(135deg,#2563eb,#7c3aed); color:#fff; font-size:.72rem; padding:4px 9px; border-radius:7px; letter-spacing:.04em; }
+    .search-box { flex:1; max-width:360px; }
+    .search-box input { width:100%; padding:10px 13px; border:1px solid var(--border); border-radius:10px; font-size:.9rem; outline:none; background:#fbfcfe; }
+    .search-box input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(37,99,235,.1); }
+    main { max-width:1080px; margin:0 auto; padding:24px 22px 56px; }
+    .hero { display:grid; grid-template-columns:1.45fr .8fr; gap:16px; margin-bottom:22px; }
+    .brief-card, .metric-card { background:var(--card); border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow); }
+    .brief-card { padding:20px; background:linear-gradient(135deg,#ffffff 0%,#f5f8ff 100%); }
+    .brief-title { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
+    .brief-title h1 { font-size:1.22rem; }
+    .status-pill { background:#eaf8f0; color:#19764a; border:1px solid #c9eedb; border-radius:999px; padding:3px 9px; font-size:.72rem; white-space:nowrap; }
+    .brief-grid { display:grid; gap:8px; color:var(--text2); font-size:.9rem; }
+    .brief-grid strong { color:var(--text); }
+    .metrics { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .metric-card { padding:15px; min-height:90px; display:flex; flex-direction:column; justify-content:center; }
+    .metric-number { font-size:1.55rem; line-height:1.1; font-weight:800; color:var(--accent); }
+    .metric-label { margin-top:6px; color:var(--muted); font-size:.78rem; }
+    .section-header { display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin:22px 0 12px; }
+    .section-header h2 { font-size:1.1rem; }
+    .section-header .date { color:var(--muted); font-size:.82rem; }
+    .hot-list { background:var(--card); border:1px solid var(--border); border-radius:14px; overflow:hidden; box-shadow:var(--shadow); margin-bottom:20px; }
+    .hot-item { display:flex; align-items:center; gap:13px; padding:12px 16px; border-bottom:1px solid #f0f2f6; }
+    .hot-item:last-child { border-bottom:0; }
+    .hot-item:hover { background:#f9fbff; }
+    .hot-rank { font-weight:800; color:var(--muted); min-width:25px; text-align:center; }
     .hot-rank.top3 { color:var(--hot); }
     .hot-content { flex:1; min-width:0; }
-    .hot-title { font-size:.95rem; font-weight:500; }
-    .hot-heat { font-size:.8rem; color:var(--hot); font-weight:600; white-space:nowrap; }
-    .stats { font-size:.8rem; color:var(--muted); margin-bottom:16px; }
-    .day-block { margin-bottom:28px; }
-    .day-title { font-size:1.05rem; font-weight:700; margin-bottom:12px; padding-bottom:6px; border-bottom:1px solid var(--border); }
-    .feed-item { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px 16px; margin-bottom:10px; }
-    .feed-item:hover { border-color:#d0d5dd; box-shadow:0 2px 8px rgba(0,0,0,.04); }
+    .hot-title { font-size:.94rem; font-weight:650; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .hot-sub { font-size:.73rem; color:var(--muted); margin-top:2px; }
+    .hot-heat { color:var(--hot); font-size:.78rem; font-weight:700; white-space:nowrap; }
+    .stats { color:var(--muted); font-size:.8rem; margin:4px 0 13px; }
+    .tags { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:22px; }
+    .tag-btn { background:var(--card); color:var(--text2); border:1px solid var(--border); padding:7px 13px; border-radius:999px; font-size:.8rem; cursor:pointer; transition:.15s ease; }
+    .tag-btn:hover, .tag-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); transform:translateY(-1px); }
+    .day-block { margin-bottom:30px; }
+    .day-title { font-size:1.07rem; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--border); }
+    .feed-item { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:17px 18px; margin-bottom:12px; transition:.18s ease; }
+    .feed-item:hover { border-color:#cfd7e6; box-shadow:var(--shadow); transform:translateY(-1px); }
     .feed-item.hidden { display:none; }
-    .feed-meta { display:flex; align-items:center; gap:8px; font-size:.78rem; color:var(--muted); margin-bottom:6px; flex-wrap:wrap; }
-    .feed-source { color:var(--accent); font-weight:500; }
-    .cat-tag { background:#f0f4ff; color:var(--accent); padding:1px 8px; border-radius:4px; font-size:.75rem; }
-    .feed-heat { margin-left:auto; color:var(--hot); font-weight:600; }
-    .feed-title { font-size:1rem; font-weight:600; margin-bottom:6px; line-height:1.4; }
-    .feed-summary { font-size:.88rem; color:var(--text2); margin-bottom:8px; line-height:1.5; }
-    .feed-reason { font-size:.82rem; color:var(--muted); background:#f8fafc; border-radius:8px; padding:8px 10px; border-left:3px solid var(--accent); }
-    .feed-reason strong { color:var(--text2); }
-    footer { max-width:900px; margin:0 auto; padding:20px; border-top:1px solid var(--border); text-align:center; font-size:.8rem; color:var(--muted); }
+    .feed-meta { display:flex; align-items:center; gap:8px; color:var(--muted); font-size:.77rem; margin-bottom:7px; flex-wrap:wrap; }
+    .feed-source { color:var(--accent); font-weight:600; }
+    .cat-tag { background:var(--accent-light); color:var(--accent); padding:2px 8px; border-radius:5px; }
+    .feed-heat { margin-left:auto; color:var(--hot); font-weight:700; }
+    .feed-title { font-size:1.04rem; line-height:1.45; margin-bottom:7px; }
+    .feed-summary { color:var(--text2); font-size:.88rem; margin-bottom:9px; }
+    .company-row { display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
+    .company-tag { display:inline-flex; padding:2px 9px; border-radius:999px; background:#f2edff; color:var(--purple); font-size:.71rem; font-weight:650; }
+    .company-empty { color:#a2a9b7; font-size:.72rem; }
+    .feed-insight { background:linear-gradient(135deg,#f8faff,#f7f8fc); border:1px solid #e6ebf5; border-left:4px solid var(--accent); border-radius:10px; padding:11px 12px; }
+    .insight-head { display:flex; align-items:center; gap:8px; margin-bottom:7px; font-size:.85rem; }
+    .ai-badge, .fallback-badge { border-radius:999px; padding:1px 7px; font-size:.65rem; font-weight:700; }
+    .ai-badge { color:#17633f; background:#e6f7ee; border:1px solid #c7ecd8; }
+    .fallback-badge { color:#8a5a00; background:#fff5dc; border:1px solid #f4dda4; }
+    .insight-row { display:grid; grid-template-columns:68px 1fr; gap:9px; color:var(--text2); font-size:.8rem; margin-top:4px; }
+    .insight-label { font-weight:700; color:#46536a; }
+    .stars { color:var(--orange); letter-spacing:.06em; }
+    .empty-state { display:none; text-align:center; color:var(--muted); padding:28px; }
+    footer { max-width:1080px; margin:0 auto; padding:24px 22px; border-top:1px solid var(--border); text-align:center; color:var(--muted); font-size:.78rem; }
+    footer p + p { margin-top:3px; }
+    @media (max-width:760px) {
+      .header-inner { padding:12px 15px; }
+      .logo span:last-child { display:none; }
+      main { padding:18px 14px 45px; }
+      .hero { grid-template-columns:1fr; }
+      .metrics { grid-template-columns:repeat(2,1fr); }
+      .hot-sub { display:none; }
+      .feed-item { padding:14px; }
+      .feed-heat { width:100%; margin-left:0; }
+      .insight-row { grid-template-columns:1fr; gap:1px; margin-top:7px; }
+    }
   </style>
 </head>
 <body>
   <header>
     <div class="header-inner">
       <div class="logo"><span class="logo-badge">PC</span><span>PC HOT</span></div>
-      <div class="search-box"><input type="text" id="searchInput" placeholder="搜索标题..." oninput="filterItems()"></div>
+      <div class="search-box"><input type="search" id="searchInput" placeholder="搜索标题、摘要、来源或厂商..." aria-label="搜索资讯"></div>
     </div>
   </header>
+
   <main>
+    <section class="hero">
+      <div class="brief-card">
+        <div class="brief-title">
+          <h1>AI 每日竞争情报简报</h1>
+          <span class="status-pill">本地 qwen2.5:7b 已增强 12 条</span>
+        </div>
+        <div class="brief-grid">
+          <div><strong>热点厂商：</strong>Microsoft（10）、NVIDIA（7）、Intel（6）、Qualcomm（4）、AMD（3）</div>
+          <div><strong>热点主题：</strong>综合（16）、处理器（9）、显卡（8）</div>
+          <div><strong>优先关注：</strong>8 条资讯关注等级达到 4 星及以上</div>
+        </div>
+      </div>
+      <div class="metrics">
+        <div class="metric-card"><span class="metric-number">45</span><span class="metric-label">资讯总数</span></div>
+        <div class="metric-card"><span class="metric-number">7</span><span class="metric-label">信息来源</span></div>
+        <div class="metric-card"><span class="metric-number">11</span><span class="metric-label">识别厂商</span></div>
+        <div class="metric-card"><span class="metric-number">12</span><span class="metric-label">AI 增强</span></div>
+      </div>
+    </section>
+
     <div class="section-header"><h2>精选热榜</h2><span class="date">08月14日 · 周五</span></div>
     <div class="hot-list">
-      <div class="hot-item">
+      <a class="hot-item" href="https://www.ithome.com/0/989/786.htm" target="_blank" rel="noopener noreferrer">
         <div class="hot-rank top3">1</div>
-        <div class="hot-content"><div class="hot-title">官方证实开发中：Epic Games 游戏启动器即将登陆 Linux 平台</div></div>
-        <div class="hot-heat">238 热度</div>
-      </div>
-      <div class="hot-item">
+        <div class="hot-content">
+          <div class="hot-title">WIKO 新款 Hi MateBook D 16 锐龙版笔记本电脑开售：AMD R7 H 255 + 24G + 512G 售 6199 元</div>
+          <div class="hot-sub">IT之家 · 处理器</div>
+        </div>
+        <div class="hot-heat">242 热度</div>
+      </a>
+      <a class="hot-item" href="https://www.pcworld.com/article/3211697/if-your-pc-needs-office-and-windows-11-pro-this-33-lifetime-bundle-handles-both.html" target="_blank" rel="noopener noreferrer">
         <div class="hot-rank top3">2</div>
-        <div class="hot-content"><div class="hot-title">忆联介绍 UM301a 固态硬盘：DRAM-less 架构的企业级启动盘</div></div>
-        <div class="hot-heat">201 热度</div>
-      </div>
-      <div class="hot-item">
+        <div class="hot-content">
+          <div class="hot-title">If your PC needs Office and Windows 11 Pro, this $33 lifetime bundle handles both</div>
+          <div class="hot-sub">PCWorld · 综合</div>
+        </div>
+        <div class="hot-heat">205 热度</div>
+      </a>
+      <a class="hot-item" href="https://www.ithome.com/0/989/785.htm" target="_blank" rel="noopener noreferrer">
         <div class="hot-rank top3">3</div>
-        <div class="hot-content"><div class="hot-title">明基推出 PV3250U 显示器：31.5 英寸 4K 120Hz 面板、主打全链路色准，12999 元</div></div>
+        <div class="hot-content">
+          <div class="hot-title">上下均提供开机键：CHIEFTEC 带来 VISTA Max GX-30B-OP 机箱</div>
+          <div class="hot-sub">IT之家 · 主板机箱</div>
+        </div>
         <div class="hot-heat">168 热度</div>
-      </div>
-      <div class="hot-item">
+      </a>
+      <a class="hot-item" href="https://www.ithome.com/0/989/784.htm" target="_blank" rel="noopener noreferrer">
         <div class="hot-rank ">4</div>
-        <div class="hot-content"><div class="hot-title">瑞银称英特尔将代工 AMD 芯片，EMIB-T 封装良率达 90%</div></div>
+        <div class="hot-content">
+          <div class="hot-title">网易《逆水寒：新世界》首个赛事《剑影杯》S4 定档，“跨服联赛”大优化</div>
+          <div class="hot-sub">IT之家 · 综合</div>
+        </div>
         <div class="hot-heat">135 热度</div>
-      </div>
-      <div class="hot-item">
+      </a>
+      <a class="hot-item" href="https://www.ithome.com/0/989/717.htm" target="_blank" rel="noopener noreferrer">
         <div class="hot-rank ">5</div>
-        <div class="hot-content"><div class="hot-title">《收获日 2》13 周年获引擎更新：迎接 64 位、DirectX 11，淘汰原生 Linux</div></div>
+        <div class="hot-content">
+          <div class="hot-title">安全不是限制性能的枷锁：智界 RX 一键 BOOST 模式提升 10% 扭矩，动力底盘座舱三域联动</div>
+          <div class="hot-sub">IT之家 · 显卡</div>
+        </div>
         <div class="hot-heat">112 热度</div>
-      </div>
-      <div class="hot-item">
+      </a>
+      <a class="hot-item" href="https://www.techpowerup.com/351601/epic-games-launcher-coming-soon-to-linux" target="_blank" rel="noopener noreferrer">
         <div class="hot-rank ">6</div>
-        <div class="hot-content"><div class="hot-title">百度文库网盘 GenFlow 官宣中文名“库库 AI”，推出独立办公端</div></div>
-        <div class="hot-heat">94 热度</div>
-      </div>
-      <div class="hot-item">
+        <div class="hot-content">
+          <div class="hot-title">Epic Games Launcher Coming &quot;Soon&quot; to Linux</div>
+          <div class="hot-sub">TechPowerUp · 综合</div>
+        </div>
+        <div class="hot-heat">98 热度</div>
+      </a>
+      <a class="hot-item" href="https://hothardware.com/news/hawk-370-slotket-supports-tualatins-slot-1-motherboards" target="_blank" rel="noopener noreferrer">
         <div class="hot-rank ">7</div>
-        <div class="hot-content"><div class="hot-title">Counterpoint：全球 POS 设备 2025 年出货量仅增长 1%，安卓占比近一半</div></div>
+        <div class="hot-content">
+          <div class="hot-title">Hawk 370 Slotket Breathes New Life Into Intel’s Legendary 440BX Chipset</div>
+          <div class="hot-sub">HotHardware · 处理器</div>
+        </div>
         <div class="hot-heat">80 热度</div>
-      </div>
-      <div class="hot-item">
+      </a>
+      <a class="hot-item" href="https://hothardware.com/news/pixel-buds-pro-2-and-2a-new-features" target="_blank" rel="noopener noreferrer">
         <div class="hot-rank ">8</div>
-        <div class="hot-content"><div class="hot-title">LG、NVIDIA 签署谅解备忘录，双方多领域 AI 合作转入执行阶段</div></div>
-        <div class="hot-heat">68 热度</div>
-      </div></div>
-    <div class="stats">本次共聚合 <strong>45</strong> 条资讯 · 来自 <strong>9</strong> 个来源 · 已用本地 Qwen 增强</div>
+        <div class="hot-content">
+          <div class="hot-title">Pixel Buds Pro 2 And 2A Gain Sweet New Features And Big Discounts</div>
+          <div class="hot-sub">HotHardware · 综合</div>
+        </div>
+        <div class="hot-heat">72 热度</div>
+      </a></div>
+
+    <div class="stats">本次共聚合 <strong>45</strong> 条资讯，来自 <strong>7</strong> 个来源。本地 qwen2.5:7b 已增强 12 条。</div>
     <div class="tags" id="tagBar">
       <button class="tag-btn active" data-filter="all">全部</button>
-      <button class="tag-btn" data-filter="综合">综合 (21)</button><button class="tag-btn" data-filter="处理器">处理器 (10)</button><button class="tag-btn" data-filter="内存存储">内存存储 (8)</button><button class="tag-btn" data-filter="笔记本">笔记本 (2)</button><button class="tag-btn" data-filter="市场动态">市场动态 (2)</button><button class="tag-btn" data-filter="主板机箱">主板机箱 (1)</button><button class="tag-btn" data-filter="显卡">显卡 (1)</button>
+      <button class="tag-btn" data-filter="综合">综合 (16)</button><button class="tag-btn" data-filter="处理器">处理器 (9)</button><button class="tag-btn" data-filter="显卡">显卡 (8)</button><button class="tag-btn" data-filter="内存存储">内存存储 (5)</button><button class="tag-btn" data-filter="主板机箱">主板机箱 (3)</button><button class="tag-btn" data-filter="笔记本">笔记本 (3)</button><button class="tag-btn" data-filter="市场动态">市场动态 (1)</button>
     </div>
-    <div class="section-header"><h2>最新精选</h2></div>
-    <div class="day-block">
-<div class="day-title">今天 08月14日 周五</div>
 
-      <article class="feed-item" data-cat="综合" data-title="官方证实开发中：epic games 游戏启动器即将登陆 linux 平台">
+    <div class="section-header"><h2>最新精选</h2><span class="date">点击标题阅读原文</span></div>
+    <div id="feedContainer"><section class="day-block"><h2 class="day-title">今天 08月14日 周五</h2>
+      <article class="feed-item" data-cat="处理器" data-search="wiko 新款 hi matebook d 16 锐龙版笔记本电脑开售：amd r7 h 255 + 24g + 512g 售 6199 元 it之家 8 月 14 日消息，wiko 旗下 hi matebook d 16 锐龙版新机上市，该机搭载锐龙 7 h 255 处理器，配备 24gb 内存和 512gb ssd， 定价为 6199 元，叠加国补后 5269.15 元 。 京东 wiko hi matebook d 16 锐龙版笔记本 6199 元 直达链接 2026 年数码家电政府补贴持续进行中，it 之家为大家汇总国补领券地址，买数码家电之前记得领取。 数码补贴： 点此领券 手机 / 平板 / 3c… it之家 处理器 amd">
         <div class="feed-meta">
-          <span class="feed-time">14:59</span>
+          <span class="feed-time">16:00</span>
           <span class="feed-source">IT之家</span>
+          <span class="cat-tag">处理器</span>
+          <span class="feed-heat">242 热度</span>
+        </div>
+        <h3 class="feed-title"><a href="https://www.ithome.com/0/989/786.htm" target="_blank" rel="noopener noreferrer">WIKO 新款 Hi MateBook D 16 锐龙版笔记本电脑开售：AMD R7 H 255 + 24G + 512G 售 6199 元</a></h3>
+        <div class="feed-summary">IT之家 8 月 14 日消息，WIKO 旗下 Hi MateBook D 16 锐龙版新机上市，该机搭载锐龙 7 H 255 处理器，配备 24GB 内存和 512GB SSD， 定价为 6199 元，叠加国补后 5269.15 元 。 京东 WIKO Hi Matebook D 16 锐龙版笔记本 6199 元 直达链接 2026 年数码家电政府补贴持续进行中，IT 之家为大家汇总国补领券地址，买数码家电之前记得领取。 数码补贴： 点此领券 手机 / 平板 / 3C…</div>
+        <div class="company-row"><span class="company-tag">AMD</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="ai-badge">Qwen AI</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>WIKO 上市新款 Hi MateBook D 16 锐龙版笔记本</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>推出高配配置提升产品竞争力，可能影响同价位段市场格局</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>AMD 处理器在中高端笔记本市场竞争力增强</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="4 星">★★★★☆</span></div>
+    </div>
+      </article>
+      <article class="feed-item" data-cat="综合" data-search="if your pc needs office and windows 11 pro, this $33 lifetime bundle handles both tl;dr : get lifetime licenses for both microsoft office and windows 11 pro for just $32.97 through august 16 at 11:59 p.m. pt (msrp $418.99). pay once and skip the recurring cost of microsoft 365 and the hassle of replacing an outdated… pcworld 综合 microsoft">
+        <div class="feed-meta">
+          <span class="feed-time">16:00</span>
+          <span class="feed-source">PCWorld</span>
           <span class="cat-tag">综合</span>
-          <span class="feed-heat">238 热度</span>
+          <span class="feed-heat">205 热度</span>
         </div>
-        <div class="feed-title"><a href="https://www.ithome.com/0/989/713.htm" target="_blank" rel="noopener">官方证实开发中：Epic Games 游戏启动器即将登陆 Linux 平台</a></div>
-        <div class="feed-summary">IT之家 8 月 14 日消息，据科技媒体 TechPower Up 今天报道，自V社推出 Steam Deck 游戏掌机以来，Linux 系统的游戏生态迎来了蓬勃发展。而V社的对手 Epic Games 曾在招聘信息中透露，他们计划让小蓝熊（IT之家注：Easy Anti-Cheat）反作弊支持 Linux，引发玩家猜测。如今，一名 Epic Games 员工在 Discord…</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>Epic Games 启动器登陆 Linux 将丰富该平台游戏生态，提升用户体验。</div>
+        <h3 class="feed-title"><a href="https://www.pcworld.com/article/3211697/if-your-pc-needs-office-and-windows-11-pro-this-33-lifetime-bundle-handles-both.html" target="_blank" rel="noopener noreferrer">If your PC needs Office and Windows 11 Pro, this $33 lifetime bundle handles both</a></h3>
+        <div class="feed-summary">TL;DR : Get lifetime licenses for both Microsoft Office and Windows 11 Pro for just $32.97 through August 16 at 11:59 p.m. PT (MSRP $418.99). Pay once and skip the recurring cost of Microsoft 365 and the hassle of replacing an outdated…</div>
+        <div class="company-row"><span class="company-tag">Microsoft</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="ai-badge">Qwen AI</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>限时优惠提供PC必备软件终身授权</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>降低企业采购成本，促进Windows 11 Pro及Office普及</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>可能吸引更多用户转向此捆绑包，增加市场份额</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="4 星">★★★★☆</span></div>
+    </div>
       </article>
-      <article class="feed-item" data-cat="内存存储" data-title="忆联介绍 um301a 固态硬盘：dram-less 架构的企业级启动盘">
+      <article class="feed-item" data-cat="主板机箱" data-search="上下均提供开机键：chieftec 带来 vista max gx-30b-op 机箱 it之家 8 月 14 日消息，pc 硬件品牌 chieftec 近日宣布推出全视“海景房”机箱 vista max gx-30b-op。该产品采用了上下均提供开机键的人性化设计，这意味着 其无论放在桌上还是桌下均可方便开机 ，提升了使用便利性。 gx-30b-op 三维 452×239×526 (mm)，以 0.7mm spcc 钢板搭配 2 块“落地式”玻璃面板。 其具备 7 条扩展槽，兼容 atx 主板（支持背插），显卡限长 420mm、电源限长… it之家 主板机箱 ">
         <div class="feed-meta">
-          <span class="feed-time">14:50</span>
+          <span class="feed-time">15:57</span>
           <span class="feed-source">IT之家</span>
-          <span class="cat-tag">内存存储</span>
-          <span class="feed-heat">201 热度</span>
-        </div>
-        <div class="feed-title"><a href="https://www.ithome.com/0/989/708.htm" target="_blank" rel="noopener">忆联介绍 UM301a 固态硬盘：DRAM-less 架构的企业级启动盘</a></div>
-        <div class="feed-summary">IT之家 8 月 14 日消息，忆联 (Union Memory) 本月 12 日介绍了其即将推出的 UM301a。这是一款采用 M.2 外形规格和 DRAM-less 架构的 PCIe Gen4 企业级服务器启动盘。对于大型算力集群而言，传统的网络启动方式存在并发带宽瓶颈问题。而 M.2 形态的启动盘在提供高速、稳定、低延迟的读取表现同时无需占用存储托架资源，是现在的主流方案。UM301a…</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>采用 DRAM-less 架构，提供高性能和低延迟读取，适合大型算力集群使用。</div>
-      </article>
-      <article class="feed-item" data-cat="笔记本" data-title="明基推出 pv3250u 显示器：31.5 英寸 4k 120hz 面板、主打全链路色准，12999 元">
-        <div class="feed-meta">
-          <span class="feed-time">14:45</span>
-          <span class="feed-source">IT之家</span>
-          <span class="cat-tag">笔记本</span>
+          <span class="cat-tag">主板机箱</span>
           <span class="feed-heat">168 热度</span>
         </div>
-        <div class="feed-title"><a href="https://www.ithome.com/0/989/707.htm" target="_blank" rel="noopener">明基推出 PV3250U 显示器：31.5 英寸 4K 120Hz 面板、主打全链路色准，12999 元</a></div>
-        <div class="feed-summary">IT之家 8 月 14 日消息，明基现已推出 PV3250U 显示器，新品搭载 31.5 英寸 4K 120Hz 面板，主打全链路色准，拥有特调影像模式，售价 12999 元。据介绍，这款显示器由明基全链路色准方案实验室提供技术支持，出厂即经过逐台色彩校准，ΔE≤1，对比度为 3000:1，黑阶性能可达 0.03 尼特。规格方面，这款显示器支持 10bit 色深，可通过 16bit 3D Lut…</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>主打全链路色准与高刷新率，色彩精准度出色，适合专业设计需求用户。</div>
+        <h3 class="feed-title"><a href="https://www.ithome.com/0/989/785.htm" target="_blank" rel="noopener noreferrer">上下均提供开机键：CHIEFTEC 带来 VISTA Max GX-30B-OP 机箱</a></h3>
+        <div class="feed-summary">IT之家 8 月 14 日消息，PC 硬件品牌 CHIEFTEC 近日宣布推出全视“海景房”机箱 VISTA Max GX-30B-OP。该产品采用了上下均提供开机键的人性化设计，这意味着 其无论放在桌上还是桌下均可方便开机 ，提升了使用便利性。 GX-30B-OP 三维 452×239×526 (mm)，以 0.7mm SPCC 钢板搭配 2 块“落地式”玻璃面板。 其具备 7 条扩展槽，兼容 ATX 主板（支持背插），显卡限长 420mm、电源限长…</div>
+        <div class="company-row"><span class="company-empty">未识别明确厂商</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="ai-badge">Qwen AI</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>CHIEFTEC 推出 VISTA Max GX-30B-OP 机箱，上下均设开机键</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>提升用户使用便利性，可能吸引更多注重操作便捷性的消费者</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>增加市场竞争维度，促使其他厂商跟进优化设计</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="1 星">★☆☆☆☆</span></div>
+    </div>
       </article>
-      <article class="feed-item" data-cat="综合" data-title="瑞银称英特尔将代工 amd 芯片，emib-t 封装良率达 90%">
+      <article class="feed-item" data-cat="综合" data-search="网易《逆水寒：新世界》首个赛事《剑影杯》s4 定档，“跨服联赛”大优化 it之家 8 月 14 日消息，网易《逆水寒：新世界》今日官宣， 新世界首个平台赛事《剑影杯》s4 正式定档 ，将于 4.1.3 版本（8 月 28 日）开启报名。本届赛事将升级为 双败赛制 ，奖励、总奖金也会同步加码。 根据官方介绍，后续【跨服联赛】，将根据不同服务器此前取得的成绩和实力梯队划分组别，并在组别内进行匹配，希望尽量减少双方实力悬殊的“一边倒”对局，让实力更加接近的对手有更多机会相遇。 在新世界战斗升级和性能优化的基础上，官方会继续 优化移动设备与 pc… it之家 综合 ">
         <div class="feed-meta">
-          <span class="feed-time">14:41</span>
+          <span class="feed-time">15:56</span>
           <span class="feed-source">IT之家</span>
           <span class="cat-tag">综合</span>
           <span class="feed-heat">135 热度</span>
         </div>
-        <div class="feed-title"><a href="https://www.ithome.com/0/989/706.htm" target="_blank" rel="noopener">瑞银称英特尔将代工 AMD 芯片，EMIB-T 封装良率达 90%</a></div>
-        <div class="feed-summary">IT之家 8 月 14 日消息，瑞银集团（UBS）在最新研报中分析认为，由于台积电（TSMC）产能限制影响，AMD 将和英特尔公司签署晶圆代工协议，并采用英特尔 EMIB-T 封装方案。IT之家援引博文介绍，台积电的 CoWoS 先进封装产能严重受限，无法满足 AMD 的 AI 加速卡产量需求，因此 AMD 正寻求和英特尔合作。除了 AMD 之外，瑞银还指出谷歌、苹果、AMD 和 SpaceX…</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>值得关注的是，EMIB-T 封装技术的高良品率将提升 AMD 芯片产能，打破封装瓶颈。</div>
+        <h3 class="feed-title"><a href="https://www.ithome.com/0/989/784.htm" target="_blank" rel="noopener noreferrer">网易《逆水寒：新世界》首个赛事《剑影杯》S4 定档，“跨服联赛”大优化</a></h3>
+        <div class="feed-summary">IT之家 8 月 14 日消息，网易《逆水寒：新世界》今日官宣， 新世界首个平台赛事《剑影杯》S4 正式定档 ，将于 4.1.3 版本（8 月 28 日）开启报名。本届赛事将升级为 双败赛制 ，奖励、总奖金也会同步加码。 根据官方介绍，后续【跨服联赛】，将根据不同服务器此前取得的成绩和实力梯队划分组别，并在组别内进行匹配，希望尽量减少双方实力悬殊的“一边倒”对局，让实力更加接近的对手有更多机会相遇。 在新世界战斗升级和性能优化的基础上，官方会继续 优化移动设备与 PC…</div>
+        <div class="company-row"><span class="company-empty">未识别明确厂商</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="ai-badge">Qwen AI</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>《逆水寒：新世界》推出S4赛事并优化跨服联赛</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>可能提升游戏在线人数和活跃度，对PC端用户需求产生影响</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>可能吸引更多玩家参与，增强网易在MMORPG市场的竞争力</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="1 星">★☆☆☆☆</span></div>
+    </div>
       </article>
-      <article class="feed-item" data-cat="处理器" data-title="《收获日 2》13 周年获引擎更新：迎接 64 位、directx 11，淘汰原生 linux">
+      <article class="feed-item" data-cat="显卡" data-search="安全不是限制性能的枷锁：智界 rx 一键 boost 模式提升 10% 扭矩，动力底盘座舱三域联动 it之家 8 月 14 日消息，智界汽车官方今日公布了智界 rx 更多配置信息，其中方向盘右下侧一枚独立的圆形物理按键被确认为“一键 boost”模式开关。 该按键采用实体设计，行驶途中驾驶员用拇指即可直接操作，无需通过屏幕菜单逐层点选。 据官方介绍，智界 rx 的一键 boost 模式可同步唤醒动力、底盘与智能座舱。 动力方面，激活后电驱系统扭矩提升 10%，配合专属电门踏板标定，四驱版车型可释放全部 437kw… it之家 显卡 ">
         <div class="feed-meta">
-          <span class="feed-time">14:36</span>
+          <span class="feed-time">15:07</span>
           <span class="feed-source">IT之家</span>
-          <span class="cat-tag">处理器</span>
+          <span class="cat-tag">显卡</span>
           <span class="feed-heat">112 热度</span>
         </div>
-        <div class="feed-title"><a href="https://www.ithome.com/0/989/705.htm" target="_blank" rel="noopener">《收获日 2》13 周年获引擎更新：迎接 64 位、DirectX 11，淘汰原生 Linux</a></div>
-        <div class="feed-summary">IT之家 8 月 14 日消息，动作类四人合作射击游戏《PAYDAY 2》（收获日 2）本周四迎来了其 13 周年生日和重大游戏引擎更新。新的 Diesel Engine v3.0 采用原生 64 位设计，渲染器支持 DirectX 11 API，提高 CPU 利用率（尤其是多线程能效核），提升加载速度，单版本原生支持…</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>新引擎大幅提升CPU利用率和加载速度，优化多线程性能值得关注。</div>
+        <h3 class="feed-title"><a href="https://www.ithome.com/0/989/717.htm" target="_blank" rel="noopener noreferrer">安全不是限制性能的枷锁：智界 RX 一键 BOOST 模式提升 10% 扭矩，动力底盘座舱三域联动</a></h3>
+        <div class="feed-summary">IT之家 8 月 14 日消息，智界汽车官方今日公布了智界 RX 更多配置信息，其中方向盘右下侧一枚独立的圆形物理按键被确认为“一键 BOOST”模式开关。 该按键采用实体设计，行驶途中驾驶员用拇指即可直接操作，无需通过屏幕菜单逐层点选。 据官方介绍，智界 RX 的一键 BOOST 模式可同步唤醒动力、底盘与智能座舱。 动力方面，激活后电驱系统扭矩提升 10%，配合专属电门踏板标定，四驱版车型可释放全部 437kW…</div>
+        <div class="company-row"><span class="company-empty">未识别明确厂商</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="ai-badge">Qwen AI</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>智界 RX 推出一键 BOOST 模式，动力提升 10%</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>可能促进PC相关性能优化技术在汽车领域的应用</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>有待观察该功能对竞品车型的吸引力及市场反应</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="2 星">★★☆☆☆</span></div>
+    </div>
       </article>
-      <article class="feed-item" data-cat="综合" data-title="百度文库网盘 genflow 官宣中文名“库库 ai”，推出独立办公端">
-        <div class="feed-meta">
-          <span class="feed-time">14:30</span>
-          <span class="feed-source">IT之家</span>
-          <span class="cat-tag">综合</span>
-          <span class="feed-heat">94 热度</span>
-        </div>
-        <div class="feed-title"><a href="https://www.ithome.com/0/989/703.htm" target="_blank" rel="noopener">百度文库网盘 GenFlow 官宣中文名“库库 AI”，推出独立办公端</a></div>
-        <div class="feed-summary">8 月 14 日下午消息，今日举办的百度 AI Day 开放日上，百度文库网盘通用智能体 GenFlow 官宣中文名“库库 AI”，同步上线“库库 AI”独立端，包括库库 AI 办公 PC 客户端、库库 AI 网页端、小程序及库库 AI 企业版等。据百度方面介绍，早在今年 4 月，GenFlow 月活用户便已突破 1 亿，其中办公用户体量指数级增长，目前 AI 办公 MAU 超过 2500…</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>值得关注其强大的AI办公能力及超2500万的月活跃用户量。</div>
-      </article>
-      <article class="feed-item" data-cat="内存存储" data-title="counterpoint：全球 pos 设备 2025 年出货量仅增长 1%，安卓占比近一半">
-        <div class="feed-meta">
-          <span class="feed-time">14:12</span>
-          <span class="feed-source">IT之家</span>
-          <span class="cat-tag">内存存储</span>
-          <span class="feed-heat">80 热度</span>
-        </div>
-        <div class="feed-title"><a href="https://www.ithome.com/0/989/694.htm" target="_blank" rel="noopener">Counterpoint：全球 POS 设备 2025 年出货量仅增长 1%，安卓占比近一半</a></div>
-        <div class="feed-summary">IT之家 8 月 14 日消息，Counterpoint 今日发布报告，2025 年全球 POS 设备出货量同比仅增长 1%，增长受限主要由于内存价格上涨以及更广泛的宏观经济压力。基于安卓系统的 POS 终端在全球出货量中占比已达到约 48%，在开放应用生态系统以及支付与商业应用整合的推动下，预计到 2032 年，这一占比将达到 70%。图源：Pexels报告称，几十年来，POS…</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>安卓系统在POS设备中的份额将持续增长至70%，值得关注其开放生态和应用整合优势。</div>
-      </article>
-      <article class="feed-item" data-cat="综合" data-title="lg、nvidia 签署谅解备忘录，双方多领域 ai 合作转入执行阶段">
-        <div class="feed-meta">
-          <span class="feed-time">14:07</span>
-          <span class="feed-source">IT之家</span>
-          <span class="cat-tag">综合</span>
-          <span class="feed-heat">68 热度</span>
-        </div>
-        <div class="feed-title"><a href="https://www.ithome.com/0/989/696.htm" target="_blank" rel="noopener">LG、NVIDIA 签署谅解备忘录，双方多领域 AI 合作转入执行阶段</a></div>
-        <div class="feed-summary">IT之家 8 月 14 日消息，LG（乐金）与 NVIDIA（英伟达）当地时间 13 日在美国加州圣克拉拉的 NVIDIA 总部签署了一份谅解备忘录，双方 CEO（具光模与黄仁勋）均出席了签字仪式。这份 MOU 意味着双方的多领域 AI 合作正式从蓝图转入执行阶段。在机器人技术方面，LG 将在其美国田纳西州洗衣机工厂进行轮式机器人 LG CLOiD 的实际生产环境验证，计划 2027Q1…</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>LG与NVIDIA合作转向执行阶段，将在机器人技术领域推动AI应用，值得关注其在智能制造上的创新进展。</div>
-      </article>
-      <article class="feed-item" data-cat="内存存储" data-title="epic games launcher coming &quot;soon&quot; to linux">
+      <article class="feed-item" data-cat="综合" data-search="epic games launcher coming &quot;soon&quot; to linux following the launch of the valve steam deck, there has been a growing tide of game and software developers looking to bring their products and projects to the growing body of linux gamers. epic games is no different, with the company… techpowerup 综合 ">
         <div class="feed-meta">
           <span class="feed-time">13:07</span>
           <span class="feed-source">TechPowerUp</span>
-          <span class="cat-tag">内存存储</span>
-          <span class="feed-heat">58 热度</span>
-        </div>
-        <div class="feed-title"><a href="https://www.techpowerup.com/351601/epic-games-launcher-coming-soon-to-linux" target="_blank" rel="noopener">Epic Games Launcher Coming &quot;Soon&quot; to Linux</a></div>
-        <div class="feed-summary">Following the launch of the Valve Steam Deck, there has been a growing tide of game and software developers looking to bring their products and projects to the growing body of Linux gamers. Epic…</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>为Linux用户带来Epic Games平台，扩展游戏生态，值得关注。</div>
-      </article>
-      <article class="feed-item" data-cat="处理器" data-title="payday 2 gets new engine 13 years post-launch and officially loses native linux version">
-        <div class="feed-meta">
-          <span class="feed-time">11:50</span>
-          <span class="feed-source">TechPowerUp</span>
-          <span class="cat-tag">处理器</span>
-          <span class="feed-heat">50 热度</span>
-        </div>
-        <div class="feed-title"><a href="https://www.techpowerup.com/351600/payday-2-gets-new-engine-13-years-post-launch-and-officially-loses-native-linux-version" target="_blank" rel="noopener">Payday 2 Gets New Engine 13 Years Post-Launch and Officially Loses Native Linux Version</a></div>
-        <div class="feed-summary">Payday 2 launch in 2013, but the co-op shooter still regularly brings in over 30,000 concurrent daily players, despite its age. Now, 13 years on, the developer, Overkill, has announced the official…</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>尽管推出已有13年，Payday 2仍保持高玩家基数，新引擎升级显示其长期生命力。</div>
-      </article>
-      <article class="feed-item" data-cat="综合" data-title="duskfade launches as &quot;love letter to classic 3d action platformers&quot;">
-        <div class="feed-meta">
-          <span class="feed-time">06:04</span>
-          <span class="feed-source">TechPowerUp</span>
           <span class="cat-tag">综合</span>
-          <span class="feed-heat">44 热度</span>
+          <span class="feed-heat">98 热度</span>
         </div>
-        <div class="feed-title"><a href="https://www.techpowerup.com/351594/duskfade-launches-as-love-letter-to-classic-3d-action-platformers" target="_blank" rel="noopener">Duskfade Launches as &quot;Love Letter to Classic 3D Action Platformers&quot;</a></div>
-        <div class="feed-summary">Duskfade, a new 3D action platformer from indie studio, Weird Beluga, has officially launched on Steam. The developer describes Duskfade as &quot;a love letter to classic 3D action platformers.&quot; It…</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>致敬经典，体验复古3D动作平台游戏的魅力。</div>
+        <h3 class="feed-title"><a href="https://www.techpowerup.com/351601/epic-games-launcher-coming-soon-to-linux" target="_blank" rel="noopener noreferrer">Epic Games Launcher Coming &quot;Soon&quot; to Linux</a></h3>
+        <div class="feed-summary">Following the launch of the Valve Steam Deck, there has been a growing tide of game and software developers looking to bring their products and projects to the growing body of Linux gamers. Epic Games is no different, with the company…</div>
+        <div class="company-row"><span class="company-empty">未识别明确厂商</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="ai-badge">Qwen AI</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>Epic Games Launcher 或将支持Linux，响应Steam Deck热潮</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>可能推动PC游戏跨平台发展，增强Linux生态系统吸引力</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>或提升Epic Games在多平台竞争中的地位，与Valve等厂商竞争加剧</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="4 星">★★★★☆</span></div>
+    </div>
       </article>
-      <article class="feed-item" data-cat="综合" data-title="disgruntled security researcher just dropped another windows zero-day, right on schedule">
-        <div class="feed-meta">
-          <span class="feed-time">05:53</span>
-          <span class="feed-source">TechSpot</span>
-          <span class="cat-tag">综合</span>
-          <span class="feed-heat">39 热度</span>
-        </div>
-        <div class="feed-title"><a href="https://www.techspot.com/news/113477-disgruntled-security-researcher-dropped-another-windows-zero-day.html" target="_blank" rel="noopener">Disgruntled security researcher just dropped another Windows zero-day, right on schedule</a></div>
-        <div class="feed-summary">NightmareEclipse and Microsoft keep clashing over zero-day vulnerabilities in Windows. The researcher, who pledged to give Redmond security hell, is back with ShieldBreak, a new flaw in Windows…</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>值得关注的是该安全研究员持续披露Windows零日漏洞，凸显Windows安全性仍存隐患。</div>
-      </article>
-      <article class="feed-item" data-cat="综合" data-title="(pr) lam research announces plans to invest more than $3b to expand global lab network">
-        <div class="feed-meta">
-          <span class="feed-time">05:12</span>
-          <span class="feed-source">TechPowerUp</span>
-          <span class="cat-tag">综合</span>
-          <span class="feed-heat">34 热度</span>
-        </div>
-        <div class="feed-title"><a href="https://www.techpowerup.com/351595/lam-research-announces-plans-to-invest-more-than-usd-3b-to-expand-global-lab-network" target="_blank" rel="noopener">(PR) Lam Research Announces Plans to Invest More than $3B to Expand Global Lab Network</a></div>
-        <div class="feed-summary">Lam Research Corp. (NASDAQ: LRCX) today announced that it intends to invest more than $3 billion over the next five years to expand its global research and development (R&amp;D) lab network. The planned…</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>来自公开源聚合，点击标题可阅读原文。</div>
-      </article>
-      <article class="feed-item" data-cat="处理器" data-title="hawk 370 slotket breathes new life into intel’s legendary 440bx chipset">
+      <article class="feed-item" data-cat="处理器" data-search="hawk 370 slotket breathes new life into intel’s legendary 440bx chipset if you&#x27;re an enthusiast of a certain age, you may recall that there was a weird diversion between the socket 7 platform used by the original pentium and the socket 370 platform used by the pentium iii. that diversion was slot 1, an… hothardware 处理器 intel">
         <div class="feed-meta">
           <span class="feed-time">04:30</span>
           <span class="feed-source">HotHardware</span>
           <span class="cat-tag">处理器</span>
-          <span class="feed-heat">30 热度</span>
+          <span class="feed-heat">80 热度</span>
         </div>
-        <div class="feed-title"><a href="https://hothardware.com/news/hawk-370-slotket-supports-tualatins-slot-1-motherboards" target="_blank" rel="noopener">Hawk 370 Slotket Breathes New Life Into Intel’s Legendary 440BX Chipset</a></div>
-        <div class="feed-summary">If you&#x27;re an enthusiast of a certain age, you may recall that there was a weird diversion between the Socket 7 platform used by the original Pentium and the Socket 370 platform used by the Pentium…</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>处理器相关动态，Intel/AMD/Qualcomm/Nvidia 竞争值得关注。</div>
+        <h3 class="feed-title"><a href="https://hothardware.com/news/hawk-370-slotket-supports-tualatins-slot-1-motherboards" target="_blank" rel="noopener noreferrer">Hawk 370 Slotket Breathes New Life Into Intel’s Legendary 440BX Chipset</a></h3>
+        <div class="feed-summary">If you&#x27;re an enthusiast of a certain age, you may recall that there was a weird diversion between the Socket 7 platform used by the original Pentium and the Socket 370 platform used by the Pentium III. That diversion was Slot 1, an…</div>
+        <div class="company-row"><span class="company-tag">Intel</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="ai-badge">Qwen AI</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>Hawk 370 Slotket 推出或重启 Intel 440BX 芯片组</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>可能刺激 Socket 370 平台相关 PC 产品需求，影响芯片组市场格局</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>Intel 或与 AMD 等竞争者在旧平台技术上展开较量</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="1 星">★☆☆☆☆</span></div>
+    </div>
       </article>
-      <article class="feed-item" data-cat="综合" data-title="chosfox announces init40 40% wireless mechanical keyboard">
-        <div class="feed-meta">
-          <span class="feed-time">03:48</span>
-          <span class="feed-source">TechPowerUp</span>
-          <span class="cat-tag">综合</span>
-          <span class="feed-heat">27 热度</span>
-        </div>
-        <div class="feed-title"><a href="https://www.techpowerup.com/351593/chosfox-announces-init40-40-wireless-mechanical-keyboard" target="_blank" rel="noopener">Chosfox Announces Init40 40% Wireless Mechanical Keyboard</a></div>
-        <div class="feed-summary">Chosfox, the niche mechanical keyboard maker responsible for the Geonix48 ortholinear keyboard series, has officially announced the Init40 as its latest take on the 40% layout. Instead of the…</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>来自公开源聚合，点击标题可阅读原文。</div>
-      </article>
-      <article class="feed-item" data-cat="处理器" data-title="qualcomm&#x27;s snapdragon c wants to be the arm chip for $300 laptops">
-        <div class="feed-meta">
-          <span class="feed-time">03:47</span>
-          <span class="feed-source">TechSpot</span>
-          <span class="cat-tag">处理器</span>
-          <span class="feed-heat">24 热度</span>
-        </div>
-        <div class="feed-title"><a href="https://www.techspot.com/news/113466-qualcomm-snapdragon-c-wants-arm-chip-300-laptops.html" target="_blank" rel="noopener">Qualcomm&#x27;s Snapdragon C wants to be the Arm chip for $300 laptops</a></div>
-        <div class="feed-summary">The processor has eight Qualcomm Kryo CPU cores. Qualcomm lists a maximum clock speed of 3 GHz for single-core workloads and 2 GHz for multi-core workloads, along with 2 MB of total cache. Its…</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>处理器相关动态，Intel/AMD/Qualcomm/Nvidia 竞争值得关注。</div>
-      </article>
-      <article class="feed-item" data-cat="综合" data-title="compare gpt-4o, claude, and gemini side by side for $59.25">
-        <div class="feed-meta">
-          <span class="feed-time">03:23</span>
-          <span class="feed-source">TechPowerUp</span>
-          <span class="cat-tag">综合</span>
-          <span class="feed-heat">16 热度</span>
-        </div>
-        <div class="feed-title"><a href="https://www.techpowerup.com/351503/compare-gpt-4o-claude-and-gemini-side-by-side-for-usd-59-25" target="_blank" rel="noopener">Compare GPT-4o, Claude, and Gemini Side by Side for $59.25</a></div>
-        <div class="feed-summary">Every major AI lab claims their model is the best one. ChatPlayground AI skips the debate by running one prompt across more than 20 models at once, including GPT-4o, Claude Sonnet 4, Gemini 1.5…</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>来自公开源聚合，点击标题可阅读原文。</div>
-      </article>
-      <article class="feed-item" data-cat="综合" data-title="pixel buds pro 2 and 2a gain sweet new features and big discounts">
+      <article class="feed-item" data-cat="综合" data-search="pixel buds pro 2 and 2a gain sweet new features and big discounts google delivered its excellent pixel buds 2a and pixel buds pro 2 last year, and the company is continuing to put in the work to make these earbuds even better. an upcoming software update will bring a bevy of new features that will have… hothardware 综合 ">
         <div class="feed-meta">
           <span class="feed-time">03:09</span>
           <span class="feed-source">HotHardware</span>
           <span class="cat-tag">综合</span>
-          <span class="feed-heat">16 热度</span>
+          <span class="feed-heat">72 热度</span>
         </div>
-        <div class="feed-title"><a href="https://hothardware.com/news/pixel-buds-pro-2-and-2a-new-features" target="_blank" rel="noopener">Pixel Buds Pro 2 And 2A Gain Sweet New Features And Big Discounts</a></div>
-        <div class="feed-summary">Google delivered its excellent Pixel Buds 2a and Pixel Buds Pro 2 last year, and the company is continuing to put in the work to make these earbuds even better. An upcoming software update will bring…</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>来自公开源聚合，点击标题可阅读原文。</div>
+        <h3 class="feed-title"><a href="https://hothardware.com/news/pixel-buds-pro-2-and-2a-new-features" target="_blank" rel="noopener noreferrer">Pixel Buds Pro 2 And 2A Gain Sweet New Features And Big Discounts</a></h3>
+        <div class="feed-summary">Google delivered its excellent Pixel Buds 2a and Pixel Buds Pro 2 last year, and the company is continuing to put in the work to make these earbuds even better. An upcoming software update will bring a bevy of new features that will have…</div>
+        <div class="company-row"><span class="company-empty">未识别明确厂商</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="ai-badge">Qwen AI</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>Google为Pixel Buds Pro 2和2A推出新功能并提供大幅折扣</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>可能提升谷歌在无线耳机市场的竞争力，对其他品牌构成压力</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>可能促使竞争对手跟进更新产品或降价以保持市场地位</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="4 星">★★★★☆</span></div>
+    </div>
       </article>
-      <article class="feed-item" data-cat="处理器" data-title="windows 11&#x27;s new cpu-boosting speed trick is rolling out to all apps">
-        <div class="feed-meta">
-          <span class="feed-time">03:02</span>
-          <span class="feed-source">TechSpot</span>
-          <span class="cat-tag">处理器</span>
-          <span class="feed-heat">16 热度</span>
-        </div>
-        <div class="feed-title"><a href="https://www.techspot.com/news/113459-microsoft-expands-cpu-boosting-feature-all-windows-11.html" target="_blank" rel="noopener">Windows 11&#x27;s new CPU-boosting speed trick is rolling out to all apps</a></div>
-        <div class="feed-summary">Microsoft began rolling out the new Low Latency Profile (LLP) feature to all Windows 11 users earlier this week. The change is part of KB5121003, this month&#x27;s Patch Tuesday update for all supported…</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>处理器相关动态，Intel/AMD/Qualcomm/Nvidia 竞争值得关注。</div>
-      </article>
-      <article class="feed-item" data-cat="内存存储" data-title="(pr) apple opens advanced manufacturing center in houston">
+      <article class="feed-item" data-cat="综合" data-search="(pr) apple opens advanced manufacturing center in houston apple today opened its new advanced manufacturing center (amc) in houston. the center offers free training and educational sessions for small- and medium-sized businesses, giving them direct experience with state-of-the-art equipment… techpowerup 综合 apple">
         <div class="feed-meta">
           <span class="feed-time">02:59</span>
           <span class="feed-source">TechPowerUp</span>
-          <span class="cat-tag">内存存储</span>
-          <span class="feed-heat">16 热度</span>
-        </div>
-        <div class="feed-title"><a href="https://www.techpowerup.com/351592/apple-opens-advanced-manufacturing-center-in-houston" target="_blank" rel="noopener">(PR) Apple Opens Advanced Manufacturing Center in Houston</a></div>
-        <div class="feed-summary">Apple today opened its new Advanced Manufacturing Center (AMC) in Houston. The center offers free training and educational sessions for small- and medium-sized businesses, giving them direct…</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>内存与存储新闻，DRAM/NAND 价格是当前市场关键变量。</div>
-      </article>
-      <article class="feed-item" data-cat="综合" data-title="nightmare eclipse now has a top 10 windows 11 vulnerability list">
-        <div class="feed-meta">
-          <span class="feed-time">02:48</span>
-          <span class="feed-source">PC Perspective</span>
           <span class="cat-tag">综合</span>
-          <span class="feed-heat">16 热度</span>
+          <span class="feed-heat">62 热度</span>
         </div>
-        <div class="feed-title"><a href="https://pcper.com/2026/08/nightmare-eclipse-now-has-a-top-10-windows-11-vulnerability-list/" target="_blank" rel="noopener">Nightmare Eclipse Now Has A Top 10 Windows 11 Vulnerability List</a></div>
-        <div class="feed-summary">ShieldBreak is the 10th zero-day vulnerability which Nightmare Eclipse has posted to GitHub. These releases are not good for sysdamin&#x27;s blood pressure and Microsoft is livid that this person or group…</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>来自公开源聚合，点击标题可阅读原文。</div>
+        <h3 class="feed-title"><a href="https://www.techpowerup.com/351592/apple-opens-advanced-manufacturing-center-in-houston" target="_blank" rel="noopener noreferrer">(PR) Apple Opens Advanced Manufacturing Center in Houston</a></h3>
+        <div class="feed-summary">Apple today opened its new Advanced Manufacturing Center (AMC) in Houston. The center offers free training and educational sessions for small- and medium-sized businesses, giving them direct experience with state-of-the-art equipment…</div>
+        <div class="company-row"><span class="company-tag">Apple</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="ai-badge">Qwen AI</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>苹果在休斯顿开设先进制造中心</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>可能促进当地PC及相关产业链发展，提高中小企业技术水平</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>有助于提升苹果供应链灵活性和本土化水平，对其他厂商构成竞争压力</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="4 星">★★★★☆</span></div>
+    </div>
       </article>
-      <article class="feed-item" data-cat="综合" data-title="asus fixes another severe security flaw in armoury crate, update asap">
+      <article class="feed-item" data-cat="综合" data-search="asus fixes another severe security flaw in armoury crate, update asap asus has patched another serious security vulnerability in armoury crate and several other hardware-management utilities that could let an unprivileged application gain kernel-level access on windows systems. the vulnerability, tracked as… hothardware 综合 microsoft asus">
         <div class="feed-meta">
           <span class="feed-time">02:15</span>
           <span class="feed-source">HotHardware</span>
           <span class="cat-tag">综合</span>
-          <span class="feed-heat">16 热度</span>
+          <span class="feed-heat">54 热度</span>
         </div>
-        <div class="feed-title"><a href="https://hothardware.com/news/asus-fixes-another-severe-armoury-crate-flaw" target="_blank" rel="noopener">ASUS Fixes Another Severe Security Flaw In Armoury Crate, Update ASAP</a></div>
-        <div class="feed-summary">ASUS has patched another serious security vulnerability in Armoury Crate and several other hardware-management utilities that could let an unprivileged application gain kernel-level access on Windows…</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>来自公开源聚合，点击标题可阅读原文。</div>
+        <h3 class="feed-title"><a href="https://hothardware.com/news/asus-fixes-another-severe-armoury-crate-flaw" target="_blank" rel="noopener noreferrer">ASUS Fixes Another Severe Security Flaw In Armoury Crate, Update ASAP</a></h3>
+        <div class="feed-summary">ASUS has patched another serious security vulnerability in Armoury Crate and several other hardware-management utilities that could let an unprivileged application gain kernel-level access on Windows systems. The vulnerability, tracked as…</div>
+        <div class="company-row"><span class="company-tag">Microsoft</span><span class="company-tag">ASUS</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="ai-badge">Qwen AI</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>ASUS修复了Armoury Crate中的严重安全漏洞，建议用户尽快更新</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>可能提升PC行业整体安全性标准，影响相关硬件管理软件的市场竞争力</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>可能增强ASUS在安全防护方面的品牌形象，但需观察其他厂商响应速度</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="4 星">★★★★☆</span></div>
+    </div>
       </article>
-      <article class="feed-item" data-cat="综合" data-title="comet gets you a free ai assistant directly into your web browser">
-        <div class="feed-meta">
-          <span class="feed-time">02:03</span>
-          <span class="feed-source">TechSpot</span>
-          <span class="cat-tag">综合</span>
-          <span class="feed-heat">16 热度</span>
-        </div>
-        <div class="feed-title"><a href="https://www.techspot.com/downloads/7794-comet.html" target="_blank" rel="noopener">Comet gets you a free AI assistant directly into your web browser</a></div>
-        <div class="feed-summary">Comet combines a familiar Chromium browsing experience with Perplexity&#x27;s AI assistant that can summarize pages, answer questions, and help with tasks across tabs. For more browser options, including…</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>来自公开源聚合，点击标题可阅读原文。</div>
-      </article>
-      <article class="feed-item" data-cat="主板机箱" data-title="microsoft unifies copilot features into a super app">
-        <div class="feed-meta">
-          <span class="feed-time">01:39</span>
-          <span class="feed-source">TechPowerUp</span>
-          <span class="cat-tag">主板机箱</span>
-          <span class="feed-heat">16 热度</span>
-        </div>
-        <div class="feed-title"><a href="https://www.techpowerup.com/351589/microsoft-unifies-copilot-features-into-a-super-app" target="_blank" rel="noopener">Microsoft Unifies Copilot Features Into a Super App</a></div>
-        <div class="feed-summary">Microsoft is finally scaling back on creating numerous Copilot variants for every use case and is instead consolidating many Copilot buttons, icons, and functions into the main Copilot app. According…</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>主板与机箱相关更新。</div>
-      </article>
-      <article class="feed-item" data-cat="综合" data-title="microsoft&#x27;s nemesis drops new zero-day privilege escalation vulnerability — attack grants system-level privileges, but it could already be patched">
+      <article class="feed-item" data-cat="综合" data-search="microsoft&#x27;s nemesis drops new zero-day privilege escalation vulnerability — attack grants system-level privileges, but it could already be patched nightmare eclipse drops shieldbreak, another windows zero-day privilege escalation vulnerability, but microsoft has rushed quickly to block it with defender tom&#x27;s hardware 综合 microsoft">
         <div class="feed-meta">
           <span class="feed-time">01:36</span>
           <span class="feed-source">Tom&#x27;s Hardware</span>
           <span class="cat-tag">综合</span>
-          <span class="feed-heat">16 热度</span>
+          <span class="feed-heat">48 热度</span>
         </div>
-        <div class="feed-title"><a href="https://www.tomshardware.com/tech-industry/cyber-security/microsofts-nemesis-drops-new-zero-day-privilege-escalation-vulnerability-attack-grants-system-level-privileges-but-it-could-already-be-patched" target="_blank" rel="noopener">Microsoft&#x27;s nemesis drops new zero-day privilege escalation vulnerability — attack grants system-level privileges, but it could already be patched</a></div>
+        <h3 class="feed-title"><a href="https://www.tomshardware.com/tech-industry/cyber-security/microsofts-nemesis-drops-new-zero-day-privilege-escalation-vulnerability-attack-grants-system-level-privileges-but-it-could-already-be-patched" target="_blank" rel="noopener noreferrer">Microsoft&#x27;s nemesis drops new zero-day privilege escalation vulnerability — attack grants system-level privileges, but it could already be patched</a></h3>
         <div class="feed-summary">Nightmare Eclipse drops ShieldBreak, another Windows zero-day privilege escalation vulnerability, but Microsoft has rushed quickly to block it with Defender</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>来自公开源聚合，点击标题可阅读原文。</div>
+        <div class="company-row"><span class="company-tag">Microsoft</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="ai-badge">Qwen AI</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>微软迅速修复了Nightmare Eclipse的ShieldBreak零日提权漏洞</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>PC产业需关注此类安全漏洞对系统稳定性与用户信任的影响</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>可能加剧厂商间的安全防护竞争，提升产品安全性成为关键</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="4 星">★★★★☆</span></div>
+    </div>
       </article>
-      <article class="feed-item" data-cat="综合" data-title="stop putting it off: windows 11 pro drops to $11.23">
+      <article class="feed-item" data-cat="综合" data-search="stop putting it off: windows 11 pro drops to $11.23 a full windows 11 pro license normally runs $199. right now it&#x27;s $11.23 with code aug25 , a one-time purchase that will add more value to your pc time. why you need to upgrade bitlocker for full-disk encryption hyper-v and windows sandbox… techpowerup 综合 microsoft">
         <div class="feed-meta">
           <span class="feed-time">01:28</span>
           <span class="feed-source">TechPowerUp</span>
           <span class="cat-tag">综合</span>
-          <span class="feed-heat">16 热度</span>
+          <span class="feed-heat">43 热度</span>
         </div>
-        <div class="feed-title"><a href="https://www.techpowerup.com/351504/stop-putting-it-off-windows-11-pro-drops-to-usd-11-23" target="_blank" rel="noopener">Stop Putting It Off: Windows 11 Pro Drops to $11.23</a></div>
-        <div class="feed-summary">A full Windows 11 Pro license normally runs $199. Right now it&#x27;s $11.23 with code Aug25, a one-time purchase that will add more value to your PC time. Why You Need to UpgradeBitLocker for full-disk…</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>来自公开源聚合，点击标题可阅读原文。</div>
+        <h3 class="feed-title"><a href="https://www.techpowerup.com/351504/stop-putting-it-off-windows-11-pro-drops-to-usd-11-23" target="_blank" rel="noopener noreferrer">Stop Putting It Off: Windows 11 Pro Drops to $11.23</a></h3>
+        <div class="feed-summary">A full Windows 11 Pro license normally runs $199. Right now it&#x27;s $11.23 with code Aug25 , a one-time purchase that will add more value to your PC time. Why You Need to Upgrade BitLocker for full-disk encryption Hyper-V and Windows Sandbox…</div>
+        <div class="company-row"><span class="company-tag">Microsoft</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="ai-badge">Qwen AI</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>Windows 11 Pro 降价至 $11.23，推动加密和虚拟化功能升级</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>PC产品价格下降可能刺激更多用户升级操作系统，影响整体PC市场销量</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>微软降价策略可能促使竞争对手调整定价或推出促销活动以保持竞争力</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="4 星">★★★★☆</span></div>
+    </div>
       </article>
-      <article class="feed-item" data-cat="综合" data-title="(pr) razer unveils the artisan keycap, triple-headed snake edition">
-        <div class="feed-meta">
-          <span class="feed-time">01:17</span>
-          <span class="feed-source">TechPowerUp</span>
-          <span class="cat-tag">综合</span>
-          <span class="feed-heat">16 热度</span>
-        </div>
-        <div class="feed-title"><a href="https://www.techpowerup.com/351588/razer-unveils-the-artisan-keycap-triple-headed-snake-edition" target="_blank" rel="noopener">(PR) Razer Unveils the Artisan Keycap, Triple-Headed Snake Edition</a></div>
-        <div class="feed-summary">Razer, the leading global lifestyle brand for gamers, today announced the Razer Artisan Keycap - Triple-Headed Snake Edition, the brand&#x27;s first artisan keycap and the next step towards the ultimate…</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>来自公开源聚合，点击标题可阅读原文。</div>
-      </article>
-      <article class="feed-item" data-cat="市场动态" data-title="(pr) honeycomb aeronautical launches the foxtrot takeoff kit">
-        <div class="feed-meta">
-          <span class="feed-time">01:12</span>
-          <span class="feed-source">TechPowerUp</span>
-          <span class="cat-tag">市场动态</span>
-          <span class="feed-heat">16 热度</span>
-        </div>
-        <div class="feed-title"><a href="https://www.techpowerup.com/351587/honeycomb-aeronautical-launches-the-foxtrot-takeoff-kit" target="_blank" rel="noopener">(PR) Honeycomb Aeronautical Launches the Foxtrot Takeoff Kit</a></div>
-        <div class="feed-summary">Honeycomb Aeronautical, a leading name in professional-grade flight simulation hardware, announced today that the Foxtrot Takeoff Kit will be released on August 31st at the official Honeycomb…</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>市场出货、价格与供应链消息，反映行业走势。</div>
-      </article>
-      <article class="feed-item" data-cat="内存存储" data-title="call of duty: black ops 7 zombies comes to its dramatic conclusion in season 05 reloaded — here&#x27;s when you can play">
+      <article class="feed-item" data-cat="内存存储" data-search="call of duty: black ops 7 zombies comes to its dramatic conclusion in season 05 reloaded — here&#x27;s when you can play call of duty: black ops 7&#x27;s latest mid-season refresh is bringing the zombies saga to a close, at least for now. here&#x27;s when you can play the final map, rex infernus. windows central 内存存储 ">
         <div class="feed-meta">
           <span class="feed-time">01:01</span>
           <span class="feed-source">Windows Central</span>
           <span class="cat-tag">内存存储</span>
-          <span class="feed-heat">16 热度</span>
+          <span class="feed-heat">34 热度</span>
         </div>
-        <div class="feed-title"><a href="https://www.windowscentral.com/gaming/call-of-duty/call-of-duty-black-ops-7-zombies-comes-to-its-dramatic-conclusion-in-season-05-reloaded-heres-when-you-can-play" target="_blank" rel="noopener">Call of Duty: Black Ops 7 Zombies comes to its dramatic conclusion in Season 05 Reloaded — here&#x27;s when you can play</a></div>
+        <h3 class="feed-title"><a href="https://www.windowscentral.com/gaming/call-of-duty/call-of-duty-black-ops-7-zombies-comes-to-its-dramatic-conclusion-in-season-05-reloaded-heres-when-you-can-play" target="_blank" rel="noopener noreferrer">Call of Duty: Black Ops 7 Zombies comes to its dramatic conclusion in Season 05 Reloaded — here&#x27;s when you can play</a></h3>
         <div class="feed-summary">Call of Duty: Black Ops 7&#x27;s latest mid-season refresh is bringing the Zombies saga to a close, at least for now. Here&#x27;s when you can play the final map, Rex Infernus.</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>内存与存储新闻，DRAM/NAND 价格是当前市场关键变量。</div>
+        <div class="company-row"><span class="company-empty">未识别明确厂商</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="fallback-badge">规则分析</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>Call of Duty: Black Ops 7 Zombies comes…</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>可能影响成本、容量与供应</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>供应商定价和产能值得关注</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="3 星">★★★☆☆</span></div>
+    </div>
       </article>
-      <article class="feed-item" data-cat="市场动态" data-title="this logitech mouse is rarely discounted, but it’s $20 off now">
-        <div class="feed-meta">
-          <span class="feed-time">00:57</span>
-          <span class="feed-source">PCWorld</span>
-          <span class="cat-tag">市场动态</span>
-          <span class="feed-heat">16 热度</span>
-        </div>
-        <div class="feed-title"><a href="https://www.pcworld.com/article/3212628/this-logitech-mouse-is-rarely-discounted-but-its-20-off-now.html" target="_blank" rel="noopener">This Logitech mouse is rarely discounted, but it’s $20 off now</a></div>
-        <div class="feed-summary">NOW $20 OFF Logitech MX Master 3S Mouse View Deal The Logitech MX Master 3S released back in June 2022, but it’s still one of our favorite productivity mice. It’s so popular that it rarely goes on…</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>市场出货、价格与供应链消息，反映行业走势。</div>
-      </article>
-      <article class="feed-item" data-cat="处理器" data-title="a youtuber just stress-tested a snapdragon x2 laptop for 17 hours straight">
+      <article class="feed-item" data-cat="处理器" data-search="a youtuber just stress-tested a snapdragon x2 laptop for 17 hours straight youtuber devondoestech ran a 17-hour live stream on the lenovo yoga slim 7x powered by qualcomm&#x27;s snapdragon x2 elite. windows central 处理器 qualcomm lenovo">
         <div class="feed-meta">
           <span class="feed-time">00:44</span>
           <span class="feed-source">Windows Central</span>
           <span class="cat-tag">处理器</span>
-          <span class="feed-heat">16 热度</span>
+          <span class="feed-heat">30 热度</span>
         </div>
-        <div class="feed-title"><a href="https://www.windowscentral.com/hardware/qualcomm/a-youtuber-just-stress-tested-a-snapdragon-x2-laptop-for-17-hours-straight" target="_blank" rel="noopener">A YouTuber just stress-tested a Snapdragon X2 laptop for 17 hours straight</a></div>
+        <h3 class="feed-title"><a href="https://www.windowscentral.com/hardware/qualcomm/a-youtuber-just-stress-tested-a-snapdragon-x2-laptop-for-17-hours-straight" target="_blank" rel="noopener noreferrer">A YouTuber just stress-tested a Snapdragon X2 laptop for 17 hours straight</a></h3>
         <div class="feed-summary">YouTuber DevonDoesTech ran a 17-hour live stream on the Lenovo Yoga Slim 7x powered by Qualcomm&#x27;s Snapdragon X2 Elite.</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>处理器相关动态，Intel/AMD/Qualcomm/Nvidia 竞争值得关注。</div>
+        <div class="company-row"><span class="company-tag">Qualcomm</span><span class="company-tag">Lenovo</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="fallback-badge">规则分析</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>A YouTuber just stress-tested a…</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>可能影响平台节奏与产品规划</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>芯片厂商竞争值得持续关注</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="3 星">★★★☆☆</span></div>
+    </div>
       </article>
-      <article class="feed-item" data-cat="综合" data-title="this modder shrunk a steam deck down to game boy size">
-        <div class="feed-meta">
-          <span class="feed-time">00:16</span>
-          <span class="feed-source">TechSpot</span>
-          <span class="cat-tag">综合</span>
-          <span class="feed-heat">16 热度</span>
-        </div>
-        <div class="feed-title"><a href="https://www.techspot.com/news/113468-modder-shrunk-steam-deck-down-game-boy-size.html" target="_blank" rel="noopener">This modder shrunk a Steam Deck down to Game Boy size</a></div>
-        <div class="feed-summary">Fitting the AMOLED panel, completing the adapter board and applying the BIOS modification will determine whether the device can function as a self-contained handheld.Read Entire Article</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>来自公开源聚合，点击标题可阅读原文。</div>
-      </article>
-      <article class="feed-item" data-cat="内存存储" data-title="best windows backup software 2026 for pcs and laptops">
+      <article class="feed-item" data-cat="笔记本" data-search="best windows backup software 2026 for pcs and laptops by now, the importance of backing up your windows pc or laptop goes without saying. it only takes a moment to consider how much of your data is at potential risk of a drive failure, natural disaster, or a bad actor, if you don’t have a… pcworld 笔记本 microsoft hp">
         <div class="feed-meta">
           <span class="feed-time">00:00</span>
           <span class="feed-source">PCWorld</span>
-          <span class="cat-tag">内存存储</span>
-          <span class="feed-heat">16 热度</span>
+          <span class="cat-tag">笔记本</span>
+          <span class="feed-heat">27 热度</span>
         </div>
-        <div class="feed-title"><a href="https://www.pcworld.com/article/407021/best-windows-backup-software.html" target="_blank" rel="noopener">Best Windows backup software 2026 for PCs and laptops</a></div>
-        <div class="feed-summary">By now, the importance of backing up your Windows PC or laptop goes without saying. It only takes a moment to consider how much of your data is at potential risk of a drive failure, natural disaster,…</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>内存与存储新闻，DRAM/NAND 价格是当前市场关键变量。</div>
-      </article>
-      <article class="feed-item" data-cat="处理器" data-title="best chromebooks 2026: top picks for work, school, and more">
-        <div class="feed-meta">
-          <span class="feed-time">00:00</span>
-          <span class="feed-source">PCWorld</span>
-          <span class="cat-tag">处理器</span>
-          <span class="feed-heat">16 热度</span>
-        </div>
-        <div class="feed-title"><a href="https://www.pcworld.com/article/608636/best-chromebooks.html" target="_blank" rel="noopener">Best Chromebooks 2026: Top picks for work, school, and more</a></div>
-        <div class="feed-summary">If you want a fast, low-maintenance machine that mostly lives in the browser, few options are as compelling as a Chromebook. Chromebooks don’t try to do everything, which is exactly why they’re so…</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>处理器相关动态，Intel/AMD/Qualcomm/Nvidia 竞争值得关注。</div>
-      </article>
-</div>
-<div class="day-block">
-<div class="day-title">昨天 08月13日</div>
-
-      <article class="feed-item" data-cat="处理器" data-title="nvidia geforce now for linux officially arrives">
+        <h3 class="feed-title"><a href="https://www.pcworld.com/article/407021/best-windows-backup-software.html" target="_blank" rel="noopener noreferrer">Best Windows backup software 2026 for PCs and laptops</a></h3>
+        <div class="feed-summary">By now, the importance of backing up your Windows PC or laptop goes without saying. It only takes a moment to consider how much of your data is at potential risk of a drive failure, natural disaster, or a bad actor, if you don’t have a…</div>
+        <div class="company-row"><span class="company-tag">Microsoft</span><span class="company-tag">HP</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="fallback-badge">规则分析</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>Best Windows backup software 2026 for PCs…</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>可能影响终端产品定义与体验</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>OEM 产品组合可能随之调整</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="3 星">★★★☆☆</span></div>
+    </div>
+      </article></section><section class="day-block"><h2 class="day-title">昨天 08月13日</h2>
+      <article class="feed-item" data-cat="显卡" data-search="nvidia geforce now for linux officially arrives nvidia&#x27;s efforts to enhance gaming on linux operating systems are increasing. the company announced today that the official, native port of the geforce now cloud gaming service client app is out of beta and now available for gamers… techpowerup 显卡 nvidia">
         <div class="feed-meta">
           <span class="feed-time">23:52</span>
           <span class="feed-source">TechPowerUp</span>
-          <span class="cat-tag">处理器</span>
-          <span class="feed-heat">16 热度</span>
-        </div>
-        <div class="feed-title"><a href="https://www.techpowerup.com/351585/nvidia-geforce-now-for-linux-officially-arrives" target="_blank" rel="noopener">NVIDIA GeForce NOW for Linux Officially Arrives</a></div>
-        <div class="feed-summary">NVIDIA&#x27;s efforts to enhance gaming on Linux operating systems are increasing. The company announced today that the official, native port of the GeForce NOW cloud gaming service client app is out of…</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>处理器相关动态，Intel/AMD/Qualcomm/Nvidia 竞争值得关注。</div>
-      </article>
-      <article class="feed-item" data-cat="综合" data-title="firefox is now the last major browser that still supports ublock origin">
-        <div class="feed-meta">
-          <span class="feed-time">23:52</span>
-          <span class="feed-source">PCWorld</span>
-          <span class="cat-tag">综合</span>
-          <span class="feed-heat">16 热度</span>
-        </div>
-        <div class="feed-title"><a href="https://www.pcworld.com/article/3212428/firefox-is-now-the-last-major-browser-that-still-supports-ublock-origin.html" target="_blank" rel="noopener">Firefox is now the last major browser that still supports uBlock Origin</a></div>
-        <div class="feed-summary">Firefox recently announced via Bluesky post: “Our support for uBlock Origin isn’t going anywhere.” The moment comes in response to news that Microsoft Edge is soon going to lock out uBlock Origin and…</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>来自公开源聚合，点击标题可阅读原文。</div>
-      </article>
-      <article class="feed-item" data-cat="综合" data-title="tsmc achieves 98% yield on cowos-l with 5.5x reticle size, 14x comes in 2029">
-        <div class="feed-meta">
-          <span class="feed-time">23:37</span>
-          <span class="feed-source">TechPowerUp</span>
-          <span class="cat-tag">综合</span>
-          <span class="feed-heat">16 热度</span>
-        </div>
-        <div class="feed-title"><a href="https://www.techpowerup.com/351584/tsmc-achieves-98-yield-on-cowos-l-with-5-5x-reticle-size-14x-comes-in-2029" target="_blank" rel="noopener">TSMC Achieves 98% Yield on CoWoS-L with 5.5x Reticle Size, 14x Comes in 2029</a></div>
-        <div class="feed-summary">TSMC has reportedly achieved near-perfect packaging yields, establishing a baseline of about 98% for its current CoWoS advanced packaging. This technology accommodates a die area equivalent to 5.5…</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>来自公开源聚合，点击标题可阅读原文。</div>
-      </article>
-      <article class="feed-item" data-cat="显卡" data-title="nvidia raises rtx pro 6000 blackwell price to a staggering $16,000">
-        <div class="feed-meta">
-          <span class="feed-time">23:33</span>
-          <span class="feed-source">TechSpot</span>
           <span class="cat-tag">显卡</span>
-          <span class="feed-heat">16 热度</span>
+          <span class="feed-heat">24 热度</span>
         </div>
-        <div class="feed-title"><a href="https://www.techspot.com/news/113460-nvidia-raises-rtx-pro-6000-blackwell-price-staggering.html" target="_blank" rel="noopener">Nvidia raises RTX Pro 6000 Blackwell price to a staggering $16,000</a></div>
-        <div class="feed-summary">The RTX Pro 6000 has gone through multiple price revisions since its launch, driven by the AI-fueled memory crunch. It originally went on pre-order for just over $7,600 in early 2025 before being…</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>显卡动态，受 AI 与内存短缺影响较大，关注价格与供应。</div>
+        <h3 class="feed-title"><a href="https://www.techpowerup.com/351585/nvidia-geforce-now-for-linux-officially-arrives" target="_blank" rel="noopener noreferrer">NVIDIA GeForce NOW for Linux Officially Arrives</a></h3>
+        <div class="feed-summary">NVIDIA&#x27;s efforts to enhance gaming on Linux operating systems are increasing. The company announced today that the official, native port of the GeForce NOW cloud gaming service client app is out of beta and now available for gamers…</div>
+        <div class="company-row"><span class="company-tag">NVIDIA</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="fallback-badge">规则分析</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>NVIDIA GeForce NOW for Linux Officially…</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>可能影响性能、价格或供应</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>GPU 厂商竞争格局值得关注</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="3 星">★★★☆☆</span></div>
+    </div>
       </article>
-      <article class="feed-item" data-cat="内存存储" data-title="8bitdo’s nes-style keyboard just dropped to $70, its lowest price yet">
-        <div class="feed-meta">
-          <span class="feed-time">23:28</span>
-          <span class="feed-source">PCWorld</span>
-          <span class="cat-tag">内存存储</span>
-          <span class="feed-heat">16 热度</span>
-        </div>
-        <div class="feed-title"><a href="https://www.pcworld.com/article/3212457/8bitdo-nes-style-keyboard-just-dropped-to-70-its-lowest-price-yet.html" target="_blank" rel="noopener">8BitDo’s NES-style keyboard just dropped to $70, its lowest price yet</a></div>
-        <div class="feed-summary">NEW LOWEST PRICE 8BitDo Retro Wireless Mechanical Keyboard View Deal The 8BitDo Retro Wireless Mechanical Keyboard is such a solid pick for a board. It’s wireless, hot-swappable, comes with…</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>内存与存储新闻，DRAM/NAND 价格是当前市场关键变量。</div>
-      </article>
-      <article class="feed-item" data-cat="处理器" data-title="gaming? check. school? check. gigabyte’s x16 and a16 laptops do it all">
+      <article class="feed-item" data-cat="内存存储" data-search="gaming? check. school? check. gigabyte’s x16 and a16 laptops do it all shop gigabyte’s newest laptops find gaming and everyday options at best buy shop gigabyte buying a new laptop in 2026 often feels like more compromise than anything else. high memory prices make it hard to get a laptop that can do one… pcworld 内存存储 gigabyte">
         <div class="feed-meta">
           <span class="feed-time">23:15</span>
           <span class="feed-source">PCWorld</span>
-          <span class="cat-tag">处理器</span>
+          <span class="cat-tag">内存存储</span>
           <span class="feed-heat">16 热度</span>
         </div>
-        <div class="feed-title"><a href="https://www.pcworld.com/article/3212556/gaming-check-school-check-gigabytes-x16-and-a16-laptops-do-it-all.html" target="_blank" rel="noopener">Gaming? Check. School? Check. Gigabyte’s X16 and A16 Laptops Do It All</a></div>
-        <div class="feed-summary">Shop Gigabyte’s Newest Laptops Find gaming and everyday options at Best Buy Shop Gigabyte Buying a new laptop in 2026 often feels like more compromise than anything else. High memory prices make it…</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>处理器相关动态，Intel/AMD/Qualcomm/Nvidia 竞争值得关注。</div>
+        <h3 class="feed-title"><a href="https://www.pcworld.com/article/3212556/gaming-check-school-check-gigabytes-x16-and-a16-laptops-do-it-all.html" target="_blank" rel="noopener noreferrer">Gaming? Check. School? Check. Gigabyte’s X16 and A16 Laptops Do It All</a></h3>
+        <div class="feed-summary">Shop Gigabyte’s Newest Laptops Find gaming and everyday options at Best Buy Shop Gigabyte Buying a new laptop in 2026 often feels like more compromise than anything else. High memory prices make it hard to get a laptop that can do one…</div>
+        <div class="company-row"><span class="company-tag">Gigabyte</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="fallback-badge">规则分析</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>Gaming? Check. School? Check. Gigabyte’s…</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>可能影响成本、容量与供应</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>供应商定价和产能值得关注</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="3 星">★★★☆☆</span></div>
+    </div>
       </article>
-      <article class="feed-item" data-cat="综合" data-title="the guy who built windows task manager in 1996 just remade it with a cyberpunk vibe — but there&#x27;s one big issue for pc users">
+      <article class="feed-item" data-cat="综合" data-search="the guy who built windows task manager in 1996 just remade it with a cyberpunk vibe — but there&#x27;s one big issue for pc users the creator of the original windows task manager has returned with an updated version, and it probably doesn&#x27;t look anything like what you think. the big problem? task manager og is currently only available for macos, with windows support… windows central 综合 microsoft">
         <div class="feed-meta">
           <span class="feed-time">23:06</span>
           <span class="feed-source">Windows Central</span>
           <span class="cat-tag">综合</span>
           <span class="feed-heat">16 热度</span>
         </div>
-        <div class="feed-title"><a href="https://www.windowscentral.com/microsoft/windows/dave-plummer-task-manager-creator-new-version-cyberpunk-mac-windows" target="_blank" rel="noopener">The guy who built Windows Task Manager in 1996 just remade it with a cyberpunk vibe — but there&#x27;s one big issue for PC users</a></div>
-        <div class="feed-summary">The creator of the original Windows Task Manager has returned with an updated version, and it probably doesn&#x27;t look anything like what you think. The big problem? Task Manager OG is currently only…</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>来自公开源聚合，点击标题可阅读原文。</div>
+        <h3 class="feed-title"><a href="https://www.windowscentral.com/microsoft/windows/dave-plummer-task-manager-creator-new-version-cyberpunk-mac-windows" target="_blank" rel="noopener noreferrer">The guy who built Windows Task Manager in 1996 just remade it with a cyberpunk vibe — but there&#x27;s one big issue for PC users</a></h3>
+        <div class="feed-summary">The creator of the original Windows Task Manager has returned with an updated version, and it probably doesn&#x27;t look anything like what you think. The big problem? Task Manager OG is currently only available for macOS, with Windows support…</div>
+        <div class="company-row"><span class="company-tag">Microsoft</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="fallback-badge">规则分析</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>The guy who built Windows Task Manager in…</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>可能对相关产品生态产生影响</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>建议结合后续进展持续观察</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="3 星">★★★☆☆</span></div>
+    </div>
       </article>
-      <article class="feed-item" data-cat="笔记本" data-title="microsoft is cutting off new office features on windows 10 soon">
+      <article class="feed-item" data-cat="综合" data-search="microsoft is cutting off new office features on windows 10 soon microsoft is stepping up the pressure on windows 10 users by winding down support for microsoft 365 apps on windows 10, including word, excel, and powerpoint. after august 2026, microsoft 365 apps on windows 10 will no longer receive new… pcworld 综合 microsoft">
         <div class="feed-meta">
           <span class="feed-time">22:57</span>
           <span class="feed-source">PCWorld</span>
-          <span class="cat-tag">笔记本</span>
+          <span class="cat-tag">综合</span>
           <span class="feed-heat">16 热度</span>
         </div>
-        <div class="feed-title"><a href="https://www.pcworld.com/article/3212424/microsoft-is-cutting-off-new-office-features-on-windows-10-soon.html" target="_blank" rel="noopener">Microsoft is cutting off new Office features on Windows 10 soon</a></div>
-        <div class="feed-summary">Microsoft is stepping up the pressure on Windows 10 users by winding down support for Microsoft 365 Apps on Windows 10, including Word, Excel, and PowerPoint. After August 2026, Microsoft 365 Apps on…</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>笔记本/AI PC 方向，本地 AI 能力成为新定义标准。</div>
+        <h3 class="feed-title"><a href="https://www.pcworld.com/article/3212424/microsoft-is-cutting-off-new-office-features-on-windows-10-soon.html" target="_blank" rel="noopener noreferrer">Microsoft is cutting off new Office features on Windows 10 soon</a></h3>
+        <div class="feed-summary">Microsoft is stepping up the pressure on Windows 10 users by winding down support for Microsoft 365 Apps on Windows 10, including Word, Excel, and PowerPoint. After August 2026, Microsoft 365 Apps on Windows 10 will no longer receive new…</div>
+        <div class="company-row"><span class="company-tag">Microsoft</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="fallback-badge">规则分析</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>Microsoft is cutting off new Office…</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>可能对相关产品生态产生影响</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>建议结合后续进展持续观察</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="3 星">★★★☆☆</span></div>
+    </div>
       </article>
-      <article class="feed-item" data-cat="内存存储" data-title="is it a bird? is it a plane? no, it&#x27;s the steam boy, a steam deck crammed inside a game boy-like chassis">
+      <article class="feed-item" data-cat="内存存储" data-search="is it a bird? is it a plane? no, it&#x27;s the steam boy, a steam deck crammed inside a game boy-like chassis a legally distinct game boy-like chassis, of course. pc gamer 内存存储 ">
         <div class="feed-meta">
           <span class="feed-time">22:57</span>
           <span class="feed-source">PC Gamer</span>
           <span class="cat-tag">内存存储</span>
           <span class="feed-heat">16 热度</span>
         </div>
-        <div class="feed-title"><a href="https://www.pcgamer.com/hardware/handheld-gaming-pcs/is-it-a-bird-is-it-a-plane-no-its-the-steam-boy-a-steam-deck-crammed-inside-a-game-boy-like-chassis/" target="_blank" rel="noopener">Is it a bird? Is it a plane? No, it&#x27;s the Steam Boy, a Steam Deck crammed inside a Game Boy-like chassis</a></div>
+        <h3 class="feed-title"><a href="https://www.pcgamer.com/hardware/handheld-gaming-pcs/is-it-a-bird-is-it-a-plane-no-its-the-steam-boy-a-steam-deck-crammed-inside-a-game-boy-like-chassis/" target="_blank" rel="noopener noreferrer">Is it a bird? Is it a plane? No, it&#x27;s the Steam Boy, a Steam Deck crammed inside a Game Boy-like chassis</a></h3>
         <div class="feed-summary">A legally distinct Game Boy-like chassis, of course.</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>内存与存储新闻，DRAM/NAND 价格是当前市场关键变量。</div>
+        <div class="company-row"><span class="company-empty">未识别明确厂商</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="fallback-badge">规则分析</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>Is it a bird? Is it a plane? No, it&#x27;s the…</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>可能影响成本、容量与供应</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>供应商定价和产能值得关注</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="3 星">★★★☆☆</span></div>
+    </div>
       </article>
-      <article class="feed-item" data-cat="综合" data-title="jcb&#x27;s hydrogen car hydromax hits 406 mph record at bonneville">
-        <div class="feed-meta">
-          <span class="feed-time">22:55</span>
-          <span class="feed-source">TechSpot</span>
-          <span class="cat-tag">综合</span>
-          <span class="feed-heat">16 热度</span>
-        </div>
-        <div class="feed-title"><a href="https://www.techspot.com/news/113471-jcb-hydrogen-powered-hydromax-hits-record-406-mph.html" target="_blank" rel="noopener">JCB&#x27;s hydrogen car Hydromax hits 406 mph record at Bonneville</a></div>
-        <div class="feed-summary">Green drove JCB&#x27;s Hydromax, a specially built vehicle designed to test hydrogen combustion at extreme speeds. The British equipment manufacturer is developing hydrogen engines for its construction…</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>来自公开源聚合，点击标题可阅读原文。</div>
-      </article>
-      <article class="feed-item" data-cat="处理器" data-title="stop packing your laptop charger. bring this one instead">
+      <article class="feed-item" data-cat="笔记本" data-search="stop packing your laptop charger. bring this one instead one charger to rule them all ugreen nexode pro charger, 160w view deal do you still bring your laptop charger with you on business trips? i just realized that i do, and it’s a habit i need to break. i have the option of carrying a mouse… pcworld 笔记本 ">
         <div class="feed-meta">
           <span class="feed-time">22:45</span>
           <span class="feed-source">PCWorld</span>
+          <span class="cat-tag">笔记本</span>
+          <span class="feed-heat">16 热度</span>
+        </div>
+        <h3 class="feed-title"><a href="https://www.pcworld.com/article/3188184/stop-packing-your-laptop-charger-bring-this-one-instead.html" target="_blank" rel="noopener noreferrer">Stop packing your laptop charger. Bring this one instead</a></h3>
+        <div class="feed-summary">One charger to rule them all UGREEN Nexode Pro Charger, 160W View Deal Do you still bring your laptop charger with you on business trips? I just realized that I do, and it’s a habit I need to break. I have the option of carrying a mouse…</div>
+        <div class="company-row"><span class="company-empty">未识别明确厂商</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="fallback-badge">规则分析</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>Stop packing your laptop charger. Bring…</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>可能影响终端产品定义与体验</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>OEM 产品组合可能随之调整</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="3 星">★★★☆☆</span></div>
+    </div>
+      </article>
+      <article class="feed-item" data-cat="综合" data-search="windows 10’s latest patch keeps your secure boot certificates on track earlier this week, microsoft released kb5120249 , a critical security update for windows 10 versions 22h2 and 21h2, as well as windows 10 enterprise ltsc 2021 and windows 10 iot enterprise ltsc 2021. this is the next entry in windows 10’s… pcworld 综合 microsoft">
+        <div class="feed-meta">
+          <span class="feed-time">22:32</span>
+          <span class="feed-source">PCWorld</span>
+          <span class="cat-tag">综合</span>
+          <span class="feed-heat">16 热度</span>
+        </div>
+        <h3 class="feed-title"><a href="https://www.pcworld.com/article/3212426/windows-10s-latest-patch-keeps-your-secure-boot-certificates-on-track.html" target="_blank" rel="noopener noreferrer">Windows 10’s latest patch keeps your Secure Boot certificates on track</a></h3>
+        <div class="feed-summary">Earlier this week, Microsoft released KB5120249 , a critical security update for Windows 10 versions 22H2 and 21H2, as well as Windows 10 Enterprise LTSC 2021 and Windows 10 IoT Enterprise LTSC 2021. This is the next entry in Windows 10’s…</div>
+        <div class="company-row"><span class="company-tag">Microsoft</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="fallback-badge">规则分析</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>Windows 10’s latest patch keeps your…</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>可能对相关产品生态产生影响</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>建议结合后续进展持续观察</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="3 星">★★★☆☆</span></div>
+    </div>
+      </article>
+      <article class="feed-item" data-cat="处理器" data-search="amd ryzen 9 9900x bundle with mobo, ram and aio cooler drops to $659 building a high-end desktop usually entails picking up parts in piecemeal fashion and, in today&#x27;s market, watching costs quickly stack up. before you skip your next build, though, consider newegg&#x27;s newest bundle deal centered around amd&#x27;s… hothardware 处理器 amd">
+        <div class="feed-meta">
+          <span class="feed-time">22:13</span>
+          <span class="feed-source">HotHardware</span>
           <span class="cat-tag">处理器</span>
           <span class="feed-heat">16 热度</span>
         </div>
-        <div class="feed-title"><a href="https://www.pcworld.com/article/3188184/stop-packing-your-laptop-charger-bring-this-one-instead.html" target="_blank" rel="noopener">Stop packing your laptop charger. Bring this one instead</a></div>
-        <div class="feed-summary">One charger to rule them all UGREEN Nexode Pro Charger, 160W View Deal Do you still bring your laptop charger with you on business trips? I just realized that I do, and it’s a habit I need to break.…</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>处理器相关动态，Intel/AMD/Qualcomm/Nvidia 竞争值得关注。</div>
+        <h3 class="feed-title"><a href="https://hothardware.com/news/amd-ryzen-9-9900x-bundle-mobo-ram-aio-cooler-drops-659" target="_blank" rel="noopener noreferrer">AMD Ryzen 9 9900X Bundle With Mobo, RAM And AIO Cooler Drops To $659</a></h3>
+        <div class="feed-summary">Building a high-end desktop usually entails picking up parts in piecemeal fashion and, in today&#x27;s market, watching costs quickly stack up. Before you skip your next build, though, consider Newegg&#x27;s newest bundle deal centered around AMD&#x27;s…</div>
+        <div class="company-row"><span class="company-tag">AMD</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="fallback-badge">规则分析</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>AMD Ryzen 9 9900X Bundle With Mobo, RAM…</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>可能影响平台节奏与产品规划</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>芯片厂商竞争值得持续关注</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="3 星">★★★☆☆</span></div>
+    </div>
       </article>
-</div>
-
+      <article class="feed-item" data-cat="综合" data-search="(pr) this working handheld radio only picks up transmissions from your favorite video games blueuplink has begun shipping the taccom v2, a handheld, out-of-game voip radio whose frequencies exist only inside multiplayer games. the taccom v2 is built for flight sims, space sims, and milsim titles. operators tune to a variety of… techpowerup 综合 ">
+        <div class="feed-meta">
+          <span class="feed-time">22:09</span>
+          <span class="feed-source">TechPowerUp</span>
+          <span class="cat-tag">综合</span>
+          <span class="feed-heat">16 热度</span>
+        </div>
+        <h3 class="feed-title"><a href="https://www.techpowerup.com/351582/this-working-handheld-radio-only-picks-up-transmissions-from-your-favorite-video-games" target="_blank" rel="noopener noreferrer">(PR) This Working Handheld Radio Only Picks Up Transmissions From Your Favorite Video Games</a></h3>
+        <div class="feed-summary">BlueUplink has begun shipping the TACCOM v2, a handheld, out-of-game VoIP radio whose frequencies exist only inside multiplayer games. The TACCOM v2 is built for flight sims, space sims, and milsim titles. Operators tune to a variety of…</div>
+        <div class="company-row"><span class="company-empty">未识别明确厂商</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="fallback-badge">规则分析</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>(PR) This Working Handheld Radio Only…</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>可能对相关产品生态产生影响</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>建议结合后续进展持续观察</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="3 星">★★★☆☆</span></div>
+    </div>
+      </article>
+      <article class="feed-item" data-cat="显卡" data-search="nvidia&#x27;s six-years-old a100 &quot;ampere&quot; gpu to remain in use until 2029 with the expansion of ai, every bit of available computing power is being utilized, and even nvidia&#x27;s six-year-old a100 &quot;ampere&quot; accelerator is being fully utilized at coreweave. according to coreweave, and confirmed by nvidia&#x27;s ceo jensen… techpowerup 显卡 nvidia">
+        <div class="feed-meta">
+          <span class="feed-time">22:04</span>
+          <span class="feed-source">TechPowerUp</span>
+          <span class="cat-tag">显卡</span>
+          <span class="feed-heat">16 热度</span>
+        </div>
+        <h3 class="feed-title"><a href="https://www.techpowerup.com/351581/nvidias-six-years-old-a100-ampere-gpu-to-remain-in-use-until-2029" target="_blank" rel="noopener noreferrer">NVIDIA&#x27;s Six-Years-Old A100 &quot;Ampere&quot; GPU to Remain in Use Until 2029</a></h3>
+        <div class="feed-summary">With the expansion of AI, every bit of available computing power is being utilized, and even NVIDIA&#x27;s six-year-old A100 &quot;Ampere&quot; accelerator is being fully utilized at CoreWeave. According to CoreWeave, and confirmed by NVIDIA&#x27;s CEO Jensen…</div>
+        <div class="company-row"><span class="company-tag">NVIDIA</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="fallback-badge">规则分析</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>NVIDIA&#x27;s Six-Years-Old A100 &quot;Ampere&quot; GPU…</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>可能影响性能、价格或供应</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>GPU 厂商竞争格局值得关注</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="3 星">★★★☆☆</span></div>
+    </div>
+      </article>
+      <article class="feed-item" data-cat="综合" data-search="i found a prompt that keeps ai agents from taking tasks too far the new chatgpt “superapp” boasts many powerful features, including the ability to organize the mess of files on your desktop pc. of course, the idea of letting chatgpt loose on your precious data may give you pause—and if it does, i don’t… pcworld 综合 ">
+        <div class="feed-meta">
+          <span class="feed-time">22:00</span>
+          <span class="feed-source">PCWorld</span>
+          <span class="cat-tag">综合</span>
+          <span class="feed-heat">16 热度</span>
+        </div>
+        <h3 class="feed-title"><a href="https://www.pcworld.com/article/3211564/i-found-a-prompt-that-keeps-ai-agents-from-taking-tasks-too-far.html" target="_blank" rel="noopener noreferrer">I found a prompt that keeps AI agents from taking tasks too far</a></h3>
+        <div class="feed-summary">The new ChatGPT “superapp” boasts many powerful features, including the ability to organize the mess of files on your desktop PC. Of course, the idea of letting ChatGPT loose on your precious data may give you pause—and if it does, I don’t…</div>
+        <div class="company-row"><span class="company-empty">未识别明确厂商</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="fallback-badge">规则分析</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>I found a prompt that keeps AI agents…</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>可能对相关产品生态产生影响</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>建议结合后续进展持续观察</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="3 星">★★★☆☆</span></div>
+    </div>
+      </article>
+      <article class="feed-item" data-cat="显卡" data-search="(pr) gears of war: e-day multiplayer beta opens with nvidia dlss, no more room in hell 2 and hell let loose: vietnam launches with dlss 4.5 each week, new games and apps integrating nvidia dlss, nvidia reflex, and advanced ray-traced effects are released or announced, delivering the definitive pc experience for geforce rtx players. today, the gears of war: e-day multiplayer… techpowerup 显卡 nvidia">
+        <div class="feed-meta">
+          <span class="feed-time">21:40</span>
+          <span class="feed-source">TechPowerUp</span>
+          <span class="cat-tag">显卡</span>
+          <span class="feed-heat">16 热度</span>
+        </div>
+        <h3 class="feed-title"><a href="https://www.techpowerup.com/351579/gears-of-war-e-day-multiplayer-beta-opens-with-nvidia-dlss-no-more-room-in-hell-2-and-hell-let-loose-vietnam-launches-with-dlss-4-5" target="_blank" rel="noopener noreferrer">(PR) Gears of War: E-Day Multiplayer Beta Opens With NVIDIA DLSS, No More Room In Hell 2 and Hell Let Loose: Vietnam Launches With DLSS 4.5</a></h3>
+        <div class="feed-summary">Each week, new games and apps integrating NVIDIA DLSS, NVIDIA Reflex, and advanced ray-traced effects are released or announced, delivering the definitive PC experience for GeForce RTX players. Today, the Gears of War: E-Day Multiplayer…</div>
+        <div class="company-row"><span class="company-tag">NVIDIA</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="fallback-badge">规则分析</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>(PR) Gears of War: E-Day Multiplayer Beta…</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>可能影响性能、价格或供应</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>GPU 厂商竞争格局值得关注</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="3 星">★★★☆☆</span></div>
+    </div>
+      </article>
+      <article class="feed-item" data-cat="主板机箱" data-search="ps5 emulation arrives on steam deck, astro playroom showcased running at 0.6 fps — milestone sharpemu development shows promise, despite unplayable performance astro&#x27;s playroom runs at 0.5 to 1 fps on the steam deck when emulated through sharpemu. it&#x27;s not much — it&#x27;s nothing at all, in fact — but just the proof-of-concept alone is enough to stir up excitement for both steam deck and ps5… tom&#x27;s hardware 主板机箱 ">
+        <div class="feed-meta">
+          <span class="feed-time">21:37</span>
+          <span class="feed-source">Tom&#x27;s Hardware</span>
+          <span class="cat-tag">主板机箱</span>
+          <span class="feed-heat">16 热度</span>
+        </div>
+        <h3 class="feed-title"><a href="https://www.tomshardware.com/video-games/playstation/ps5-emulation-arrives-on-steam-deck-astro-playroom-showcased-running-at-0-6-fps-milestone-sharpemu-development-shows-promise-despite-unplayable-performance" target="_blank" rel="noopener noreferrer">PS5 emulation arrives on Steam Deck, Astro Playroom showcased running at 0.6 FPS — milestone SharpEmu development shows promise, despite unplayable performance</a></h3>
+        <div class="feed-summary">Astro&#x27;s Playroom runs at 0.5 to 1 FPS on the Steam Deck when emulated through SharpEmu. It&#x27;s not much — it&#x27;s nothing at all, in fact — but just the proof-of-concept alone is enough to stir up excitement for both Steam Deck and PS5…</div>
+        <div class="company-row"><span class="company-empty">未识别明确厂商</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="fallback-badge">规则分析</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>PS5 emulation arrives on Steam Deck…</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>可能影响平台兼容与装机体验</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>生态厂商产品节奏值得关注</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="3 星">★★★☆☆</span></div>
+    </div>
+      </article>
+      <article class="feed-item" data-cat="内存存储" data-search="memory maker cxmt overtakes tencent to become china&#x27;s most valuable company 17 days after its ipo — now worth $524 billion changxin memory technologies (cxmt) is now the world&#x27;s most valuable chinese company after passing tencent. tom&#x27;s hardware 内存存储 ">
+        <div class="feed-meta">
+          <span class="feed-time">21:27</span>
+          <span class="feed-source">Tom&#x27;s Hardware</span>
+          <span class="cat-tag">内存存储</span>
+          <span class="feed-heat">16 热度</span>
+        </div>
+        <h3 class="feed-title"><a href="https://www.tomshardware.com/tech-industry/cxmt-overtakes-tencent-to-become-chinas-most-valuable-company-17-days-after-its-ipo" target="_blank" rel="noopener noreferrer">Memory maker CXMT overtakes Tencent to become China&#x27;s most valuable company 17 days after its IPO — now worth $524 billion</a></h3>
+        <div class="feed-summary">ChangXin Memory Technologies (CXMT) is now the world&#x27;s most valuable Chinese company after passing Tencent.</div>
+        <div class="company-row"><span class="company-empty">未识别明确厂商</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="fallback-badge">规则分析</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>Memory maker CXMT overtakes Tencent to…</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>可能影响成本、容量与供应</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>供应商定价和产能值得关注</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="3 星">★★★☆☆</span></div>
+    </div>
+      </article>
+      <article class="feed-item" data-cat="处理器" data-search="qualcomm claims snapdragon c crushes intel n250 on battery power qualcomm has finally detailed the specifications and performance metrics for its entry-tier snapdragon c platform, setting its sights directly on the budget laptop market and $300 windows pcs. targeted at students, families, small… hothardware 处理器 intel qualcomm microsoft">
+        <div class="feed-meta">
+          <span class="feed-time">21:16</span>
+          <span class="feed-source">HotHardware</span>
+          <span class="cat-tag">处理器</span>
+          <span class="feed-heat">16 热度</span>
+        </div>
+        <h3 class="feed-title"><a href="https://hothardware.com/news/qualcomm-claims-snapdragon-c-crushes-intel-n250-on-battery-power" target="_blank" rel="noopener noreferrer">Qualcomm Claims Snapdragon C Crushes Intel N250 On Battery Power</a></h3>
+        <div class="feed-summary">Qualcomm has finally detailed the specifications and performance metrics for its entry-tier Snapdragon C platform, setting its sights directly on the budget laptop market and $300 Windows PCs. Targeted at students, families, small…</div>
+        <div class="company-row"><span class="company-tag">Intel</span><span class="company-tag">Qualcomm</span><span class="company-tag">Microsoft</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="fallback-badge">规则分析</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>Qualcomm Claims Snapdragon C Crushes…</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>可能影响平台节奏与产品规划</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>芯片厂商竞争值得持续关注</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="3 星">★★★☆☆</span></div>
+    </div>
+      </article>
+      <article class="feed-item" data-cat="显卡" data-search="zotac marks 20 years with a titanium rtx 5080 solid core oc gpu time flies, doesn&#x27;t it? zotac is celebrating a full two decades in the graphics hardware business by giving one of its high-end gpus a titanium-themed makeover. to mark the company&#x27;s 20th anniversary, zotac is trotting out the geforce rtx… hothardware 显卡 nvidia">
+        <div class="feed-meta">
+          <span class="feed-time">21:13</span>
+          <span class="feed-source">HotHardware</span>
+          <span class="cat-tag">显卡</span>
+          <span class="feed-heat">16 热度</span>
+        </div>
+        <h3 class="feed-title"><a href="https://hothardware.com/news/zotac-marks-20-years-titanium-rtx-5080-solid-core-oc-gpu" target="_blank" rel="noopener noreferrer">Zotac Marks 20 Years With A Titanium RTX 5080 Solid Core OC GPU</a></h3>
+        <div class="feed-summary">Time flies, doesn&#x27;t it? Zotac is celebrating a full two decades in the graphics hardware business by giving one of its high-end GPUs a titanium-themed makeover. To mark the company&#x27;s 20th anniversary, Zotac is trotting out the GeForce RTX…</div>
+        <div class="company-row"><span class="company-tag">NVIDIA</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="fallback-badge">规则分析</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>Zotac Marks 20 Years With A Titanium RTX…</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>可能影响性能、价格或供应</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>GPU 厂商竞争格局值得关注</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="3 星">★★★☆☆</span></div>
+    </div>
+      </article>
+      <article class="feed-item" data-cat="处理器" data-search="geekom it13 max 2026 review: meteor lake rides again in a $799 mini pc geekom mates an intel meteor lake core ultra 9 processor with soldered 24gb ddr5 dual-channel ram to conjure up an attractively specified and priced mini pc for the rampocalypse era. tom&#x27;s hardware 处理器 intel">
+        <div class="feed-meta">
+          <span class="feed-time">21:05</span>
+          <span class="feed-source">Tom&#x27;s Hardware</span>
+          <span class="cat-tag">处理器</span>
+          <span class="feed-heat">16 热度</span>
+        </div>
+        <h3 class="feed-title"><a href="https://www.tomshardware.com/desktops/mini-pcs/geekom-it13-max-2026-review-meteor-lake-rides-again-in-a-usd799-mini-pc" target="_blank" rel="noopener noreferrer">Geekom IT13 Max 2026 review: Meteor Lake rides again in a $799 mini PC</a></h3>
+        <div class="feed-summary">Geekom mates an Intel Meteor Lake Core Ultra 9 processor with soldered 24GB DDR5 dual-channel RAM to conjure up an attractively specified and priced mini PC for the RAMpocalypse era.</div>
+        <div class="company-row"><span class="company-tag">Intel</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="fallback-badge">规则分析</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>Geekom IT13 Max 2026 review: Meteor Lake…</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>可能影响平台节奏与产品规划</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>芯片厂商竞争值得持续关注</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="3 星">★★★☆☆</span></div>
+    </div>
+      </article>
+      <article class="feed-item" data-cat="显卡" data-search="nvidia geforce now linux app exits beta with great new perks nvidia is kicking off the back-to-school season with a notable upgrade to its cloud gaming service. alongside performance enhancements for cloud streamers, the native geforce now app for linux has officially graduated from beta status… hothardware 显卡 nvidia">
+        <div class="feed-meta">
+          <span class="feed-time">21:00</span>
+          <span class="feed-source">HotHardware</span>
+          <span class="cat-tag">显卡</span>
+          <span class="feed-heat">16 热度</span>
+        </div>
+        <h3 class="feed-title"><a href="https://hothardware.com/news/nvidia-geforce-now-linux-app-exits-beta-new-perks" target="_blank" rel="noopener noreferrer">NVIDIA GeForce NOW Linux App Exits Beta With Great New Perks</a></h3>
+        <div class="feed-summary">NVIDIA is kicking off the back-to-school season with a notable upgrade to its cloud gaming service. Alongside performance enhancements for cloud streamers, the native GeForce NOW app for Linux has officially graduated from beta status…</div>
+        <div class="company-row"><span class="company-tag">NVIDIA</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="fallback-badge">规则分析</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>NVIDIA GeForce NOW Linux App Exits Beta…</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>可能影响性能、价格或供应</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>GPU 厂商竞争格局值得关注</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="3 星">★★★☆☆</span></div>
+    </div>
+      </article>
+      <article class="feed-item" data-cat="综合" data-search="best deals on pc setup accessories — save money on chairs, desks, monitor stands, boom arms, and more we&#x27;ve scoured the internet and found the best deals on pc office and gaming furniture. find the best desks, chairs, monitor arms, and more. tom&#x27;s hardware 综合 ">
+        <div class="feed-meta">
+          <span class="feed-time">20:30</span>
+          <span class="feed-source">Tom&#x27;s Hardware</span>
+          <span class="cat-tag">综合</span>
+          <span class="feed-heat">16 热度</span>
+        </div>
+        <h3 class="feed-title"><a href="https://www.tomshardware.com/gift-guides-seasonal-sales/best-deals-on-pc-furniture-save-money-on-chairs-desks-monitor-stands-boom-arms-and-more" target="_blank" rel="noopener noreferrer">Best deals on PC setup accessories — save money on chairs, desks, monitor stands, boom arms, and more</a></h3>
+        <div class="feed-summary">We&#x27;ve scoured the internet and found the best deals on PC office and gaming furniture. Find the best desks, chairs, monitor arms, and more.</div>
+        <div class="company-row"><span class="company-empty">未识别明确厂商</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="fallback-badge">规则分析</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>Best deals on PC setup accessories — save…</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>可能对相关产品生态产生影响</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>建议结合后续进展持续观察</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="3 星">★★★☆☆</span></div>
+    </div>
+      </article>
+      <article class="feed-item" data-cat="处理器" data-search="qualcomm introduces $300 laptops with snapdragon c, outruns intel n250 by up to 67% qualcomm is finally unveiling the specifications of its entry-level, low-cost snapdragon c platform. according to the specifications, the platform features up to eight arm cores for systems expected to start around the $300 mark. in a… techpowerup 处理器 intel qualcomm">
+        <div class="feed-meta">
+          <span class="feed-time">20:15</span>
+          <span class="feed-source">TechPowerUp</span>
+          <span class="cat-tag">处理器</span>
+          <span class="feed-heat">16 热度</span>
+        </div>
+        <h3 class="feed-title"><a href="https://www.techpowerup.com/351578/qualcomm-introduces-usd-300-laptops-with-snapdragon-c-outruns-intel-n250-by-up-to-67" target="_blank" rel="noopener noreferrer">Qualcomm Introduces $300 Laptops With Snapdragon C, Outruns Intel N250 by Up to 67%</a></h3>
+        <div class="feed-summary">Qualcomm is finally unveiling the specifications of its entry-level, low-cost Snapdragon C platform. According to the specifications, the platform features up to eight Arm cores for systems expected to start around the $300 mark. In a…</div>
+        <div class="company-row"><span class="company-tag">Intel</span><span class="company-tag">Qualcomm</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="fallback-badge">规则分析</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>Qualcomm Introduces $300 Laptops With…</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>可能影响平台节奏与产品规划</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>芯片厂商竞争值得持续关注</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="3 星">★★★☆☆</span></div>
+    </div>
+      </article>
+      <article class="feed-item" data-cat="主板机箱" data-search="maxsun terminator b850m pro ii motherboard review: comparable features, but us pricing is over msrp maxsun’s terminator b850m pro ii is a decent budget option in the micro atx form factor, but only if you can find it for the $199.99 msrp. tom&#x27;s hardware 主板机箱 ">
+        <div class="feed-meta">
+          <span class="feed-time">20:05</span>
+          <span class="feed-source">Tom&#x27;s Hardware</span>
+          <span class="cat-tag">主板机箱</span>
+          <span class="feed-heat">16 热度</span>
+        </div>
+        <h3 class="feed-title"><a href="https://www.tomshardware.com/pc-components/motherboards/maxsun-terminator-b850m-pro-ii-motherboard-review" target="_blank" rel="noopener noreferrer">Maxsun Terminator B850M Pro II Motherboard Review: Comparable features, but US pricing is over MSRP</a></h3>
+        <div class="feed-summary">Maxsun’s Terminator B850M Pro II is a decent budget option in the Micro ATX form factor, but only if you can find it for the $199.99 MSRP.</div>
+        <div class="company-row"><span class="company-empty">未识别明确厂商</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="fallback-badge">规则分析</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>Maxsun Terminator B850M Pro II…</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>可能影响平台兼容与装机体验</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>生态厂商产品节奏值得关注</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="3 星">★★★☆☆</span></div>
+    </div>
+      </article>
+      <article class="feed-item" data-cat="处理器" data-search="snapdragon c specs mean qualcomm could eat intel&#x27;s lunch with budget laptops: here&#x27;s what we know (and what we still don&#x27;t) qualcomm revealed full specs for its snapdragon c platform, promising up to 67% faster battery performance and better power efficiency than intel&#x27;s n250. windows central 处理器 intel qualcomm">
+        <div class="feed-meta">
+          <span class="feed-time">19:56</span>
+          <span class="feed-source">Windows Central</span>
+          <span class="cat-tag">处理器</span>
+          <span class="feed-heat">16 热度</span>
+        </div>
+        <h3 class="feed-title"><a href="https://www.windowscentral.com/hardware/qualcomm/snapdragon-c-specs-mean-qualcomm-could-eat-intels-lunch-with-budget-laptops-heres-what-we-know-and-what-we-still-dont" target="_blank" rel="noopener noreferrer">Snapdragon C specs mean Qualcomm could eat Intel&#x27;s lunch with budget laptops: Here&#x27;s what we know (and what we still don&#x27;t)</a></h3>
+        <div class="feed-summary">Qualcomm revealed full specs for its Snapdragon C platform, promising up to 67% faster battery performance and better power efficiency than Intel&#x27;s N250.</div>
+        <div class="company-row"><span class="company-tag">Intel</span><span class="company-tag">Qualcomm</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="fallback-badge">规则分析</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>Snapdragon C specs mean Qualcomm could…</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>可能影响平台节奏与产品规划</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>芯片厂商竞争值得持续关注</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="3 星">★★★☆☆</span></div>
+    </div>
+      </article>
+      <article class="feed-item" data-cat="内存存储" data-search="get 16gb of ddr5 ram free when you buy amd&#x27;s 9900x and an asus tuf motherboard — $659 newegg combo saves $274, and you get a free 240mm aio save $274 and snag 16gb of ddr5 ram for free in this 3-item newegg combo with ryzen 9 9900x, asus tuf gaming x870e-plus wifi7, and 16gb of dual channel team group t-force vulkan ram tom&#x27;s hardware 内存存储 amd asus">
+        <div class="feed-meta">
+          <span class="feed-time">19:50</span>
+          <span class="feed-source">Tom&#x27;s Hardware</span>
+          <span class="cat-tag">内存存储</span>
+          <span class="feed-heat">16 热度</span>
+        </div>
+        <h3 class="feed-title"><a href="https://www.tomshardware.com/pc-components/ddr5/get-16gb-of-ddr5-ram-free-when-you-buy-amds-9900x-and-an-asus-tuf-motherboard-usd659-newegg-combo-saves-usd274-and-you-get-a-free-240mm-aio" target="_blank" rel="noopener noreferrer">Get 16GB of DDR5 RAM free when you buy AMD&#x27;s 9900X and an Asus TUF motherboard — $659 Newegg combo saves $274, and you get a free 240mm AIO</a></h3>
+        <div class="feed-summary">Save $274 and snag 16GB of DDR5 RAM for free in this 3-item Newegg combo with Ryzen 9 9900X, Asus TUF Gaming X870E-Plus Wifi7, and 16GB of dual channel Team Group T-Force Vulkan RAM</div>
+        <div class="company-row"><span class="company-tag">AMD</span><span class="company-tag">ASUS</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="fallback-badge">规则分析</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>Get 16GB of DDR5 RAM free when you buy…</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>可能影响成本、容量与供应</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>供应商定价和产能值得关注</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="3 星">★★★☆☆</span></div>
+    </div>
+      </article>
+      <article class="feed-item" data-cat="显卡" data-search="(pr) zotac gaming launches geforce rtx 5080 solid core oc 20th anniversary edition zotac technology pte. limited, a leading global manufacturer of technology and pc gaming hardware, officially launches the zotac gaming geforce rtx 5080 solid core oc 20th anniversary edition today to commemorate the zotac brand&#x27;s 20th… techpowerup 显卡 nvidia">
+        <div class="feed-meta">
+          <span class="feed-time">19:49</span>
+          <span class="feed-source">TechPowerUp</span>
+          <span class="cat-tag">显卡</span>
+          <span class="feed-heat">16 热度</span>
+        </div>
+        <h3 class="feed-title"><a href="https://www.techpowerup.com/351577/zotac-gaming-launches-geforce-rtx-5080-solid-core-oc-20th-anniversary-edition" target="_blank" rel="noopener noreferrer">(PR) Zotac Gaming Launches GeForce RTX 5080 SOLID CORE OC 20th Anniversary Edition</a></h3>
+        <div class="feed-summary">ZOTAC Technology PTE. Limited, a leading global manufacturer of technology and PC gaming hardware, officially launches the ZOTAC GAMING GeForce RTX 5080 SOLID CORE OC 20th Anniversary Edition today to commemorate the ZOTAC Brand&#x27;s 20th…</div>
+        <div class="company-row"><span class="company-tag">NVIDIA</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="fallback-badge">规则分析</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>(PR) Zotac Gaming Launches GeForce RTX…</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>可能影响性能、价格或供应</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>GPU 厂商竞争格局值得关注</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="3 星">★★★☆☆</span></div>
+    </div>
+      </article>
+      <article class="feed-item" data-cat="市场动态" data-search="oled monitors more popular than ever says analyst firm, which makes sense as one of the few good deals left in pc gaming shipments are up nearly 100% since last year. pc gamer 市场动态 ">
+        <div class="feed-meta">
+          <span class="feed-time">19:32</span>
+          <span class="feed-source">PC Gamer</span>
+          <span class="cat-tag">市场动态</span>
+          <span class="feed-heat">16 热度</span>
+        </div>
+        <h3 class="feed-title"><a href="https://www.pcgamer.com/hardware/gaming-monitors/oled-monitors-more-popular-than-ever-says-analyst-firm-which-makes-sense-as-one-of-the-few-good-deals-left-in-pc-gaming/" target="_blank" rel="noopener noreferrer">OLED monitors more popular than ever says analyst firm, which makes sense as one of the few good deals left in PC gaming</a></h3>
+        <div class="feed-summary">Shipments are up nearly 100% since last year.</div>
+        <div class="company-row"><span class="company-empty">未识别明确厂商</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="fallback-badge">规则分析</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>OLED monitors more popular than ever says…</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>可能影响价格、出货与库存</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>相关厂商策略可能发生调整</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="3 星">★★★☆☆</span></div>
+    </div>
+      </article>
+      <article class="feed-item" data-cat="笔记本" data-search="today’s best laptop deals: save big on work, school, home use, and gaming if you’re looking for an affordable windows machine under $500 , a blazing fast gaming beast for those intense matches, or a portable 2-in-1 for school or work, you’ve got plenty of great choices right now. why you should trust us: it’s in… pcworld 笔记本 microsoft">
+        <div class="feed-meta">
+          <span class="feed-time">19:22</span>
+          <span class="feed-source">PCWorld</span>
+          <span class="cat-tag">笔记本</span>
+          <span class="feed-heat">16 热度</span>
+        </div>
+        <h3 class="feed-title"><a href="https://www.pcworld.com/article/550968/best-laptop-deals-3.html" target="_blank" rel="noopener noreferrer">Today’s best laptop deals: Save big on work, school, home use, and gaming</a></h3>
+        <div class="feed-summary">If you’re looking for an affordable Windows machine under $500 , a blazing fast gaming beast for those intense matches, or a portable 2-in-1 for school or work, you’ve got plenty of great choices right now. Why you should trust us: It’s in…</div>
+        <div class="company-row"><span class="company-tag">Microsoft</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="fallback-badge">规则分析</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>Today’s best laptop deals: Save big on…</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>可能影响终端产品定义与体验</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>OEM 产品组合可能随之调整</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="3 星">★★★☆☆</span></div>
+    </div>
+      </article>
+      <article class="feed-item" data-cat="综合" data-search="the next time someone asks for pc help, don’t explain it—show them! “hey, can you show me how to do this?” it’s the simplest of questions. in person, it’s the simplest of tasks. if you have the time and tools, you can demonstrate what needs to be done. but trying to show a colleague or friend on the other… pcworld 综合 ">
+        <div class="feed-meta">
+          <span class="feed-time">19:15</span>
+          <span class="feed-source">PCWorld</span>
+          <span class="cat-tag">综合</span>
+          <span class="feed-heat">16 热度</span>
+        </div>
+        <h3 class="feed-title"><a href="https://www.pcworld.com/article/3209863/show-me-how-a-productivity-task-that-isnt-as-easy-as-it-sounds.html" target="_blank" rel="noopener noreferrer">The next time someone asks for PC help, don’t explain it—show them!</a></h3>
+        <div class="feed-summary">“Hey, can you show me how to do this?” It’s the simplest of questions. In person, it’s the simplest of tasks. If you have the time and tools, you can demonstrate what needs to be done. But trying to show a colleague or friend on the other…</div>
+        <div class="company-row"><span class="company-empty">未识别明确厂商</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="fallback-badge">规则分析</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>The next time someone asks for PC help…</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>可能对相关产品生态产生影响</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>建议结合后续进展持续观察</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="3 星">★★★☆☆</span></div>
+    </div>
+      </article>
+      <article class="feed-item" data-cat="综合" data-search="this $57.99 8bitdo ultimate 2 wireless controller is a brilliantly customizable option for pc gamers — fully customizable gamepad with nintendo switch compatibility includes dual… save 17% on this 8bitdo ultimate 2 game controller for your pc or nintendo switch right now. tom&#x27;s hardware 综合 ">
+        <div class="feed-meta">
+          <span class="feed-time">19:10</span>
+          <span class="feed-source">Tom&#x27;s Hardware</span>
+          <span class="cat-tag">综合</span>
+          <span class="feed-heat">16 热度</span>
+        </div>
+        <h3 class="feed-title"><a href="https://www.tomshardware.com/peripherals/controllers-gamepads/this-usd57-99-8bitdo-ultimate-2-wireless-controller-is-a-brilliantly-customizable-option-for-pc-gamers-fully-customizable-gamepad-with-nintendo-switch-compatibility-includes-dual-triggers-tmr-joysticks-and-adjustable-rgb-lighting" target="_blank" rel="noopener noreferrer">This $57.99 8BitDo Ultimate 2 wireless controller is a brilliantly customizable option for PC gamers — fully customizable gamepad with Nintendo Switch compatibility includes dual…</a></h3>
+        <div class="feed-summary">Save 17% on this 8BitDo Ultimate 2 game controller for your PC or Nintendo Switch right now.</div>
+        <div class="company-row"><span class="company-empty">未识别明确厂商</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="fallback-badge">规则分析</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>This $57.99 8BitDo Ultimate 2 wireless…</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>可能对相关产品生态产生影响</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>建议结合后续进展持续观察</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="3 星">★★★☆☆</span></div>
+    </div>
+      </article>
+      <article class="feed-item" data-cat="显卡" data-search="jump into pc gaming for under a thousand dollars with a $350 saving on this rtx 5060-powered laptop — the 15.6-inch msi cyborg 15 is just $949 at walmart bag a new gaming laptop for under $1k at walmart, thanks to a $350 saving on the latest msi cyborg 15. tom&#x27;s hardware 显卡 nvidia msi">
+        <div class="feed-meta">
+          <span class="feed-time">19:07</span>
+          <span class="feed-source">Tom&#x27;s Hardware</span>
+          <span class="cat-tag">显卡</span>
+          <span class="feed-heat">16 热度</span>
+        </div>
+        <h3 class="feed-title"><a href="https://www.tomshardware.com/laptops/gaming-laptops/jump-into-pc-gaming-for-under-a-thousand-dollars-with-a-usd350-saving-on-this-rtx-5060-powered-laptop-the-15-6-inch-msi-cyborg-15-is-just-usd949-at-walmart" target="_blank" rel="noopener noreferrer">Jump into PC gaming for under a thousand dollars with a $350 saving on this RTX 5060-powered laptop — the 15.6-inch MSI Cyborg 15 is just $949 at Walmart</a></h3>
+        <div class="feed-summary">Bag a new gaming laptop for under $1K at Walmart, thanks to a $350 saving on the latest MSI Cyborg 15.</div>
+        <div class="company-row"><span class="company-tag">NVIDIA</span><span class="company-tag">MSI</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="fallback-badge">规则分析</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>Jump into PC gaming for under a thousand…</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>可能影响性能、价格或供应</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>GPU 厂商竞争格局值得关注</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="3 星">★★★☆☆</span></div>
+    </div>
+      </article>
+      <article class="feed-item" data-cat="处理器" data-search="analysts see &#x27;increasing foundry success conviction&#x27; as intel ceo puts $12 million more of his own money in company — analysts point to accelerating foundry progress and capex… intel&#x27;s lip-bu ran reportedly buys $12 million worth of intel stock as analysts believe that the management is increasingly convinced about landing external customers. tom&#x27;s hardware 处理器 intel asus">
+        <div class="feed-meta">
+          <span class="feed-time">19:00</span>
+          <span class="feed-source">Tom&#x27;s Hardware</span>
+          <span class="cat-tag">处理器</span>
+          <span class="feed-heat">16 热度</span>
+        </div>
+        <h3 class="feed-title"><a href="https://www.tomshardware.com/pc-components/cpus/analysts-see-increasing-foundry-success-conviction-as-intel-ceo-puts-usd12-million-more-of-his-own-money-in-company-analysts-point-to-accelerating-foundry-progress-and-capex-expansion" target="_blank" rel="noopener noreferrer">Analysts see &#x27;increasing foundry success conviction&#x27; as Intel CEO puts $12 million more of his own money in company — analysts point to accelerating foundry progress and capex…</a></h3>
+        <div class="feed-summary">Intel&#x27;s Lip-Bu Ran reportedly buys $12 million worth of Intel stock as analysts believe that the management is increasingly convinced about landing external customers.</div>
+        <div class="company-row"><span class="company-tag">Intel</span><span class="company-tag">ASUS</span></div>
+        <div class="feed-insight">
+        <div class="insight-head"><strong>AI 洞察</strong><span class="fallback-badge">规则分析</span></div>
+        <div class="insight-row"><span class="insight-label">事件</span><span>Analysts see &#x27;increasing foundry success…</span></div>
+        <div class="insight-row"><span class="insight-label">行业影响</span><span>可能影响平台节奏与产品规划</span></div>
+        <div class="insight-row"><span class="insight-label">竞争影响</span><span>芯片厂商竞争值得持续关注</span></div>
+        <div class="insight-row"><span class="insight-label">关注等级</span><span class="stars" aria-label="3 星">★★★☆☆</span></div>
+    </div>
+      </article></section></div>
+    <div id="emptyState" class="empty-state">没有找到符合条件的资讯。</div>
   </main>
+
   <footer>
-    <p><strong>PC HOT</strong> — PC 行业动态聚合 · 每日精选</p>
-    <p>更新于 2026-08-14 15:09 (北京时间)</p>
+    <p><strong>PC HOT</strong> - PC 行业动态聚合与本地 AI 竞争情报</p>
+    <p>更新于 2026-08-14 16:12（北京时间）</p>
+    <p>AI 洞察仅供信息筛选参考，重要判断请以原始新闻和官方信息为准。</p>
   </footer>
+
   <script>
     const searchInput = document.getElementById('searchInput');
-    const tagBtns = document.querySelectorAll('.tag-btn');
+    const tagButtons = document.querySelectorAll('.tag-btn');
+    const emptyState = document.getElementById('emptyState');
     let currentFilter = 'all';
-    tagBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        tagBtns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        currentFilter = btn.dataset.filter;
+
+    tagButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        tagButtons.forEach((item) => item.classList.remove('active'));
+        button.classList.add('active');
+        currentFilter = button.dataset.filter || 'all';
         filterItems();
       });
     });
+
+    searchInput.addEventListener('input', filterItems);
+
     function filterItems() {
-      const q = (searchInput.value || '').trim().toLowerCase();
-      document.querySelectorAll('.feed-item').forEach(item => {
-        const cat = item.dataset.cat || '';
-        const title = item.dataset.title || '';
-        item.classList.toggle('hidden', !((currentFilter === 'all' || cat === currentFilter) && (!q || title.includes(q))));
+      const query = (searchInput.value || '').trim().toLowerCase();
+      let visibleCount = 0;
+
+      document.querySelectorAll('.feed-item').forEach((item) => {
+        const category = item.dataset.cat || '';
+        const searchable = item.dataset.search || '';
+        const categoryMatched = currentFilter === 'all' || category === currentFilter;
+        const queryMatched = !query || searchable.includes(query);
+        const visible = categoryMatched && queryMatched;
+        item.classList.toggle('hidden', !visible);
+        if (visible) visibleCount += 1;
       });
+
+      document.querySelectorAll('.day-block').forEach((block) => {
+        const hasVisibleItem = block.querySelector('.feed-item:not(.hidden)');
+        block.style.display = hasVisibleItem ? '' : 'none';
+      });
+
+      emptyState.style.display = visibleCount === 0 ? 'block' : 'none';
     }
   </script>
 </body>
