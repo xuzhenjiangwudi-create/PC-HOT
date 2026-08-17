@@ -426,6 +426,16 @@ def main():
     html = render_html(entries)
     Path("index.html").write_text(html, encoding="utf-8")
     print(f"\n已生成 index.html")
+
+    # 发送邮件通知
+    try:
+        from send_email import send_daily_report
+        top = [e["title"] for e in entries[:6]]
+        cost_n = sum(1 for e in entries if e.get("cost_flag"))
+        send_daily_report(entry_count=len(entries), cost_count=cost_n, top_titles=top)
+    except Exception as e:
+        print("邮件通知跳过:", e)
+
     print("执行: git add index.html && git commit -m \"focus cost\" && git push --force")
 
 
