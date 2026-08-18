@@ -322,18 +322,16 @@ def render_html(entries):
 
     /* Header */
     header {{
-      background: rgba(255,255,255,.85);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
+      background: #111827;
+      border-bottom: none;
       position: sticky; top: 0; z-index: 50;
     }}
     .header-inner {{
       max-width: 920px; margin: 0 auto; padding: 14px 20px;
       display: flex; align-items: center; justify-content: space-between; gap: 16px;
     }}
-    .logo {{
-      display: flex; align-items: center; gap: 10px;
-      font-weight: 700; font-size: 1.25rem; letter-spacing: -0.03em;
+    .brand {{
+      display: flex; align-items: center; gap: 12px;
     }}
     .logo-badge {{
       background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
@@ -341,19 +339,35 @@ def render_html(entries):
       padding: 4px 9px; border-radius: 8px; letter-spacing: .04em;
       box-shadow: 0 2px 8px rgba(59,130,246,.35);
     }}
+    .pc-name {{
+      font-weight: 700; font-size: 1.2rem; letter-spacing: -0.03em; color: #fff;
+    }}
+    .brand-divider {{
+      width: 1px; height: 22px; background: #4b5563;
+    }}
+    .lenovo-logo {{
+      font-weight: 700; font-size: 1.1rem; letter-spacing: -0.02em;
+      color: #e2231a; font-family: Arial, "Helvetica Neue", sans-serif;
+    }}
+    .tec-badge {{
+      font-weight: 700; font-size: 0.95rem; letter-spacing: 0.08em;
+      color: #fff; padding: 2px 8px; border: 1.5px solid #fff;
+      border-radius: 4px; font-family: Arial, sans-serif;
+    }}
     .search-box {{ flex: 1; max-width: 280px; }}
     .search-box input {{
       width: 100%; padding: 9px 14px 9px 36px;
-      border: 1px solid var(--border); border-radius: 10px;
-      font-size: .9rem; outline: none; background: var(--bg);
+      border: 1px solid #374151; border-radius: 10px;
+      font-size: .9rem; outline: none; background: #1f2937; color: #e5e7eb;
       transition: border-color .15s, box-shadow .15s;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%239ca3af' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242.656a5 5 0 1 1 0-10 5 5 0 0 1 0 10z'/%3E%3C/svg%3E");
       background-repeat: no-repeat; background-position: 12px center;
     }}
+    .search-box input::placeholder {{ color: #6b7280; }}
     .search-box input:focus {{
       border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(59,130,246,.15);
-      background-color: #fff;
+      box-shadow: 0 0 0 3px rgba(59,130,246,.25);
+      background-color: #111827;
     }}
 
     main {{ max-width: 920px; margin: 0 auto; padding: 24px 20px 60px; }}
@@ -490,7 +504,13 @@ def render_html(entries):
 <body>
   <header>
     <div class="header-inner">
-      <div class="logo"><span class="logo-badge">PC</span><span>PC HOT</span></div>
+      <div class="brand">
+        <span class="logo-badge">PC</span>
+        <span class="pc-name">PC HOT</span>
+        <span class="brand-divider"></span>
+        <span class="lenovo-logo">Lenovo</span>
+        <span class="tec-badge">TEC</span>
+      </div>
       <div class="search-box"><input type="text" id="searchInput" placeholder="搜索标题..." oninput="filterItems()"></div>
     </div>
   </header>
