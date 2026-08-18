@@ -69,7 +69,12 @@ def is_relevant(title: str, summary: str = "") -> bool:
 
 def is_cost_related(title: str, summary: str = "") -> bool:
     text = (title + " " + summary).lower()
-    return any(kw.lower() in text for kw in COST_KEYWORDS)
+    strong = [
+        "price", "pricing", "cost", "expensive", "hike", "shortage", "涨价", "降价",
+        "价格", "成本", "短缺", "合约价", "现货", "bom", "memory crunch", "asps",
+        "$", "美元", "元", "涨至", "降至", "supply chain"
+    ]
+    return any(kw.lower() in text for kw in strong)
 
 def get_category(title: str, summary: str = "") -> str:
     text = (title + " " + summary).lower()
@@ -549,20 +554,20 @@ def render_html(entries):
     .feed-reason strong {{ color: var(--text); font-weight: 600; }}
 
 
-    .lang-toggle {
+    .lang-toggle {{
       display: flex; align-items: center; gap: 0;
       background: #1f2937; border: 1px solid #374151;
       border-radius: 8px; overflow: hidden; flex-shrink: 0;
-    }
-    .lang-toggle button {
+    }}
+    .lang-toggle button {{
       background: transparent; border: none; color: #9ca3af;
       padding: 6px 12px; font-size: 0.8rem; font-weight: 600;
       cursor: pointer; transition: all .15s;
-    }
-    .lang-toggle button.active {
+    }}
+    .lang-toggle button.active {{
       background: #3b82f6; color: #fff;
-    }
-    .lang-toggle button:hover:not(.active) { color: #e5e7eb; }
+    }}
+    .lang-toggle button:hover:not(.active) {{ color: #e5e7eb; }}
 
     footer {{
       max-width: 920px; margin: 0 auto; padding: 28px 20px;
