@@ -15,7 +15,7 @@ from datetime import datetime
 # ============ 配置区 ============
 OLLAMA_URL = "http://localhost:11434/api/generate"
 MODEL_NAME = "qwen2.5:7b"   # 改成你实际的模型名，比如 qwen2:7b / qwen:7b 等
-MAX_ITEMS = 15              # 最多增强多少条（避免太慢）
+MAX_ITEMS = 20             # 最多增强多少条（避免太慢）
 # ==============================
 
 def call_qwen(prompt: str, max_tokens: int = 200) -> str:

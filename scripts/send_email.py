@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PC HOT - QQ 邮箱通知（每人单独发送，更稳定）"""
+"""PC HOT - QQ 邮箱通知"""
 
 import smtplib
 from email.mime.text import MIMEText
@@ -11,21 +11,16 @@ import sys
 SMTP_SERVER = "smtp.qq.com"
 SMTP_PORT = 465
 SENDER = "1043643759@qq.com"
-PASSWORD = "frkgodfprdlibahj"
-
-# 收件人列表 —— 在这里继续添加
+PASSWORD = "frkgodfprdlibahj"   
 RECEIVERS = [
     "1043643759@qq.com",
     "xuzj12@lenovo.com",
-    "wangling11@lenovo.com",
 ]
-
-
-def send_one(to: str, subject: str, content: str, html_content: str = None) -> bool:
+def send_update_email(subject: str, content: str, html_content: str = None) -> bool:
     try:
         msg = MIMEMultipart("alternative")
         msg["From"] = SENDER
-        msg["To"] = to
+        msg["To"] = RECEIVER
         msg["Subject"] = Header(subject, "utf-8")
         msg.attach(MIMEText(content, "plain", "utf-8"))
         if html_content:
@@ -33,11 +28,11 @@ def send_one(to: str, subject: str, content: str, html_content: str = None) -> b
 
         with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, timeout=30) as server:
             server.login(SENDER, PASSWORD)
-            server.sendmail(SENDER, [to], msg.as_string())
-        print(f"  OK → {to}")
+            server.sendmail(SENDER, [RECEIVER], msg.as_string())
+        print("邮件发送成功 →", RECEIVER)
         return True
     except Exception as e:
-        print(f"  FAIL → {to}: {e}")
+        print("邮件发送失败:", e)
         return False
 
 
@@ -78,20 +73,14 @@ def send_daily_report(entry_count: int = 0, cost_count: int = 0, top_titles: lis
         html += "</ol>"
     html += "<p style='color:#888;font-size:12px;'>— PC HOT 自动推送</p></div>"
 
-    print(f"开始发送，共 {len(RECEIVERS)} 人...")
-    ok_count = 0
-    for to in RECEIVERS:
-        if send_one(to, subject, content, html):
-            ok_count += 1
-    print(f"完成：成功 {ok_count}/{len(RECEIVERS)}")
-    return ok_count > 0
+    return send_update_email(subject, content, html)
 
 
 if __name__ == "__main__":
-    print("测试发送到所有收件人...")
+    print("正在发送测试/通知邮件...")
     ok = send_daily_report(
         entry_count=0,
         cost_count=0,
-        top_titles=["测试邮件：请确认是否收到"]
+        top_titles=["任务已执行，请打开网站查看最新内容"]
     )
     sys.exit(0 if ok else 1)
