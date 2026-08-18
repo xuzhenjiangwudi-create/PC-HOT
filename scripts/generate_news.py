@@ -291,52 +291,201 @@ def render_html(entries):
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PC HOT — PC 行业与成本动态</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
   <style>
-    :root {{ --bg:#f7f8fa; --card:#fff; --text:#1a1a1a; --text2:#555; --muted:#888; --border:#e8e8e8; --accent:#2563eb; --hot:#ef4444; --cost:#d97706; }}
+    :root {{
+      --bg: #f0f2f5;
+      --card: #ffffff;
+      --text: #111827;
+      --text2: #4b5563;
+      --muted: #9ca3af;
+      --border: #e5e7eb;
+      --accent: #3b82f6;
+      --accent-soft: #eff6ff;
+      --hot: #ef4444;
+      --cost: #d97706;
+      --cost-bg: #fffbeb;
+      --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+      --shadow-hover: 0 10px 25px -5px rgba(0,0,0,.08), 0 4px 6px -2px rgba(0,0,0,.03);
+      --radius: 14px;
+    }}
     * {{ margin:0; padding:0; box-sizing:border-box; }}
-    body {{ font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--text); line-height:1.6; }}
-    a {{ color:inherit; text-decoration:none; }} a:hover {{ color:var(--accent); }}
-    header {{ background:var(--card); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:50; }}
-    .header-inner {{ max-width:900px; margin:0 auto; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; gap:16px; }}
-    .logo {{ display:flex; align-items:center; gap:10px; font-weight:700; font-size:1.2rem; }}
-    .logo-badge {{ background:linear-gradient(135deg,#2563eb,#7c3aed); color:#fff; font-size:.7rem; font-weight:700; padding:3px 8px; border-radius:6px; }}
-    .search-box {{ flex:1; max-width:260px; }}
-    .search-box input {{ width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:8px; font-size:.9rem; outline:none; }}
-    .search-box input:focus {{ border-color:var(--accent); }}
-    main {{ max-width:900px; margin:0 auto; padding:20px 20px 50px; }}
-    .section-header {{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:14px; }}
-    .section-header h2 {{ font-size:1.1rem; font-weight:700; }}
-    .section-header .date {{ font-size:.85rem; color:var(--muted); }}
-    .tags {{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px; }}
-    .tag-btn {{ background:var(--card); border:1px solid var(--border); padding:5px 12px; border-radius:20px; font-size:.8rem; cursor:pointer; color:var(--text2); }}
-    .tag-btn:hover, .tag-btn.active {{ background:var(--accent); color:#fff; border-color:var(--accent); }}
-    .tag-btn.cost-filter {{ border-color:#fbbf24; color:var(--cost); }}
-    .tag-btn.cost-filter.active {{ background:var(--cost); color:#fff; border-color:var(--cost); }}
-    .hot-list {{ background:var(--card); border:1px solid var(--border); border-radius:12px; padding:6px 0; margin-bottom:24px; }}
-    .hot-item {{ display:flex; align-items:flex-start; gap:12px; padding:10px 16px; }}
-    .hot-item:hover {{ background:#f8fafc; }}
-    .hot-rank {{ font-weight:700; font-size:1rem; color:var(--muted); min-width:22px; text-align:center; }}
-    .hot-rank.top3 {{ color:var(--hot); }}
-    .hot-content {{ flex:1; min-width:0; }}
-    .hot-title {{ font-size:.95rem; font-weight:500; }}
-    .hot-heat {{ font-size:.78rem; color:var(--hot); font-weight:600; white-space:nowrap; }}
-    .stats {{ font-size:.8rem; color:var(--muted); margin-bottom:16px; }}
-    .day-block {{ margin-bottom:28px; }}
-    .day-title {{ font-size:1.05rem; font-weight:700; margin-bottom:12px; padding-bottom:6px; border-bottom:1px solid var(--border); }}
-    .feed-item {{ background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px 16px; margin-bottom:10px; }}
-    .feed-item:hover {{ border-color:#d0d5dd; box-shadow:0 2px 8px rgba(0,0,0,.04); }}
-    .feed-item.hidden {{ display:none; }}
-    .feed-meta {{ display:flex; align-items:center; gap:8px; font-size:.78rem; color:var(--muted); margin-bottom:6px; flex-wrap:wrap; }}
-    .feed-source {{ color:var(--accent); font-weight:500; }}
-    .cat-tag {{ background:#f0f4ff; color:var(--accent); padding:1px 8px; border-radius:4px; font-size:.75rem; }}
-    .cost-badge {{ background:#fef3c7; color:var(--cost); padding:1px 8px; border-radius:4px; font-size:.75rem; font-weight:600; }}
-    .feed-heat {{ margin-left:auto; color:var(--hot); font-weight:600; }}
-    .feed-title {{ font-size:1rem; font-weight:600; margin-bottom:6px; line-height:1.4; }}
-    .feed-summary {{ font-size:.88rem; color:var(--text2); margin-bottom:8px; line-height:1.5; }}
-    .feed-reason {{ font-size:.82rem; color:var(--muted); background:#f8fafc; border-radius:8px; padding:8px 10px; border-left:3px solid var(--accent); }}
-    .feed-reason strong {{ color:var(--text2); }}
-    footer {{ max-width:900px; margin:0 auto; padding:20px; border-top:1px solid var(--border); text-align:center; font-size:.8rem; color:var(--muted); }}
+    body {{
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      min-height: 100vh;
+    }}
+    a {{ color: inherit; text-decoration: none; transition: color .15s; }}
+    a:hover {{ color: var(--accent); }}
+
+    /* Header */
+    header {{
+      background: rgba(255,255,255,.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 50;
+    }}
+    .header-inner {{
+      max-width: 920px; margin: 0 auto; padding: 14px 20px;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }}
+    .logo {{
+      display: flex; align-items: center; gap: 10px;
+      font-weight: 700; font-size: 1.25rem; letter-spacing: -0.03em;
+    }}
+    .logo-badge {{
+      background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+      color: #fff; font-size: .68rem; font-weight: 700;
+      padding: 4px 9px; border-radius: 8px; letter-spacing: .04em;
+      box-shadow: 0 2px 8px rgba(59,130,246,.35);
+    }}
+    .search-box {{ flex: 1; max-width: 280px; }}
+    .search-box input {{
+      width: 100%; padding: 9px 14px 9px 36px;
+      border: 1px solid var(--border); border-radius: 10px;
+      font-size: .9rem; outline: none; background: var(--bg);
+      transition: border-color .15s, box-shadow .15s;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%239ca3af' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242.656a5 5 0 1 1 0-10 5 5 0 0 1 0 10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: 12px center;
+    }}
+    .search-box input:focus {{
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(59,130,246,.15);
+      background-color: #fff;
+    }}
+
+    main {{ max-width: 920px; margin: 0 auto; padding: 24px 20px 60px; }}
+
+    .section-header {{
+      display: flex; align-items: baseline; justify-content: space-between;
+      margin-bottom: 14px;
+    }}
+    .section-header h2 {{
+      font-size: 1.15rem; font-weight: 700; letter-spacing: -0.02em;
+    }}
+    .section-header .date {{ font-size: .85rem; color: var(--muted); }}
+
+    /* Tags */
+    .tags {{ display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }}
+    .tag-btn {{
+      background: var(--card); border: 1px solid var(--border);
+      padding: 6px 14px; border-radius: 999px; font-size: .8rem;
+      cursor: pointer; color: var(--text2); transition: all .15s;
+      font-weight: 500;
+    }}
+    .tag-btn:hover {{ border-color: var(--accent); color: var(--accent); }}
+    .tag-btn.active {{
+      background: var(--accent); color: #fff; border-color: var(--accent);
+      box-shadow: 0 2px 8px rgba(59,130,246,.3);
+    }}
+    .tag-btn.cost-filter {{ border-color: #fcd34d; color: var(--cost); }}
+    .tag-btn.cost-filter.active {{
+      background: var(--cost); color: #fff; border-color: var(--cost);
+      box-shadow: 0 2px 8px rgba(217,119,6,.3);
+    }}
+
+    /* Hot list */
+    .hot-list {{
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 8px 0; margin-bottom: 28px;
+      box-shadow: var(--shadow);
+    }}
+    .hot-item {{
+      display: flex; align-items: flex-start; gap: 14px;
+      padding: 12px 18px; transition: background .15s;
+    }}
+    .hot-item:hover {{ background: #f8fafc; }}
+    .hot-rank {{
+      font-weight: 800; font-size: 1.05rem; color: var(--muted);
+      min-width: 24px; text-align: center; font-variant-numeric: tabular-nums;
+    }}
+    .hot-rank.top3 {{
+      background: linear-gradient(135deg, #ef4444, #f97316);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }}
+    .hot-content {{ flex: 1; min-width: 0; }}
+    .hot-title {{ font-size: .95rem; font-weight: 550; line-height: 1.4; }}
+    .hot-heat {{
+      font-size: .78rem; color: var(--hot); font-weight: 600;
+      white-space: nowrap; padding-top: 2px;
+    }}
+
+    .stats {{
+      font-size: .82rem; color: var(--muted); margin-bottom: 18px;
+      padding: 10px 14px; background: var(--accent-soft);
+      border-radius: 10px; color: #1e40af;
+    }}
+    .stats strong {{ color: var(--accent); }}
+
+    /* Day blocks */
+    .day-block {{ margin-bottom: 32px; }}
+    .day-title {{
+      font-size: 1.05rem; font-weight: 700; margin-bottom: 14px;
+      padding-bottom: 8px; border-bottom: 2px solid var(--border);
+      letter-spacing: -0.01em;
+    }}
+
+    /* Feed cards */
+    .feed-item {{
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px 18px; margin-bottom: 12px;
+      box-shadow: var(--shadow); transition: all .2s;
+    }}
+    .feed-item:hover {{
+      border-color: #c7d2fe;
+      box-shadow: var(--shadow-hover);
+      transform: translateY(-1px);
+    }}
+    .feed-item.hidden {{ display: none; }}
+    .feed-meta {{
+      display: flex; align-items: center; gap: 8px;
+      font-size: .78rem; color: var(--muted); margin-bottom: 8px; flex-wrap: wrap;
+    }}
+    .feed-time {{ font-variant-numeric: tabular-nums; font-weight: 500; }}
+    .feed-source {{ color: var(--accent); font-weight: 600; }}
+    .cat-tag {{
+      background: var(--accent-soft); color: var(--accent);
+      padding: 2px 9px; border-radius: 6px; font-size: .74rem; font-weight: 500;
+    }}
+    .cost-badge {{
+      background: var(--cost-bg); color: var(--cost);
+      padding: 2px 9px; border-radius: 6px; font-size: .74rem; font-weight: 600;
+    }}
+    .feed-heat {{ margin-left: auto; color: var(--hot); font-weight: 600; }}
+    .feed-title {{
+      font-size: 1.02rem; font-weight: 650; margin-bottom: 8px;
+      line-height: 1.45; letter-spacing: -0.01em;
+    }}
+    .feed-summary {{
+      font-size: .9rem; color: var(--text2); margin-bottom: 10px; line-height: 1.55;
+    }}
+    .feed-reason {{
+      font-size: .84rem; color: var(--text2);
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      border-radius: 10px; padding: 10px 12px;
+      border-left: 3px solid var(--accent);
+    }}
+    .feed-reason strong {{ color: var(--text); font-weight: 600; }}
+
+    footer {{
+      max-width: 920px; margin: 0 auto; padding: 28px 20px;
+      border-top: 1px solid var(--border); text-align: center;
+      font-size: .8rem; color: var(--muted);
+    }}
+    footer p {{ margin-bottom: 4px; }}
+    footer strong {{ color: var(--text2); }}
+
+    @media (max-width: 600px) {{
+      .header-inner {{ flex-wrap: wrap; }}
+      .search-box {{ max-width: 100%; order: 3; width: 100%; }}
+      .hot-item {{ padding: 10px 14px; }}
+      .feed-item {{ padding: 14px; }}
+    }}
   </style>
+
 </head>
 <body>
   <header>
