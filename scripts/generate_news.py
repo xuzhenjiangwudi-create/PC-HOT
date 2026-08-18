@@ -145,6 +145,51 @@ def default_reason(category: str, cost_flag: bool = False) -> str:
         "综合": "PC 行业相关资讯。",
     }.get(category, "PC 行业相关资讯。")
 
+
+def is_mostly_chinese(s: str) -> bool:
+    if not s:
+        return False
+    cn = sum(1 for c in s if "一" <= c <= "鿿")
+    return cn > max(2, len(s) * 0.15)
+
+
+def translate_with_qwen(text: str, to_lang: str) -> str:
+    """to_lang: 'zh' or 'en'"""
+    if not text or not text.strip():
+        return text
+    if to_lang == "zh":
+        prompt = f"""将下面的英文翻译成简洁自然的中文，只输出译文，不要解释：\n\n{text[:500]}"""
+    else:
+        prompt = f"""Translate the following Chinese into clear, concise English. Output only the translation:\n\n{text[:500]}"""
+    result = call_qwen(prompt, max_tokens=180)
+    return result.strip() if result else text
+
+
+def bilingual_fields(title: str, summary: str, reason: str, cost_flag: bool, category: str):
+    """Return title_zh, title_en, summary_zh, summary_en, reason_zh, reason_en"""
+    if is_mostly_chinese(title):
+        title_zh, title_en = title, (translate_with_qwen(title, "en") if USE_OLLAMA else title)
+    else:
+        title_en, title_zh = title, (translate_with_qwen(title, "zh") if USE_OLLAMA else title)
+
+    if summary:
+        if is_mostly_chinese(summary):
+            summary_zh, summary_en = summary, (translate_with_qwen(summary, "en") if USE_OLLAMA else summary)
+        else:
+            summary_en, summary_zh = summary, (translate_with_qwen(summary, "zh") if USE_OLLAMA else summary)
+    else:
+        summary_zh, summary_en = "", ""
+
+    # reason is usually Chinese from our prompts; make EN version
+    reason_zh = reason or default_reason(category, cost_flag)
+    if USE_OLLAMA and reason_zh:
+        reason_en = translate_with_qwen(reason_zh, "en") or reason_zh
+    else:
+        reason_en = reason_zh
+
+    return title_zh, title_en, summary_zh, summary_en, reason_zh, reason_en
+
+
 def fetch_entries(max_items: int = 50):
     entries = []
     headers = {"User-Agent": "Mozilla/5.0 (compatible; PC-HOT-Bot/1.4)"}
@@ -268,8 +313,15 @@ def render_html(entries):
             reason = e.get("reason") or default_reason(e["category"], e["cost_flag"])
             cost_badge = '<span class="cost-badge">成本相关</span>' if e["cost_flag"] else ""
 
+            title_zh = e.get("title_zh") or e["title"]
+            title_en = e.get("title_en") or e["title"]
+            summary_zh = e.get("summary_zh") or e.get("summary") or ""
+            summary_en = e.get("summary_en") or e.get("summary") or ""
+            reason_zh = e.get("reason_zh") or reason
+            reason_en = e.get("reason_en") or reason
+
             feed_sections += f"""
-      <article class="feed-item" data-cat="{html.escape(e['category'])}" data-title="{html.escape(e['title'].lower())}" data-cost="{'1' if e['cost_flag'] else '0'}">
+      <article class="feed-item" data-cat="{html.escape(e['category'])}" data-title="{html.escape((title_zh + ' ' + title_en).lower())}" data-cost="{'1' if e['cost_flag'] else '0'}">
         <div class="feed-meta">
           <span class="feed-time">{time_str}</span>
           <span class="feed-source">{html.escape(e['source'])}</span>
@@ -277,9 +329,21 @@ def render_html(entries):
           {cost_badge}
           <span class="feed-heat">{heat} 热度</span>
         </div>
-        <div class="feed-title"><a href="{html.escape(e['link'])}" target="_blank" rel="noopener">{html.escape(e['title'])}</a></div>
-        <div class="feed-summary">{html.escape(e['summary']) or '（暂无摘要）'}</div>
-        <div class="feed-reason"><strong>推荐理由：</strong>{html.escape(reason)}</div>
+        <div class="feed-title">
+          <a href="{html.escape(e['link'])}" target="_blank" rel="noopener">
+            <span class="lang-zh">{html.escape(title_zh)}</span>
+            <span class="lang-en" style="display:none">{html.escape(title_en)}</span>
+          </a>
+        </div>
+        <div class="feed-summary">
+          <span class="lang-zh">{html.escape(summary_zh) or '（暂无摘要）'}</span>
+          <span class="lang-en" style="display:none">{html.escape(summary_en) or '(No summary)'}</span>
+        </div>
+        <div class="feed-reason">
+          <strong class="lang-zh">推荐理由：</strong><strong class="lang-en" style="display:none">Why it matters: </strong>
+          <span class="lang-zh">{html.escape(reason_zh)}</span>
+          <span class="lang-en" style="display:none">{html.escape(reason_en)}</span>
+        </div>
       </article>"""
         feed_sections += "\n</div>\n"
 
@@ -484,6 +548,22 @@ def render_html(entries):
     }}
     .feed-reason strong {{ color: var(--text); font-weight: 600; }}
 
+
+    .lang-toggle {
+      display: flex; align-items: center; gap: 0;
+      background: #1f2937; border: 1px solid #374151;
+      border-radius: 8px; overflow: hidden; flex-shrink: 0;
+    }
+    .lang-toggle button {
+      background: transparent; border: none; color: #9ca3af;
+      padding: 6px 12px; font-size: 0.8rem; font-weight: 600;
+      cursor: pointer; transition: all .15s;
+    }
+    .lang-toggle button.active {
+      background: #3b82f6; color: #fff;
+    }
+    .lang-toggle button:hover:not(.active) { color: #e5e7eb; }
+
     footer {{
       max-width: 920px; margin: 0 auto; padding: 28px 20px;
       border-top: 1px solid var(--border); text-align: center;
@@ -511,12 +591,18 @@ def render_html(entries):
         <span class="lenovo-logo">Lenovo</span>
         <span class="tec-badge">TEC</span>
       </div>
-      <div class="search-box"><input type="text" id="searchInput" placeholder="搜索标题..." oninput="filterItems()"></div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div class="search-box"><input type="text" id="searchInput" placeholder="搜索标题..." oninput="filterItems()" data-i18n-placeholder="search"></div>
+        <div class="lang-toggle">
+          <button type="button" id="btnZh" class="active" onclick="setLang('zh')">中文</button>
+          <button type="button" id="btnEn" onclick="setLang('en')">EN</button>
+        </div>
+      </div>
     </div>
   </header>
   <main>
     <div class="section-header">
-      <h2>精选热榜（成本优先）</h2>
+      <h2 data-i18n="hotTitle">精选热榜（成本优先）</h2>
       <span class="date">{now.strftime('%m月%d日')} · {weekday}</span>
     </div>
     <div class="hot-list">{hot_html}</div>
@@ -525,42 +611,97 @@ def render_html(entries):
       {' · 已用本地 Qwen 增强' if USE_OLLAMA else ''}
     </div>
     <div class="tags" id="tagBar">
-      <button class="tag-btn active" data-filter="all">全部</button>
-      <button class="tag-btn cost-filter" data-filter="cost">只看成本相关</button>
+      <button class="tag-btn active" data-filter="all" data-i18n="all">全部</button>
+      <button class="tag-btn cost-filter" data-filter="cost" data-i18n="costOnly">只看成本相关</button>
       {cat_tags}
     </div>
-    <div class="section-header"><h2>最新精选</h2></div>
+    <div class="section-header"><h2 data-i18n="latestTitle">最新精选</h2></div>
     {feed_sections}
   </main>
   <footer>
-    <p><strong>PC HOT</strong> — 聚焦 PC 行业与成本动态</p>
+    <p data-i18n="footer1"><strong>PC HOT</strong> — 聚焦 PC 行业与成本动态</p>
     <p>更新于 {now.strftime('%Y-%m-%d %H:%M')} (北京时间)</p>
   </footer>
   <script>
-    const searchInput = document.getElementById('searchInput');
-    const tagBtns = document.querySelectorAll('.tag-btn');
-    let currentFilter = 'all';
+    const I18N = {{
+      zh: {{
+        search: "搜索标题...",
+        hotTitle: "精选热榜（成本优先）",
+        latestTitle: "最新精选",
+        all: "全部",
+        costOnly: "只看成本相关",
+        reason: "推荐理由：",
+        footer1: "PC HOT — 聚焦 PC 行业与成本动态",
+        costBadge: "成本相关"
+      }},
+      en: {{
+        search: "Search titles...",
+        hotTitle: "Top Stories (Cost Priority)",
+        latestTitle: "Latest",
+        all: "All",
+        costOnly: "Cost only",
+        reason: "Why it matters: ",
+        footer1: "PC HOT — PC Industry & Cost Insights",
+        costBadge: "Cost"
+      }}
+    }};
+
+    let currentLang = localStorage.getItem("pc_hot_lang") || "zh";
+
+    function setLang(lang) {{
+      currentLang = lang;
+      localStorage.setItem("pc_hot_lang", lang);
+      document.getElementById("btnZh").classList.toggle("active", lang === "zh");
+      document.getElementById("btnEn").classList.toggle("active", lang === "en");
+      applyI18n();
+    }}
+
+    function applyI18n() {{
+      const t = I18N[currentLang];
+      const search = document.getElementById("searchInput");
+      if (search) search.placeholder = t.search;
+      document.querySelectorAll("[data-i18n]").forEach(el => {{
+        const key = el.getAttribute("data-i18n");
+        if (t[key]) el.textContent = t[key];
+      }});
+      document.querySelectorAll(".tag-btn").forEach(btn => {{
+        const f = btn.dataset.filter;
+        if (f === "all") btn.textContent = t.all;
+        if (f === "cost") btn.textContent = t.costOnly;
+      }});
+      document.querySelectorAll(".cost-badge").forEach(el => {{ el.textContent = t.costBadge; }});
+      // 正文中英文切换
+      const showZh = currentLang === "zh";
+      document.querySelectorAll(".lang-zh").forEach(el => {{ el.style.display = showZh ? "" : "none"; }});
+      document.querySelectorAll(".lang-en").forEach(el => {{ el.style.display = showZh ? "none" : ""; }});
+    }}
+
+    const searchInput = document.getElementById("searchInput");
+    const tagBtns = document.querySelectorAll(".tag-btn");
+    let currentFilter = "all";
     tagBtns.forEach(btn => {{
-      btn.addEventListener('click', () => {{
-        tagBtns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
+      btn.addEventListener("click", () => {{
+        tagBtns.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
         currentFilter = btn.dataset.filter;
         filterItems();
       }});
     }});
     function filterItems() {{
-      const q = (searchInput.value || '').trim().toLowerCase();
-      document.querySelectorAll('.feed-item').forEach(item => {{
-        const cat = item.dataset.cat || '';
-        const title = item.dataset.title || '';
-        const isCost = item.dataset.cost === '1';
+      const q = (searchInput.value || "").trim().toLowerCase();
+      document.querySelectorAll(".feed-item").forEach(item => {{
+        const cat = item.dataset.cat || "";
+        const title = item.dataset.title || "";
+        const isCost = item.dataset.cost === "1";
         let match = true;
-        if (currentFilter === 'cost') match = isCost;
-        else if (currentFilter !== 'all') match = cat === currentFilter;
+        if (currentFilter === "cost") match = isCost;
+        else if (currentFilter !== "all") match = cat === currentFilter;
         if (q && !title.includes(q)) match = false;
-        item.classList.toggle('hidden', !match);
+        item.classList.toggle("hidden", !match);
       }});
     }}
+
+    setLang(currentLang);
   </script>
 </body>
 </html>"""
@@ -585,12 +726,34 @@ def main():
     cost_n = sum(1 for e in entries if e["cost_flag"])
     print(f"其中成本/价格相关: {cost_n} 条")
 
-    if USE_OLLAMA and entries:
-        print(f"\n用 {MODEL_NAME} 增强前 {min(MAX_ENHANCE, len(entries))} 条推荐理由...")
-        for i, e in enumerate(entries[:MAX_ENHANCE]):
-            print(f"  [{i+1}] {e['title'][:42]}...")
-            e["reason"] = enhance_reason(e["title"], e["summary"], e["category"], e["cost_flag"])
-            print(f"      → {e['reason']}")
+    # 推荐理由 + 中英双语
+    n = min(MAX_ENHANCE, len(entries)) if USE_OLLAMA else min(8, len(entries))
+    print(f"\n处理前 {n} 条（推荐理由 + 中英翻译）...")
+    for i, e in enumerate(entries):
+        if i < n:
+            print(f"  [{i+1}/{n}] {e['title'][:40]}...")
+            if USE_OLLAMA:
+                e["reason"] = enhance_reason(e["title"], e["summary"], e["category"], e["cost_flag"])
+            else:
+                e["reason"] = default_reason(e["category"], e["cost_flag"])
+            tz, te, sz, se, rz, re_ = bilingual_fields(
+                e["title"], e["summary"], e["reason"], e["cost_flag"], e["category"]
+            )
+            e["title_zh"], e["title_en"] = tz, te
+            e["summary_zh"], e["summary_en"] = sz, se
+            e["reason_zh"], e["reason_en"] = rz, re_
+            print(f"      ZH: {tz[:36]}...")
+        else:
+            # 未增强条目：尽量简单处理
+            e["reason"] = e.get("reason") or default_reason(e["category"], e["cost_flag"])
+            if is_mostly_chinese(e["title"]):
+                e["title_zh"], e["title_en"] = e["title"], e["title"]
+            else:
+                e["title_zh"], e["title_en"] = e["title"], e["title"]
+            e["summary_zh"] = e["summary"]
+            e["summary_en"] = e["summary"]
+            e["reason_zh"] = e["reason"]
+            e["reason_en"] = e["reason"]
 
     html = render_html(entries)
     Path("index.html").write_text(html, encoding="utf-8")
