@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""PC HOT - QQ email (English-first body)"""
+"""PC HOT - QQ email (credentials from environment variables)"""
 
+import os
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -8,15 +9,19 @@ from email.header import Header
 from datetime import datetime
 import sys
 
-SMTP_SERVER = "smtp.qq.com"
-SMTP_PORT = 465
-SENDER = "1043643759@qq.com"
-PASSWORD = "frkgodfprdlibahj"
+SMTP_SERVER = os.environ.get("PC_HOT_SMTP_SERVER", "smtp.qq.com")
+SMTP_PORT = int(os.environ.get("PC_HOT_SMTP_PORT", "465"))
+SENDER = os.environ.get("PC_HOT_SMTP_USER", "1043643759@qq.com")
+PASSWORD = os.environ.get("PC_HOT_SMTP_PASS", "")  # 必须从环境变量读取
 
-RECEIVERS = [
-    "1043643759@qq.com",
-    "xuzj12@lenovo.com",
-]
+# 收件人：环境变量用英文逗号分隔，否则用下面默认列表
+_env_receivers = os.environ.get("PC_HOT_RECEIVERS", "").strip()
+if _env_receivers:
+    RECEIVERS = [x.strip() for x in _env_receivers.split(",") if x.strip()]
+else:
+    RECEIVERS = [
+        "1043643759@qq.com",
+    ]
 
 
 def send_one(to: str, subject: str, content: str, html_content: str = None) -> bool:
@@ -40,6 +45,11 @@ def send_one(to: str, subject: str, content: str, html_content: str = None) -> b
 
 def send_daily_report(entry_count: int = 0, cost_count: int = 0, top_titles: list = None):
     """Email body prefers English."""
+    if not PASSWORD:
+        print("错误: 未设置环境变量 PC_HOT_SMTP_PASS（QQ 邮箱授权码）")
+        print("请先设置后再发送邮件。")
+        return False
+
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
     site_url = "https://xuzhenjiangwudi-create.github.io/PC-HOT/"
     subject = f"PC HOT Daily Update · {now[:10]}"
@@ -88,6 +98,9 @@ def send_daily_report(entry_count: int = 0, cost_count: int = 0, top_titles: lis
 
 if __name__ == "__main__":
     print("Test English email...")
+    print(f"SMTP user: {SENDER}")
+    print(f"Receivers: {RECEIVERS}")
+    print(f"Password set: {'yes' if PASSWORD else 'NO'}")
     ok = send_daily_report(
         entry_count=0,
         cost_count=0,
