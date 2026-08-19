@@ -18,6 +18,7 @@ RECEIVERS = [
     "1043643759@qq.com",
     "xuzj12@lenovo.com",
     "wangling11@lenovo.com",
+    "markgao@lenovo.com",
 ]
 
 
