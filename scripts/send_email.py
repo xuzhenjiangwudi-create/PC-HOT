@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PC HOT - QQ 邮箱通知（每人单独发送，更稳定）"""
+"""PC HOT - QQ email (English-first body)"""
 
 import smtplib
 from email.mime.text import MIMEText
@@ -13,11 +13,9 @@ SMTP_PORT = 465
 SENDER = "1043643759@qq.com"
 PASSWORD = "frkgodfprdlibahj"
 
-# 收件人列表 —— 在这里继续添加
 RECEIVERS = [
     "1043643759@qq.com",
     "xuzj12@lenovo.com",
-    "markgao@lenovo.com",
 ]
 
 
@@ -30,7 +28,6 @@ def send_one(to: str, subject: str, content: str, html_content: str = None) -> b
         msg.attach(MIMEText(content, "plain", "utf-8"))
         if html_content:
             msg.attach(MIMEText(html_content, "html", "utf-8"))
-
         with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, timeout=30) as server:
             server.login(SENDER, PASSWORD)
             server.sendmail(SENDER, [to], msg.as_string())
@@ -42,56 +39,58 @@ def send_one(to: str, subject: str, content: str, html_content: str = None) -> b
 
 
 def send_daily_report(entry_count: int = 0, cost_count: int = 0, top_titles: list = None):
+    """Email body prefers English."""
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
     site_url = "https://xuzhenjiangwudi-create.github.io/PC-HOT/"
-    subject = f"PC HOT 每日更新 · {now[:10]}"
+    subject = f"PC HOT Daily Update · {now[:10]}"
 
     lines = [
-        f"PC HOT 已完成今日更新",
-        f"时间：{now}",
-        f"",
-        f"本次资讯数量：{entry_count} 条",
-        f"其中成本/价格相关：{cost_count} 条",
-        f"",
-        f"网站地址：{site_url}",
-        f"",
+        "PC HOT — Daily laptop industry briefing",
+        f"Time: {now}",
+        "",
+        f"Items: {entry_count}",
+        f"Cost / pricing related: {cost_count}",
+        "",
+        f"Website: {site_url}",
+        "",
     ]
     if top_titles:
-        lines.append("今日热榜：")
+        lines.append("Top stories:")
         for i, t in enumerate(top_titles[:6], 1):
             lines.append(f"  {i}. {t}")
         lines.append("")
-    lines.append("— PC HOT 自动推送")
+    lines.append("— PC HOT auto notification")
     content = "\n".join(lines)
 
     html = f"""
-    <div style="font-family:sans-serif;max-width:560px;margin:0 auto;">
-      <h2 style="color:#2563eb;">PC HOT 每日更新</h2>
-      <p>时间：{now}</p>
-      <p>本次资讯：<b>{entry_count}</b> 条 · 成本相关：<b>{cost_count}</b> 条</p>
-      <p><a href="{site_url}">点击查看网站 →</a></p>
+    <div style="font-family:Segoe UI,Arial,sans-serif;max-width:560px;margin:0 auto;color:#111;">
+      <h2 style="color:#2563eb;margin-bottom:8px;">PC HOT Daily Update</h2>
+      <p style="color:#555;">Laptop industry · OEM / ODM · AI PC</p>
+      <p><b>Time:</b> {now}</p>
+      <p><b>Items:</b> {entry_count} · <b>Cost-related:</b> {cost_count}</p>
+      <p><a href="{site_url}" style="color:#2563eb;">Open website →</a></p>
     """
     if top_titles:
-        html += "<h3>今日热榜</h3><ol>"
+        html += "<h3 style='margin-top:20px;'>Top stories</h3><ol>"
         for t in top_titles[:6]:
-            html += f"<li>{t}</li>"
+            html += f"<li style='margin-bottom:6px;'>{t}</li>"
         html += "</ol>"
-    html += "<p style='color:#888;font-size:12px;'>— PC HOT 自动推送</p></div>"
+    html += "<p style='color:#888;font-size:12px;margin-top:24px;'>— PC HOT auto notification</p></div>"
 
-    print(f"开始发送，共 {len(RECEIVERS)} 人...")
+    print(f"Sending English email to {len(RECEIVERS)} recipients...")
     ok_count = 0
     for to in RECEIVERS:
         if send_one(to, subject, content, html):
             ok_count += 1
-    print(f"完成：成功 {ok_count}/{len(RECEIVERS)}")
+    print(f"Done: {ok_count}/{len(RECEIVERS)}")
     return ok_count > 0
 
 
 if __name__ == "__main__":
-    print("测试发送到所有收件人...")
+    print("Test English email...")
     ok = send_daily_report(
         entry_count=0,
         cost_count=0,
-        top_titles=["测试邮件：请确认是否收到"]
+        top_titles=["Test: laptop industry digest (English body)"],
     )
     sys.exit(0 if ok else 1)

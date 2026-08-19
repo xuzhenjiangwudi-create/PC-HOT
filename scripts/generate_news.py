@@ -29,6 +29,8 @@ RSS_SOURCES = [
     ("PC Gamer", "https://www.pcgamer.com/feeds/tag/hardware"),
     ("Windows Central", "https://www.windowscentral.com/feeds.xml"),
     ("TechPowerUp", "https://www.techpowerup.com/rss/news"),
+    ("Notebookcheck", "https://www.notebookcheck.net/RSS-Feed-All-Articles-EN.165552.0.html"),
+    ("Laptop Mag", "https://www.laptopmag.com/feeds/all"),
 ]
 
 # 成本/价格相关关键词（高权重）
@@ -321,13 +323,21 @@ def render_html(entries):
     for i, e in enumerate(hot_candidates[:8]):
         rank_class = "top3" if i < 3 else ""
         cost_mark = " · 成本" if e["cost_flag"] else ""
+        t_zh = html.escape(e.get("title_zh") or e["title"])
+        t_en = html.escape(e.get("title_en") or e["title"])
         hot_html += f"""
       <div class="hot-item">
         <div class="hot-rank {rank_class}">{i+1}</div>
         <div class="hot-content">
-          <div class="hot-title">{html.escape(e['title'])}</div>
+          <div class="hot-title">
+            <span class="lang-zh">{t_zh}</span>
+            <span class="lang-en" style="display:none">{t_en}</span>
+          </div>
         </div>
-        <div class="hot-heat">{heat_score(i, e['cost_flag'])} 热度{cost_mark}</div>
+        <div class="hot-heat">
+          <span class="lang-zh">{heat_score(i, e['cost_flag'])} 热度{cost_mark}</span>
+          <span class="lang-en" style="display:none">{heat_score(i, e['cost_flag'])} heat{" · Cost" if e["cost_flag"] else ""}</span>
+        </div>
       </div>"""
 
     cat_count = defaultdict(int)
@@ -357,13 +367,16 @@ def render_html(entries):
         if not items:
             continue
         if label == "今天":
-            day_title = f"今天 {now.strftime('%m月%d日')} {weekday}"
+            day_title_zh = f"今天 {now.strftime('%m月%d日')} {weekday}"
+            day_title_en = f"Today {now.strftime('%Y-%m-%d')}"
         elif label == "昨天":
-            day_title = f"昨天 {(now - timedelta(days=1)).strftime('%m月%d日')}"
+            day_title_zh = f"昨天 {(now - timedelta(days=1)).strftime('%m月%d日')}"
+            day_title_en = f"Yesterday {(now - timedelta(days=1)).strftime('%Y-%m-%d')}"
         else:
-            day_title = "更早内容"
+            day_title_zh = "更早内容"
+            day_title_en = "Earlier"
 
-        feed_sections += f'<div class="day-block">\n<div class="day-title">{day_title}</div>\n'
+        feed_sections += f'<div class="day-block">\n<div class="day-title"><span class="lang-zh">{day_title_zh}</span><span class="lang-en" style="display:none">{day_title_en}</span></div>\n'
         for e in items:
             time_str = e["dt"].astimezone(timezone(timedelta(hours=8))).strftime("%H:%M")
             heat = heat_score(global_rank, e["cost_flag"])
@@ -820,7 +833,7 @@ def main():
     # 发送邮件通知
     try:
         from send_email import send_daily_report
-        top = [e["title"] for e in entries[:6]]
+        top = [e.get("title_en") or e.get("title_zh") or e["title"] for e in entries[:6]]
         cost_n = sum(1 for e in entries if e.get("cost_flag"))
         send_daily_report(entry_count=len(entries), cost_count=cost_n, top_titles=top)
     except Exception as e:
