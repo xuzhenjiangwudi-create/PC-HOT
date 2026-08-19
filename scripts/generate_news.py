@@ -33,39 +33,91 @@ RSS_SOURCES = [
 
 # 成本/价格相关关键词（高权重）
 COST_KEYWORDS = [
-    "price", "pricing", "cost", "expensive", "cheap", "hike", "increase", "rise", "soar",
-    "shortage", "supply", "memory crunch", "dram", "nand", "hbm", "bom",
-    "涨价", "降价", "价格", "成本", "短缺", "供应", "内存", "显存", "合约价", "现货",
-    "出货", "shipment", "asps", "average selling", "margin"
+    "price", "pricing", "cost", "expensive", "hike", "shortage", "涨价", "降价",
+    "价格", "成本", "短缺", "合约价", "asp", "bom", "supply"
 ]
 
 # PC 核心关键词
 PC_KEYWORDS = [
-    "pc", "laptop", "notebook", "desktop", "cpu", "gpu", "rtx", "rx ", "ryzen", "intel", "amd",
-    "nvidia", "memory", "ram", "ddr5", "ddr4", "ssd", "nvme", "motherboard",
-    "asus", "msi", "gigabyte", "lenovo", "dell", "hp", "apple", "macbook",
-    "windows", "ai pc", "snapdragon", "qualcomm", "computex", "processor", "graphics",
-    "mini pc", "nuc", "rog", "legion", "core ultra", "zen ", "blackwell", "rdna",
-    "电脑", "笔记本", "显卡", "处理器", "内存", "固态", "主板", "华硕", "微星", "技嘉",
-    "联想", "戴尔", "惠普", "锐龙", "酷睿", "骁龙", "装机"
+    # 笔记本核心
+    "laptop", "notebook", "ultrabook", "chromebook", "macbook", "ai pc", "copilot+ pc",
+    "notebooks", "laptops", "portable", "thin and light", "gaming laptop", "workstation",
+    "笔记本", "轻薄本", "游戏本", "商务本", "二合一",
+    # OEM
+    "lenovo", "thinkpad", "yoga", "legion", "dell", "xps", "latitude", "alienware",
+    "hp", "hewlett", "elitebook", "probook", "spectre", "omen", "asus", "zenbook",
+    "vivobook", "rog", "tuf", "acer", "swift", "predator", "msi", "razer", "blade",
+    "samsung galaxy book", "huawei matebook", "honor magicbook", "xiaomi notebook",
+    "联想", "戴尔", "惠普", "华硕", "宏碁", "机械革命", "神舟", "荣耀", "华为",
+    # ODM
+    "quanta", "compal", "wistron", "pegatron", "inventec", "huaqin", "luxshare",
+    "广达", "仁宝", "纬创", "和硕", "英业达", "华勤", "立讯", "翼辉",
+    # AI / AI PC / 芯片
+    "ai pc", "npu", "copilot", "snapdragon x", "qualcomm", "lunar lake", "arrow lake",
+    "meteor lake", "strix point", "hawk point", "ryzen ai", "core ultra", "intel vpu",
+    "hexagon npu", "40 tops", "45 tops", "npu tops", "on-device ai", "local ai",
+    "骁龙", "锐龙 ai", "酷睿 ultra", "端侧 ai", "本地 ai",
+    # 相关硬件但仍偏本本
+    "battery", "oled laptop", "laptop gpu", "mobile rtx", "mxm",
 ]
 
 CATEGORIES = {
-    "成本价格": COST_KEYWORDS + ["price", "cost", "涨价", "降价", "短缺", "供应"],
-    "内存存储": ["memory", "ram", "ddr", "ssd", "nvme", "dram", "nand", "hbm", "存储", "内存", "固态", "显存"],
-    "显卡": ["gpu", "rtx", "radeon", "rx ", "graphics", "显卡", "blackwell"],
-    "处理器": ["cpu", "ryzen", "intel", "core ultra", "snapdragon", "qualcomm", "处理器", "锐龙", "酷睿", "骁龙"],
-    "笔记本": ["laptop", "notebook", "ai pc", "macbook", "笔记本", "轻薄本", "游戏本"],
-    "市场出货": ["shipment", "market", "出货", "销量", "份额", "idc", "counterpoint", "omdia"],
-    "主板机箱": ["motherboard", "chipset", "case", "主板", "机箱"],
+    "AI与芯片": [
+        "ai pc", "npu", "copilot", "snapdragon", "qualcomm", "lunar lake", "ryzen ai",
+        "core ultra", "tops", "on-device", "端侧", "本地 ai", "骁龙", "npu"
+    ],
+    "OEM品牌": [
+        "lenovo", "dell", "hp", "asus", "acer", "msi", "razer", "samsung", "huawei",
+        "联想", "戴尔", "惠普", "华硕", "宏碁", "thinkpad", "xps", "zenbook", "legion"
+    ],
+    "ODM代工": [
+        "quanta", "compal", "wistron", "pegatron", "inventec", "huaqin", "luxshare",
+        "广达", "仁宝", "纬创", "和硕", "英业达", "华勤", "立讯", "odm"
+    ],
+    "成本价格": [
+        "price", "cost", "涨价", "降价", "价格", "成本", "短缺", "shortage", "asp", "bom"
+    ],
+    "市场出货": [
+        "shipment", "market", "出货", "销量", "份额", "idc", "canalys", "counterpoint"
+    ],
+    "产品发布": [
+        "launch", "unveil", "announce", "发布", "上市", "首发", "新款", "refresh"
+    ],
 }
 
 def is_relevant(title: str, summary: str = "") -> bool:
     text = (title + " " + summary).lower()
-    # 必须命中 PC 相关关键词
-    if not any(kw.lower() in text for kw in PC_KEYWORDS):
-        return False
-    return True
+    # 笔记本主信号
+    laptop_signals = [
+        "laptop", "notebook", "macbook", "ai pc", "ultrabook", "chromebook",
+        "笔记本", "轻薄本", "游戏本", "thinkpad", "xps", "zenbook", "vivobook",
+        "elitebook", "latitude", "yoga", "legion", "spectre", "omen", "rog ",
+        "galaxy book", "matebook"
+    ]
+    oem_odm = [
+        "lenovo", "dell", "hp ", "hewlett", "asus", "acer", "msi", "razer",
+        "quanta", "compal", "wistron", "pegatron", "inventec", "huaqin",
+        "联想", "戴尔", "惠普", "华硕", "广达", "仁宝", "纬创", "华勤", "和硕", "英业达"
+    ]
+    ai_chip = [
+        "ai pc", "snapdragon x", "ryzen ai", "core ultra", "lunar lake", "npu",
+        "copilot+ pc", "copilot + pc", "端侧 ai"
+    ]
+    if any(s in text for s in laptop_signals):
+        return True
+    if any(s in text for s in oem_odm) and any(
+        x in text for x in ["laptop", "notebook", "pc", "笔记本", "出货", "shipment", "odm", "oem"]
+    ):
+        return True
+    if any(s in text for s in ai_chip):
+        return True
+    # 兜底：原 PC 关键词但仍排除明显手机/纯服务器
+    if any(kw.lower() in text for kw in PC_KEYWORDS):
+        exclude = ["smartphone", "iphone", "pixel phone", "android phone", "only phone"]
+        if any(ex in text for ex in exclude):
+            return False
+        return True
+    return False
 
 def is_cost_related(title: str, summary: str = "") -> bool:
     text = (title + " " + summary).lower()
@@ -139,16 +191,16 @@ def enhance_reason(title: str, summary: str, category: str, cost_flag: bool) -> 
 
 def default_reason(category: str, cost_flag: bool = False) -> str:
     if cost_flag or category == "成本价格":
-        return "涉及价格或供应链变化，对 PC 整机成本影响较大，建议关注。"
+        return "涉及价格或供应链变化，对笔记本整机成本与出货影响较大。"
     return {
-        "内存存储": "内存/存储动态，直接影响 PC 成本和配置选择。",
-        "显卡": "显卡相关，当前价格与供应受 AI 需求挤压明显。",
-        "处理器": "处理器动态，影响整机性能与定价策略。",
-        "笔记本": "笔记本/AI PC 方向，成本与续航是关键决策因素。",
-        "市场出货": "出货与市场数据，反映行业真实需求与价格压力。",
-        "主板机箱": "主板/机箱更新。",
-        "综合": "PC 行业相关资讯。",
-    }.get(category, "PC 行业相关资讯。")
+        "AI与芯片": "AI PC / NPU / 端侧算力相关，影响下一代笔记本产品定义。",
+        "OEM品牌": "联想/戴尔/惠普/华硕等品牌动态，关注产品与出货策略。",
+        "ODM代工": "广达/仁宝/纬创/华勤等代工厂动态，反映笔记本供应链走势。",
+        "市场出货": "笔记本出货与市场份额数据，反映真实需求。",
+        "产品发布": "笔记本新品发布，关注定位、配置与价格。",
+        "成本价格": "价格与成本相关，影响整机定价与利润。",
+        "综合": "笔记本电脑行业相关资讯。",
+    }.get(category, "笔记本电脑行业相关资讯。")
 
 
 def is_mostly_chinese(s: str) -> bool:
@@ -359,7 +411,7 @@ def render_html(entries):
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PC HOT — PC 行业与成本动态</title>
+  <title>PC HOT — 笔记本电脑行业动态（OEM / ODM / AI PC）</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <style>
     :root {{
@@ -607,7 +659,7 @@ def render_html(entries):
   </header>
   <main>
     <div class="section-header">
-      <h2 data-i18n="hotTitle">精选热榜（成本优先）</h2>
+      <h2 data-i18n="hotTitle">精选热榜（笔记本 / AI PC）</h2>
       <span class="date">{now.strftime('%m月%d日')} · {weekday}</span>
     </div>
     <div class="hot-list">{hot_html}</div>
@@ -624,29 +676,29 @@ def render_html(entries):
     {feed_sections}
   </main>
   <footer>
-    <p data-i18n="footer1"><strong>PC HOT</strong> — 聚焦 PC 行业与成本动态</p>
+    <p data-i18n="footer1"><strong>PC HOT</strong> — 聚焦笔记本电脑 · OEM / ODM · AI PC</p>
     <p>更新于 {now.strftime('%Y-%m-%d %H:%M')} (北京时间)</p>
   </footer>
   <script>
     const I18N = {{
       zh: {{
         search: "搜索标题...",
-        hotTitle: "精选热榜（成本优先）",
+        hotTitle: "精选热榜（笔记本 / AI PC）",
         latestTitle: "最新精选",
         all: "全部",
         costOnly: "只看成本相关",
         reason: "推荐理由：",
-        footer1: "PC HOT — 聚焦 PC 行业与成本动态",
+        footer1: "PC HOT — 聚焦笔记本电脑 · OEM / ODM · AI PC",
         costBadge: "成本相关"
       }},
       en: {{
         search: "Search titles...",
-        hotTitle: "Top Stories (Cost Priority)",
+        hotTitle: "Top Stories (Laptop / AI PC)",
         latestTitle: "Latest",
         all: "All",
         costOnly: "Cost only",
         reason: "Why it matters: ",
-        footer1: "PC HOT — PC Industry & Cost Insights",
+        footer1: "PC HOT — Laptop Industry · OEM / ODM · AI PC",
         costBadge: "Cost"
       }}
     }};
