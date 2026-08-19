@@ -87,37 +87,34 @@ CATEGORIES = {
 
 def is_relevant(title: str, summary: str = "") -> bool:
     text = (title + " " + summary).lower()
-    # 笔记本主信号
-    laptop_signals = [
-        "laptop", "notebook", "macbook", "ai pc", "ultrabook", "chromebook",
-        "笔记本", "轻薄本", "游戏本", "thinkpad", "xps", "zenbook", "vivobook",
-        "elitebook", "latitude", "yoga", "legion", "spectre", "omen", "rog ",
-        "galaxy book", "matebook"
+    # 硬排除明显无关
+    exclude = [
+        "ferrari", "electric car", "expressvpn", "vpn deal",
+        "microsoft project professional", "word, excel, powerpoint",
+        "instagram", "facebook", "儿童沉迷", "起诉 meta",
+        "mortal shell", "sinking city", "viper v4 pro", "zalman cnps",
+        "iphone", "smartphone only"
     ]
-    oem_odm = [
-        "lenovo", "dell", "hp ", "hewlett", "asus", "acer", "msi", "razer",
+    if any(ex in text for ex in exclude):
+        return False
+
+    # 笔记本 / AI PC / OEM / ODM / 相关芯片与供应链（保量）
+    keys = [
+        "laptop", "notebook", "macbook", "ultrabook", "chromebook", "ai pc",
+        "gaming laptop", "thinkpad", "yoga", "xps", "latitude", "elitebook",
+        "zenbook", "vivobook", "spectre", "omen", "legion", "framework laptop",
+        "笔记本", "轻薄本", "游戏本", "商务本",
+        "lenovo", "dell", "hp ", "asus", "acer", "msi", "联想", "戴尔", "惠普", "华硕",
         "quanta", "compal", "wistron", "pegatron", "inventec", "huaqin",
-        "联想", "戴尔", "惠普", "华硕", "广达", "仁宝", "纬创", "华勤", "和硕", "英业达"
+        "广达", "仁宝", "纬创", "和硕", "英业达", "华勤", "立讯", "odm",
+        "snapdragon x", "ryzen ai", "core ultra", "lunar lake", "panther lake",
+        "strix point", "npu", "copilot+", "骁龙", "端侧",
+        "memory", "dram", "ddr5", "hbm", "ssd", "涨价", "短缺", "出货", "shipment",
+        "pc market", "notebook shipment", "mobile rtx", "laptop gpu", "laptop cpu",
+        "windows on arm", "qualcomm", "intel", "amd", "nvidia"
     ]
-    ai_chip = [
-        "ai pc", "snapdragon x", "ryzen ai", "core ultra", "lunar lake", "npu",
-        "copilot+ pc", "copilot + pc", "端侧 ai"
-    ]
-    if any(s in text for s in laptop_signals):
-        return True
-    if any(s in text for s in oem_odm) and any(
-        x in text for x in ["laptop", "notebook", "pc", "笔记本", "出货", "shipment", "odm", "oem"]
-    ):
-        return True
-    if any(s in text for s in ai_chip):
-        return True
-    # 兜底：原 PC 关键词但仍排除明显手机/纯服务器
-    if any(kw.lower() in text for kw in PC_KEYWORDS):
-        exclude = ["smartphone", "iphone", "pixel phone", "android phone", "only phone"]
-        if any(ex in text for ex in exclude):
-            return False
-        return True
-    return False
+    return any(k in text for k in keys)
+
 
 def is_cost_related(title: str, summary: str = "") -> bool:
     text = (title + " " + summary).lower()
@@ -247,7 +244,7 @@ def bilingual_fields(title: str, summary: str, reason: str, cost_flag: bool, cat
     return title_zh, title_en, summary_zh, summary_en, reason_zh, reason_en
 
 
-def fetch_entries(max_items: int = 50):
+def fetch_entries(max_items: int = 55):
     entries = []
     headers = {"User-Agent": "Mozilla/5.0 (compatible; PC-HOT-Bot/1.4)"}
 
@@ -258,7 +255,7 @@ def fetch_entries(max_items: int = 50):
             resp.raise_for_status()
             feed = feedparser.parse(resp.content)
             count = 0
-            for entry in feed.entries[:20]:
+            for entry in feed.entries[:28]:
                 title = entry.get("title", "").strip()
                 summary = entry.get("summary", entry.get("description", ""))
                 link = entry.get("link", "")
@@ -291,7 +288,11 @@ def fetch_entries(max_items: int = 50):
     # 去重 + 成本优先排序
     seen = set()
     unique = []
-    for e in sorted(entries, key=lambda x: (not x["cost_flag"], -x["dt"].timestamp())):
+    def _laptop_boost(e):
+        t = (e["title"] + " " + e.get("summary", "")).lower()
+        strong = ["laptop", "notebook", "ai pc", "thinkpad", "笔记本", "legion", "xps", "zenbook"]
+        return 0 if any(s in t for s in strong) else 1
+    for e in sorted(entries, key=lambda x: (_laptop_boost(x), not x["cost_flag"], -x["dt"].timestamp())):
         key = re.sub(r'[^a-z0-9\u4e00-\u9fff]', '', e["title"].lower())[:50]
         if key not in seen:
             seen.add(key)
@@ -778,7 +779,7 @@ def main():
             print(f"无法连接 Ollama: {e}，将使用默认推荐理由")
             globals()["USE_OLLAMA"] = False
 
-    entries = fetch_entries(50)
+    entries = fetch_entries(55)
     print(f"\n共获取 {len(entries)} 条 PC 相关资讯")
     cost_n = sum(1 for e in entries if e["cost_flag"])
     print(f"其中成本/价格相关: {cost_n} 条")
