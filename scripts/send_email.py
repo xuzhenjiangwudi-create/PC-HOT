@@ -21,6 +21,8 @@ if _env_receivers:
 else:
     RECEIVERS = [
         "1043643759@qq.com",
+        "markgao@lenovo.com",
+        "xuzj12@lenovo.com",
     ]
 
 
