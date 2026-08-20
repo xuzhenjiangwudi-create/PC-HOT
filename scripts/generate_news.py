@@ -396,7 +396,7 @@ def render_html(entries):
         <div class="feed-meta">
           <span class="feed-time">{time_str}</span>
           <span class="feed-source">{html.escape(e['source'])}</span>
-          <span class="cat-tag">{html.escape(e['category'])}</span>
+          <span class="cat-tag" data-cat-key="{html.escape(e['category'])}">{html.escape(e['category'])}</span>
           {cost_badge}
           <span class="feed-heat">{heat} 热度</span>
         </div>
@@ -703,7 +703,12 @@ def render_html(entries):
         costOnly: "只看成本相关",
         reason: "推荐理由：",
         footer1: "PC HOT — 聚焦笔记本电脑 · OEM / ODM · AI PC",
-        costBadge: "成本相关"
+        costBadge: "成本相关",
+        heat: "热度",
+        cats: {{
+          "AI与芯片": "AI与芯片", "OEM品牌": "OEM品牌", "ODM代工": "ODM代工",
+          "成本价格": "成本价格", "市场出货": "市场出货", "产品发布": "产品发布", "综合": "综合"
+        }}
       }},
       en: {{
         search: "Search titles...",
@@ -713,7 +718,12 @@ def render_html(entries):
         costOnly: "Cost only",
         reason: "Why it matters: ",
         footer1: "PC HOT — Laptop Industry · OEM / ODM · AI PC",
-        costBadge: "Cost"
+        costBadge: "Cost",
+        heat: "heat",
+        cats: {{
+          "AI与芯片": "AI & Chips", "OEM品牌": "OEM Brands", "ODM代工": "ODM",
+          "成本价格": "Cost & Price", "市场出货": "Shipments", "产品发布": "Launches", "综合": "General"
+        }}
       }}
     }};
 
@@ -738,10 +748,19 @@ def render_html(entries):
       document.querySelectorAll(".tag-btn").forEach(btn => {{
         const f = btn.dataset.filter;
         if (f === "all") btn.textContent = t.all;
-        if (f === "cost") btn.textContent = t.costOnly;
+        else if (f === "cost") btn.textContent = t.costOnly;
+        else if (t.cats && t.cats[f]) {{
+          const n = (btn.textContent.match(/\((\d+)\)/) || [])[1];
+          btn.textContent = n ? (t.cats[f] + " (" + n + ")") : t.cats[f];
+        }}
       }});
       document.querySelectorAll(".cost-badge").forEach(el => {{ el.textContent = t.costBadge; }});
-      // 正文中英文切换
+      document.querySelectorAll(".cat-tag").forEach(el => {{
+        const raw = el.getAttribute("data-cat-key") || el.textContent.trim();
+        el.setAttribute("data-cat-key", raw);
+        if (t.cats && t.cats[raw]) el.textContent = t.cats[raw];
+      }});
+      document.documentElement.lang = currentLang === "zh" ? "zh-CN" : "en";
       const showZh = currentLang === "zh";
       document.querySelectorAll(".lang-zh").forEach(el => {{ el.style.display = showZh ? "" : "none"; }});
       document.querySelectorAll(".lang-en").forEach(el => {{ el.style.display = showZh ? "none" : ""; }});
