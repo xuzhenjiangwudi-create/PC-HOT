@@ -23,6 +23,7 @@ else:
         "1043643759@qq.com",
         "markgao@lenovo.com",
         "xuzj12@lenovo.com",
+        "tbeaufort@lenovo.com",
     ]
 
 
