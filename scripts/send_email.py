@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
-"""PC HOT - QQ email (env credentials + Lenovo-styled HTML)"""
+"""PC HOT - Email via QQ (SMTP_SSL) / credentials from env"""
 
 import os
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.header import Header
+from email.utils import formataddr
 from datetime import datetime
 import sys
 
+# 默认 QQ；可用环境变量覆盖
 SMTP_SERVER = os.environ.get("PC_HOT_SMTP_SERVER", "smtp.qq.com")
 SMTP_PORT = int(os.environ.get("PC_HOT_SMTP_PORT", "465"))
 SENDER = os.environ.get("PC_HOT_SMTP_USER", "1043643759@qq.com")
@@ -19,16 +21,7 @@ if _env_receivers:
     RECEIVERS = [x.strip() for x in _env_receivers.split(",") if x.strip()]
 else:
     RECEIVERS = [
-        "1043643759@qq.com",
-        "markgao@lenovo.com",
         "xuzj12@lenovo.com",
-        "tbeaufort@lenovo.com",
-        "fanying4@lenovo.com",
-        "chrislin@lenovo.com",
-        "wanghq15@lenovo.com",
-        "bizh2@lenovo.com",
-        "kanke1@lenovo.com",
-        "niedang1@lenovo.com",
     ]
 
 SITE_URL = "https://xuzhenjiangwudi-create.github.io/PC-HOT/"
@@ -105,13 +98,24 @@ def build_html(now: str, entry_count: int, cost_count: int, top_titles: list) ->
 def send_one(to: str, subject: str, content: str, html_content: str = None) -> bool:
     try:
         msg = MIMEMultipart("alternative")
-        msg["From"] = SENDER
+        # 列表优先显示正式名称；QQ 地址在详情里可见
+        msg["From"] = formataddr(("PC HOT | Lenovo TEC", SENDER))
+        msg["Reply-To"] = "xuzj12@lenovo.com"
         msg["To"] = to
         msg["Subject"] = Header(subject, "utf-8")
         msg.attach(MIMEText(content, "plain", "utf-8"))
         if html_content:
             msg.attach(MIMEText(html_content, "html", "utf-8"))
-        with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, timeout=30) as server:
+
+        if SMTP_PORT == 465:
+            server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, timeout=30)
+        else:
+            server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=30)
+            server.ehlo()
+            server.starttls()
+            server.ehlo()
+
+        with server:
             server.login(SENDER, PASSWORD)
             server.sendmail(SENDER, [to], msg.as_string())
         print(f"  OK → {to}")
@@ -123,7 +127,8 @@ def send_one(to: str, subject: str, content: str, html_content: str = None) -> b
 
 def send_daily_report(entry_count: int = 0, cost_count: int = 0, top_titles: list = None):
     if not PASSWORD:
-        print("错误: 未设置环境变量 PC_HOT_SMTP_PASS")
+        print("错误: 未设置环境变量 PC_HOT_SMTP_PASS（QQ 邮箱授权码）")
+        print("请先: setx PC_HOT_SMTP_PASS \"你的授权码\"")
         return False
 
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
@@ -146,6 +151,7 @@ def send_daily_report(entry_count: int = 0, cost_count: int = 0, top_titles: lis
     content = "\n".join(lines)
     html = build_html(now, entry_count, cost_count, top_titles or [])
 
+    print(f"From: {SENDER} via {SMTP_SERVER}:{SMTP_PORT}")
     print(f"Sending to {len(RECEIVERS)} recipients...")
     ok_count = 0
     for to in RECEIVERS:
@@ -156,8 +162,11 @@ def send_daily_report(entry_count: int = 0, cost_count: int = 0, top_titles: lis
 
 
 if __name__ == "__main__":
-    print("Test email...")
+    print("Test QQ email...")
+    print(f"SMTP: {SMTP_SERVER}:{SMTP_PORT}")
+    print(f"User: {SENDER}")
     print(f"Password set: {'yes' if PASSWORD else 'NO'}")
+    print(f"Receivers: {RECEIVERS}")
     ok = send_daily_report(
         entry_count=55,
         cost_count=19,
