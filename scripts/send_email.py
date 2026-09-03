@@ -9,6 +9,7 @@ from email.header import Header
 from email.utils import formataddr
 from datetime import datetime
 import sys
+import time
 
 # 默认 QQ；可用环境变量覆盖
 SMTP_SERVER = os.environ.get("PC_HOT_SMTP_SERVER", "smtp.qq.com")
@@ -16,13 +17,27 @@ SMTP_PORT = int(os.environ.get("PC_HOT_SMTP_PORT", "465"))
 SENDER = os.environ.get("PC_HOT_SMTP_USER", "1043643759@qq.com")
 PASSWORD = os.environ.get("PC_HOT_SMTP_PASS", "")
 
-_env_receivers = os.environ.get("PC_HOT_RECEIVERS", "").strip()
-if _env_receivers:
-    RECEIVERS = [x.strip() for x in _env_receivers.split(",") if x.strip()]
-else:
-    RECEIVERS = [
+# 收件人：只改这里即可（不再读取环境变量，避免被覆盖）
+RECEIVERS = [
+        "1043643759@qq.com",
+        "markgao@lenovo.com",
         "xuzj12@lenovo.com",
-    ]
+        "tbeaufort@lenovo.com",
+        "fanying4@lenovo.com",
+        "chrislin@lenovo.com",
+        "wanghq15@lenovo.com",
+        "bizh2@lenovo.com",
+        "kanke1@lenovo.com",
+        "niedang1@lenovo.com",
+        "jackyzj@lenovo.com",
+        "yumin8@lenovo.com",
+        "pengsj2@lenovo.com",
+        "lawranceye@lenovo.com",
+        "wangxg12@lenovo.com",
+        "wangling11@lenovo.com",
+        "waltersw@lenovo.com",
+        "tanzh3@lenovo.com",
+]
 
 SITE_URL = "https://xuzhenjiangwudi-create.github.io/PC-HOT/"
 
@@ -95,34 +110,48 @@ def build_html(now: str, entry_count: int, cost_count: int, top_titles: list) ->
 """
 
 
-def send_one(to: str, subject: str, content: str, html_content: str = None) -> bool:
-    try:
-        msg = MIMEMultipart("alternative")
-        # 列表优先显示正式名称；QQ 地址在详情里可见
-        msg["From"] = formataddr(("PC HOT | Lenovo TEC", SENDER))
-        msg["Reply-To"] = "xuzj12@lenovo.com"
-        msg["To"] = to
-        msg["Subject"] = Header(subject, "utf-8")
-        msg.attach(MIMEText(content, "plain", "utf-8"))
-        if html_content:
-            msg.attach(MIMEText(html_content, "html", "utf-8"))
+def send_one(to: str, subject: str, content: str, html_content: str = None, retries: int = 2) -> bool:
+    last_err = None
+    for attempt in range(1, retries + 1):
+        try:
+            msg = MIMEMultipart("alternative")
+            # 列表优先显示正式名称；QQ 地址在详情里可见
+            msg["From"] = formataddr(("PC HOT | Lenovo TEC", SENDER))
+            msg["Reply-To"] = "xuzj12@lenovo.com"
+            msg["To"] = to
+            msg["Subject"] = Header(subject, "utf-8")
+            msg.attach(MIMEText(content, "plain", "utf-8"))
+            if html_content:
+                msg.attach(MIMEText(html_content, "html", "utf-8"))
 
-        if SMTP_PORT == 465:
-            server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, timeout=30)
-        else:
-            server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=30)
-            server.ehlo()
-            server.starttls()
-            server.ehlo()
+            # 每封邮件单独连接，避免 QQ 批量发送中途断线
+            if SMTP_PORT == 465:
+                server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, timeout=60)
+            else:
+                server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=60)
+                server.ehlo()
+                server.starttls()
+                server.ehlo()
 
-        with server:
-            server.login(SENDER, PASSWORD)
-            server.sendmail(SENDER, [to], msg.as_string())
-        print(f"  OK → {to}")
-        return True
-    except Exception as e:
-        print(f"  FAIL → {to}: {e}")
-        return False
+            try:
+                server.login(SENDER, PASSWORD)
+                server.sendmail(SENDER, [to], msg.as_string())
+            finally:
+                try:
+                    server.quit()
+                except Exception:
+                    pass
+
+            print(f"  OK → {to}")
+            return True
+        except Exception as e:
+            last_err = e
+            print(f"  retry {attempt}/{retries} → {to}: {e}")
+            time.sleep(2 * attempt)
+
+    print(f"  FAIL → {to}: {last_err}")
+    return False
+
 
 
 def send_daily_report(entry_count: int = 0, cost_count: int = 0, top_titles: list = None):
@@ -154,9 +183,12 @@ def send_daily_report(entry_count: int = 0, cost_count: int = 0, top_titles: lis
     print(f"From: {SENDER} via {SMTP_SERVER}:{SMTP_PORT}")
     print(f"Sending to {len(RECEIVERS)} recipients...")
     ok_count = 0
-    for to in RECEIVERS:
+    for i, to in enumerate(RECEIVERS):
         if send_one(to, subject, content, html):
             ok_count += 1
+        # QQ 限速：每封间隔 1.5 秒，降低 Connection unexpectedly closed
+        if i < len(RECEIVERS) - 1:
+            time.sleep(1.5)
     print(f"Done: {ok_count}/{len(RECEIVERS)}")
     return ok_count > 0
 
