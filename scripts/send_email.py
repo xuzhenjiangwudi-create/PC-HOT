@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PC HOT - Email via QQ (SMTP_SSL) / credentials from env"""
+"""PC HOT - Email via QQ (SMTP_SSL) / anti rate-limit"""
 
 import os
 import smtplib
@@ -11,13 +11,12 @@ from datetime import datetime
 import sys
 import time
 
-# 默认 QQ；可用环境变量覆盖
 SMTP_SERVER = os.environ.get("PC_HOT_SMTP_SERVER", "smtp.qq.com")
 SMTP_PORT = int(os.environ.get("PC_HOT_SMTP_PORT", "465"))
 SENDER = os.environ.get("PC_HOT_SMTP_USER", "1043643759@qq.com")
 PASSWORD = os.environ.get("PC_HOT_SMTP_PASS", "")
 
-# 收件人：只改这里即可（不再读取环境变量，避免被覆盖）
+# 收件人：只改这里
 RECEIVERS = [
         "1043643759@qq.com",
         "markgao@lenovo.com",
@@ -41,12 +40,18 @@ RECEIVERS = [
 
 SITE_URL = "https://xuzhenjiangwudi-create.github.io/PC-HOT/"
 
+# QQ 限速参数（人多时务必加大间隔）
+DELAY_BETWEEN = 4.0       # 每封间隔秒数
+PAUSE_EVERY = 8           # 每发 N 封多歇一次
+PAUSE_SECONDS = 20        # 额外休息秒数
+RETRIES = 3
+
 
 def build_html(now: str, entry_count: int, cost_count: int, top_titles: list) -> str:
     items_html = ""
     if top_titles:
         items_html = "<ol style='margin:0;padding-left:20px;color:#374151;font-size:14px;line-height:1.6;'>"
-        for t in top_titles[:6]:
+        for t in top_titles[:5]:
             items_html += f"<li style='margin-bottom:8px;'>{t}</li>"
         items_html += "</ol>"
     else:
@@ -68,7 +73,7 @@ def build_html(now: str, entry_count: int, cost_count: int, top_titles: list) ->
   </div>
 
   <div style="padding:24px;">
-    <h2 style="margin:0 0 8px;color:#111827;font-size:20px;">PC HOT Daily Update</h2>
+    <h2 style="margin:0 0 8px;color:#111827;font-size:20px;">PC HOT Daily Top 5</h2>
     <p style="margin:0 0 16px;color:#6b7280;font-size:14px;">
       Laptop industry · OEM / ODM · AI PC
     </p>
@@ -98,7 +103,7 @@ def build_html(now: str, entry_count: int, cost_count: int, top_titles: list) ->
       <p style="margin:10px 0 0;font-size:12px;color:#9ca3af;">{SITE_URL}</p>
     </div>
 
-    <h3 style="margin:0 0 12px;color:#111827;font-size:16px;">Top stories</h3>
+    <h3 style="margin:0 0 12px;color:#111827;font-size:16px;">Today's Top 5</h3>
     {items_html}
   </div>
 
@@ -110,12 +115,11 @@ def build_html(now: str, entry_count: int, cost_count: int, top_titles: list) ->
 """
 
 
-def send_one(to: str, subject: str, content: str, html_content: str = None, retries: int = 2) -> bool:
+def send_one(to: str, subject: str, content: str, html_content: str = None) -> bool:
     last_err = None
-    for attempt in range(1, retries + 1):
+    for attempt in range(1, RETRIES + 1):
         try:
             msg = MIMEMultipart("alternative")
-            # 列表优先显示正式名称；QQ 地址在详情里可见
             msg["From"] = formataddr(("PC HOT | Lenovo TEC", SENDER))
             msg["Reply-To"] = "xuzj12@lenovo.com"
             msg["To"] = to
@@ -124,11 +128,10 @@ def send_one(to: str, subject: str, content: str, html_content: str = None, retr
             if html_content:
                 msg.attach(MIMEText(html_content, "html", "utf-8"))
 
-            # 每封邮件单独连接，避免 QQ 批量发送中途断线
             if SMTP_PORT == 465:
-                server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, timeout=60)
+                server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, timeout=90)
             else:
-                server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=60)
+                server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=90)
                 server.ehlo()
                 server.starttls()
                 server.ehlo()
@@ -146,12 +149,12 @@ def send_one(to: str, subject: str, content: str, html_content: str = None, retr
             return True
         except Exception as e:
             last_err = e
-            print(f"  retry {attempt}/{retries} → {to}: {e}")
-            time.sleep(2 * attempt)
+            wait = 5 * attempt
+            print(f"  retry {attempt}/{RETRIES} → {to}: {e}  (wait {wait}s)")
+            time.sleep(wait)
 
     print(f"  FAIL → {to}: {last_err}")
     return False
-
 
 
 def send_daily_report(entry_count: int = 0, cost_count: int = 0, top_titles: list = None):
@@ -161,10 +164,10 @@ def send_daily_report(entry_count: int = 0, cost_count: int = 0, top_titles: lis
         return False
 
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
-    subject = f"PC HOT Daily Update · {now[:10]}"
+    subject = f"PC HOT Daily Top 5 · {now[:10]}"
 
     lines = [
-        "PC HOT — Daily laptop industry briefing",
+        "PC HOT — Daily Top 5 Digest",
         f"Time: {now}",
         f"Items: {entry_count}",
         f"Cost-related: {cost_count}",
@@ -172,8 +175,8 @@ def send_daily_report(entry_count: int = 0, cost_count: int = 0, top_titles: lis
         "",
     ]
     if top_titles:
-        lines.append("Top stories:")
-        for i, t in enumerate(top_titles[:6], 1):
+        lines.append("Today's Top 5:")
+        for i, t in enumerate(top_titles[:5], 1):
             lines.append(f"  {i}. {t}")
         lines.append("")
     lines.append("— PC HOT auto notification · Lenovo TEC")
@@ -182,14 +185,29 @@ def send_daily_report(entry_count: int = 0, cost_count: int = 0, top_titles: lis
 
     print(f"From: {SENDER} via {SMTP_SERVER}:{SMTP_PORT}")
     print(f"Sending to {len(RECEIVERS)} recipients...")
+    print(f"(interval {DELAY_BETWEEN}s, extra pause every {PAUSE_EVERY} mails)")
     ok_count = 0
+    failed = []
     for i, to in enumerate(RECEIVERS):
         if send_one(to, subject, content, html):
             ok_count += 1
-        # QQ 限速：每封间隔 1.5 秒，降低 Connection unexpectedly closed
+        else:
+            failed.append(to)
+
         if i < len(RECEIVERS) - 1:
-            time.sleep(1.5)
+            # 每发满 PAUSE_EVERY 封，多歇一会，降低 QQ 踢线
+            if (i + 1) % PAUSE_EVERY == 0:
+                print(f"  ... pause {PAUSE_SECONDS}s after {i + 1} emails ...")
+                time.sleep(PAUSE_SECONDS)
+            else:
+                time.sleep(DELAY_BETWEEN)
+
     print(f"Done: {ok_count}/{len(RECEIVERS)}")
+    if failed:
+        print("Failed list:")
+        for f in failed:
+            print(f"  - {f}")
+        print("可稍后再单独补发失败名单。")
     return ok_count > 0
 
 
