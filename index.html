@@ -83,7 +83,17 @@
       background-color: #111827;
     }
 
-    main { max-width: 920px; margin: 0 auto; padding: 24px 20px 60px; }
+    main { max-width: 1100px; margin: 0 auto; padding: 24px 20px 60px; }
+    .layout { display: flex; gap: 24px; align-items: flex-start; }
+    .sidebar { width: 180px; flex-shrink: 0; position: sticky; top: 80px; }
+    .sidebar-section { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); margin-bottom: 16px; }
+    .sidebar-title { font-size: .78rem; font-weight: 700; color: var(--text2); margin-bottom: 12px; text-transform: uppercase; letter-spacing: .04em; }
+    .time-filters { display: flex; flex-direction: column; gap: 6px; }
+    .time-btn { background: transparent; border: 1px solid var(--border); padding: 9px 14px; border-radius: 8px; font-size: .85rem; cursor: pointer; color: var(--text2); text-align: left; transition: all .15s; font-weight: 500; }
+    .time-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+    .time-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 2px 8px rgba(59,130,246,.3); }
+    .content { flex: 1; min-width: 0; }
+    .no-data { text-align: center; padding: 48px 20px; color: var(--muted); font-size: .9rem; }
 
     .section-header {
       display: flex; align-items: baseline; justify-content: space-between;
@@ -226,6 +236,10 @@
       .search-box { max-width: 100%; order: 3; width: 100%; }
       .hot-item { padding: 10px 14px; }
       .feed-item { padding: 14px; }
+      .layout { flex-direction: column; }
+      .sidebar { width: 100%; position: static; }
+      .time-filters { flex-direction: row; flex-wrap: wrap; }
+      .time-btn { flex: 1; min-width: 80px; text-align: center; }
     }
   </style>
 
@@ -250,6 +264,20 @@
     </div>
   </header>
   <main>
+    <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-section">
+        <h3 class="sidebar-title" data-i18n="timeRange">时间范围</h3>
+        <div class="time-filters">
+          <button class="time-btn active" data-range="today" data-i18n="today">今天</button>
+          <button class="time-btn" data-range="7" data-i18n="lastWeek">近一周</button>
+          <button class="time-btn" data-range="30" data-i18n="lastMonth">近一月</button>
+          <button class="time-btn" data-range="0" data-i18n="allHistory">全部历史</button>
+        </div>
+      </div>
+    </aside>
+    <div class="content">
+    <div id="todayView">
     <div class="section-header">
       <h2 data-i18n="hotTitle">精选热榜（笔记本 / AI PC）</h2>
       <span class="date">09月16日 · 周三</span>
@@ -259,8 +287,8 @@
         <div class="hot-rank top3">1</div>
         <div class="hot-content">
           <div class="hot-title">
-            <span class="lang-zh">机械革命无界 14S 2026 笔记本锐龙版开售：R7 H 255 处理器，24GB+512GB 售价 4699 元（国补后 3994.15 元）</span>
-            <span class="lang-en" style="display:none">Mecharge Boundless 14S 2026 Ryzen Edition Laptop on Sale: R7 H 255 Processor, 24GB+512GB for 4,699 RMB (3,994.15 RMB after national subsidy)</span>
+            <span class="lang-zh">存储芯片短缺预计持续至 2027 年，低端数码设备市场承压</span>
+            <span class="lang-en" style="display:none">The shortage of storage chips is expected to persist through 2027, putting pressure on the低端数码设备市场 has been translated to low-end digital device market.</span>
           </div>
         </div>
         <div class="hot-heat">
@@ -272,8 +300,8 @@
         <div class="hot-rank top3">2</div>
         <div class="hot-content">
           <div class="hot-title">
-            <span class="lang-zh">苹果 M6 Mac mini 跑分曝光：单核较 M4 款高 24%、多核高 48%</span>
-            <span class="lang-en" style="display:none">The Apple M6 Mac mini Benchmarks Revealed: Single-Core Performance is 24% Higher than the M4 Model, and Multi-Core Performance is 48% Higher.</span>
+            <span class="lang-zh">小米多款笔记本电脑涨价，覆盖 REDMI Book Pro 及 Xiaomi Book Pro 系列</span>
+            <span class="lang-en" style="display:none">Several models of Xiaomi laptops have seen price increases, including the REDMI Book Pro and Xiaomi Book Pro series.</span>
           </div>
         </div>
         <div class="hot-heat">
@@ -285,8 +313,8 @@
         <div class="hot-rank top3">3</div>
         <div class="hot-content">
           <div class="hot-title">
-            <span class="lang-zh">联想在更多国家推出更便宜的16英寸预算笔记本电脑</span>
-            <span class="lang-en" style="display:none">Lenovo releases budget 16-inch laptop in more countries with cheaper pricing</span>
+            <span class="lang-zh">500美元以内的最佳笔记本：满足你需求的经济实惠选择</span>
+            <span class="lang-en" style="display:none">Best laptops under $500: Affordable picks that will satisfy your needs</span>
           </div>
         </div>
         <div class="hot-heat">
@@ -298,8 +326,8 @@
         <div class="hot-rank ">4</div>
         <div class="hot-content">
           <div class="hot-title">
-            <span class="lang-zh">500美元以内最佳笔记本：满足你需求的高性价比选择</span>
-            <span class="lang-en" style="display:none">Best laptops under $500: Affordable picks that will satisfy your needs</span>
+            <span class="lang-zh">今天的最佳笔记本电脑优惠：工作、学习、家用和游戏都能省大钱</span>
+            <span class="lang-en" style="display:none">Today’s best laptop deals: Save big on work, school, home use, and gaming</span>
           </div>
         </div>
         <div class="hot-heat">
@@ -311,8 +339,8 @@
         <div class="hot-rank ">5</div>
         <div class="hot-content">
           <div class="hot-title">
-            <span class="lang-zh">今天的最佳笔记本电脑优惠：无论工作、学习、家用还是游戏，都能省大钱</span>
-            <span class="lang-en" style="display:none">Today’s best laptop deals: Save big on work, school, home use, and gaming</span>
+            <span class="lang-zh">今天购买这款Lenovo RTX 5060 笔记本电脑，配备16GB内存，可节省650美元</span>
+            <span class="lang-en" style="display:none">Save $650 on this Lenovo RTX 5060 laptop with 16GB RAM today</span>
           </div>
         </div>
         <div class="hot-heat">
@@ -324,8 +352,8 @@
         <div class="hot-rank ">6</div>
         <div class="hot-content">
           <div class="hot-title">
-            <span class="lang-zh">今天购买这款Lenovo RTX 5060 笔记本电脑，配备16GB内存，可节省650美元</span>
-            <span class="lang-en" style="display:none">Save $650 on this Lenovo RTX 5060 laptop with 16GB RAM today</span>
+            <span class="lang-zh">MacBook 替代品：最佳购买将16GBLenovo笔记本电脑售价降至499.99美元</span>
+            <span class="lang-en" style="display:none">MacBook Neo Alternative: Best Buy Drops 16GB Lenovo Laptop To $499.99</span>
           </div>
         </div>
         <div class="hot-heat">
@@ -337,8 +365,8 @@
         <div class="hot-rank ">7</div>
         <div class="hot-content">
           <div class="hot-title">
-            <span class="lang-zh">MacBook替代品：最佳购买将16GB联想笔记本电脑售价降至499.99美元</span>
-            <span class="lang-en" style="display:none">MacBook Neo Alternative: Best Buy Drops 16GB Lenovo Laptop To $499.99</span>
+            <span class="lang-zh">我最喜欢的轻薄本今天便宜了近500元</span>
+            <span class="lang-en" style="display:none">My favorite lightweight laptop is almost $500 off today</span>
           </div>
         </div>
         <div class="hot-heat">
@@ -350,8 +378,8 @@
         <div class="hot-rank ">8</div>
         <div class="hot-content">
           <div class="hot-title">
-            <span class="lang-zh">我最喜欢的轻薄笔记本今天便宜了近500元</span>
-            <span class="lang-en" style="display:none">My favorite lightweight laptop is almost $500 off today</span>
+            <span class="lang-zh">框架获得了一批较低成本的LPCAMM2模块的有限数量。</span>
+            <span class="lang-en" style="display:none">Framework Scores “A limited quantity” Of Lower Cost LPCAMM2 Modules</span>
           </div>
         </div>
         <div class="hot-heat">
@@ -360,179 +388,203 @@
         </div>
       </div></div>
     <div class="stats">
-      本次聚合 <strong>55</strong> 条 · 其中成本/价格相关 <strong>25</strong> 条 · 来自 9 个来源
+      本次聚合 <strong>55</strong> 条 · 其中成本/价格相关 <strong>23</strong> 条 · 来自 9 个来源
        · 已用本地 Qwen 增强
     </div>
     <div class="tags" id="tagBar">
       <button class="tag-btn active" data-filter="all" data-i18n="all">全部</button>
       <button class="tag-btn cost-filter" data-filter="cost" data-i18n="costOnly">只看成本相关</button>
-      <button class="tag-btn" data-filter="AI与芯片">AI与芯片 (27)</button><button class="tag-btn" data-filter="成本价格">成本价格 (25)</button><button class="tag-btn" data-filter="综合">综合 (2)</button><button class="tag-btn" data-filter="OEM品牌">OEM品牌 (1)</button>
+      <button class="tag-btn" data-filter="AI与芯片">AI与芯片 (27)</button><button class="tag-btn" data-filter="成本价格">成本价格 (23)</button><button class="tag-btn" data-filter="OEM品牌">OEM品牌 (3)</button><button class="tag-btn" data-filter="综合">综合 (2)</button>
     </div>
     <div class="section-header"><h2 data-i18n="latestTitle">最新精选</h2></div>
     <div class="day-block">
 <div class="day-title"><span class="lang-zh">今天 09月16日 周三</span><span class="lang-en" style="display:none">Today 2026-09-16</span></div>
 
-      <article class="feed-item" data-cat="成本价格" data-title="机械革命无界 14s 2026 笔记本锐龙版开售：r7 h 255 处理器，24gb+512gb 售价 4699 元（国补后 3994.15 元） mecharge boundless 14s 2026 ryzen edition laptop on sale: r7 h 255 processor, 24gb+512gb for 4,699 rmb (3,994.15 rmb after national subsidy)" data-cost="1">
+      <article class="feed-item" data-cat="成本价格" data-title="存储芯片短缺预计持续至 2027 年，低端数码设备市场承压 the shortage of storage chips is expected to persist through 2027, putting pressure on the低端数码设备市场 has been translated to low-end digital device market." data-cost="1">
         <div class="feed-meta">
-          <span class="feed-time">09:39</span>
+          <span class="feed-time">15:05</span>
           <span class="feed-source">IT之家</span>
           <span class="cat-tag" data-cat-key="成本价格">成本价格</span>
           <span class="cost-badge">成本相关</span>
           <span class="feed-heat">255 热度</span>
         </div>
         <div class="feed-title">
-          <a href="https://www.ithome.com/1/002/876.htm" target="_blank" rel="noopener">
-            <span class="lang-zh">机械革命无界 14S 2026 笔记本锐龙版开售：R7 H 255 处理器，24GB+512GB 售价 4699 元（国补后 3994.15 元）</span>
-            <span class="lang-en" style="display:none">Mecharge Boundless 14S 2026 Ryzen Edition Laptop on Sale: R7 H 255 Processor, 24GB+512GB for 4,699 RMB (3,994.15 RMB after national subsidy)</span>
+          <a href="https://www.ithome.com/1/003/086.htm" target="_blank" rel="noopener">
+            <span class="lang-zh">存储芯片短缺预计持续至 2027 年，低端数码设备市场承压</span>
+            <span class="lang-en" style="display:none">The shortage of storage chips is expected to persist through 2027, putting pressure on the低端数码设备市场 has been translated to low-end digital device market.</span>
           </a>
         </div>
         <div class="feed-summary">
-          <span class="lang-zh">IT之家 9 月 16 日消息，机械革命无界 14S 2026 笔记本锐龙版今日 10:00 正式开售，搭载 R7 H 255 处理器，24GB+512GB 售价 4699 元（国补后 3994.15 元）。这款笔记本搭载 AMD R7 H 255 处理器（8 核心 16 线程），最高可实现 45W 性能释放，支持三档性能模式切换。该机配备 14 英寸雾面防眩光屏，分辨率为…</span>
-          <span class="lang-en" style="display:none">IT Home September 16 news: The MechRevolution Boundless 14S 2026 Ryzen edition laptop is now officially on sale at 10:00 AM today, featuring an R7 H 255 processor, with a price of 4,699 yuan (3,994.15 yuan after national subsidies). This laptop is equipped with an AMD R7 H 255 processor (8 cores, 16 threads), capable of up to 45W performance output, and supports switching between three performance modes. It comes with a 14-inch anti-glare matte screen, with a resolution of...</span>
+          <span class="lang-zh">IT之家 9 月 16 日消息，据路透社报道，存储芯片短缺的局面预计将持续到 2027 年，低端数码设备市场正因此承压。独立手机和笔记本电脑厂商正在重新设计产品、检测新到芯片的真伪，并将成本转嫁给消费者。三家企业的高管均表示，当前的核心制约因素是供货量，而非价格。“拿不到供货配额，你直接就出局了。”荷兰可维修手机厂商 Fairphone 首席执行官雷蒙德 · 范 · 埃克（Raymond van…</span>
+          <span class="lang-en" style="display:none">IT之家9月16日消息，据路透社报道，存储芯片短缺的情况预计将持续到2027年，低端数码设备市场因此承压。独立手机和笔记本电脑厂商正在重新设计产品、检测新到芯片的真伪，并将成本转嫁给消费者。三家企业的高管均表示，当前的核心制约因素是供货量，而非价格。“拿不到供货配额，你直接就出局了。”荷兰可维修手机厂商Fairphone首席执行官雷蒙德·范·埃克（Raymond van…</span>
         </div>
         <div class="feed-reason">
           <strong class="lang-zh">推荐理由：</strong><strong class="lang-en" style="display:none">Why it matters: </strong>
-          <span class="lang-zh">该款笔记本采用高性能处理器，但售价亲民，或降低整机市场成本预期。</span>
-          <span class="lang-en" style="display:none">The laptop features a high-performance processor but is priced affordably, potentially lowering the expected cost for the entire market.</span>
+          <span class="lang-zh">存储芯片短缺将持续至2027年，推高PC整机成本，影响供应链稳定性。</span>
+          <span class="lang-en" style="display:none">Semiconductor shortages will persist through 2027, driving up the cost of PC systems and impacting supply chain stability.</span>
         </div>
       </article>
-      <article class="feed-item" data-cat="成本价格" data-title="苹果 m6 mac mini 跑分曝光：单核较 m4 款高 24%、多核高 48% the apple m6 mac mini benchmarks revealed: single-core performance is 24% higher than the m4 model, and multi-core performance is 48% higher." data-cost="1">
+      <article class="feed-item" data-cat="成本价格" data-title="小米多款笔记本电脑涨价，覆盖 redmi book pro 及 xiaomi book pro 系列 several models of xiaomi laptops have seen price increases, including the redmi book pro and xiaomi book pro series." data-cost="1">
         <div class="feed-meta">
-          <span class="feed-time">08:04</span>
+          <span class="feed-time">14:52</span>
           <span class="feed-source">IT之家</span>
           <span class="cat-tag" data-cat-key="成本价格">成本价格</span>
           <span class="cost-badge">成本相关</span>
           <span class="feed-heat">235 热度</span>
         </div>
         <div class="feed-title">
-          <a href="https://www.ithome.com/1/002/849.htm" target="_blank" rel="noopener">
-            <span class="lang-zh">苹果 M6 Mac mini 跑分曝光：单核较 M4 款高 24%、多核高 48%</span>
-            <span class="lang-en" style="display:none">The Apple M6 Mac mini Benchmarks Revealed: Single-Core Performance is 24% Higher than the M4 Model, and Multi-Core Performance is 48% Higher.</span>
+          <a href="https://www.ithome.com/1/003/071.htm" target="_blank" rel="noopener">
+            <span class="lang-zh">小米多款笔记本电脑涨价，覆盖 REDMI Book Pro 及 Xiaomi Book Pro 系列</span>
+            <span class="lang-en" style="display:none">Several models of Xiaomi laptops have seen price increases, including the REDMI Book Pro and Xiaomi Book Pro series.</span>
           </a>
         </div>
         <div class="feed-summary">
-          <span class="lang-zh">IT之家 9 月 16 日消息，型号为“Mac18,5”的苹果笔记本现身 GeekBench 跑分库，目前共有 3 条跑分记录，分别涉及 CPU 和 GPU 跑分，该型号对应苹果 M6 Mac mini。在本次曝光的 3 条记录中，2 条关联 CPU 跑分（分别为 7.0.0 版本和 6.3.0 版本），此外关联 GPU 记录为 6.3.0 版本，成绩为 97,137 分。Mac18,5…</span>
-          <span class="lang-en" style="display:none">On September 16, IT之家 reported that a MacBook with the model number &quot;Mac18,5&quot; appeared in the GeekBench benchmark database. There are currently three benchmark records for this model, including both CPU and GPU scores. This model corresponds to the Apple M6 Mac mini. Among the three exposed records, two are related to CPU scores (versions 7.0.0 and 6.3.0), while the GPU record is version 6.3.0, with a score of 97,137. Mac18,5…</span>
+          <span class="lang-zh">IT之家 9 月 16 日消息，博主 @懒酱的日记本 今日发现，小米旗下笔记本电脑产品现已迎来新一轮价格调整。REDMI Book Pro 14 2025、REDMI Book Pro 16 2025、Xiaomi Book Pro 14、REDMI Book 16 2026、REDMI Book 14 2026、REDMI Book Pro 16 2026，以及 REDMI Book Pro…</span>
+          <span class="lang-en" style="display:none">IT Home September 16, 2023 - Today, blogger @lanshajian&#x27;s Diary Book discovered that Xiaomi&#x27;s laptop products have undergone a new round of price adjustments. The affected models include the REDMI Book Pro 14 2025, REDMI Book Pro 16 2025, Xiaomi Book Pro 14, REDMI Book 16 2026, REDMI Book 14 2026, and REDMI Book Pro….</span>
         </div>
         <div class="feed-reason">
           <strong class="lang-zh">推荐理由：</strong><strong class="lang-en" style="display:none">Why it matters: </strong>
-          <span class="lang-zh">M6 Mac mini 跑分提升显著，但对整机成本影响尚不确定，需进一步观察供应链变化。</span>
-          <span class="lang-en" style="display:none">The M6 Mac mini benchmark scores have significantly improved, but the impact on the overall device cost is uncertain and further observation of supply chain changes is needed.</span>
+          <span class="lang-zh">此次涨价可能反映显卡和内存等关键组件成本上升，影响PC整机成本结构。</span>
+          <span class="lang-en" style="display:none">This price increase may reflect rising costs for key components such as graphics cards and memory, affecting the overall cost structure of PCs.</span>
         </div>
       </article>
-      <article class="feed-item" data-cat="成本价格" data-title="联想在更多国家推出更便宜的16英寸预算笔记本电脑 lenovo releases budget 16-inch laptop in more countries with cheaper pricing" data-cost="1">
-        <div class="feed-meta">
-          <span class="feed-time">01:52</span>
-          <span class="feed-source">Notebookcheck</span>
-          <span class="cat-tag" data-cat-key="成本价格">成本价格</span>
-          <span class="cost-badge">成本相关</span>
-          <span class="feed-heat">200 热度</span>
-        </div>
-        <div class="feed-title">
-          <a href="https://www.notebookcheck.net/Lenovo-releases-budget-16-inch-laptop-in-more-countries-with-cheaper-pricing.1400238.0.html" target="_blank" rel="noopener">
-            <span class="lang-zh">联想在更多国家推出更便宜的16英寸预算笔记本电脑</span>
-            <span class="lang-en" style="display:none">Lenovo releases budget 16-inch laptop in more countries with cheaper pricing</span>
-          </a>
-        </div>
-        <div class="feed-summary">
-          <span class="lang-zh">联想最新发布了更多国家的16英寸笔记本电脑，并大幅降低了起始价格。IdeaPad Slim 3……</span>
-          <span class="lang-en" style="display:none">Lenovo has released one of its latest 16-inch laptops in more countries. At the same time, Lenovo has added more configurations to significantly reduce the laptop&#x27;s starting price. The IdeaPad Slim 3…</span>
-        </div>
-        <div class="feed-reason">
-          <strong class="lang-zh">推荐理由：</strong><strong class="lang-en" style="display:none">Why it matters: </strong>
-          <span class="lang-zh">Lenovo扩大16英寸笔记本市场并降价，或推动整机成本下行，影响行业定价。</span>
-          <span class="lang-en" style="display:none">Lenovo&#x27;s expansion into the 16-inch laptop market and price reductions may drive down overall costs, influencing industry pricing.</span>
-        </div>
-      </article>
-      <article class="feed-item" data-cat="成本价格" data-title="500美元以内最佳笔记本：满足你需求的高性价比选择 best laptops under $500: affordable picks that will satisfy your needs" data-cost="1">
+      <article class="feed-item" data-cat="成本价格" data-title="500美元以内的最佳笔记本：满足你需求的经济实惠选择 best laptops under $500: affordable picks that will satisfy your needs" data-cost="1">
         <div class="feed-meta">
           <span class="feed-time">00:00</span>
           <span class="feed-source">PCWorld</span>
           <span class="cat-tag" data-cat-key="成本价格">成本价格</span>
           <span class="cost-badge">成本相关</span>
-          <span class="feed-heat">170 热度</span>
+          <span class="feed-heat">200 热度</span>
         </div>
         <div class="feed-title">
           <a href="https://www.pcworld.com/article/699203/best-laptops-under-500.html" target="_blank" rel="noopener">
-            <span class="lang-zh">500美元以内最佳笔记本：满足你需求的高性价比选择</span>
+            <span class="lang-zh">500美元以内的最佳笔记本：满足你需求的经济实惠选择</span>
             <span class="lang-en" style="display:none">Best laptops under $500: Affordable picks that will satisfy your needs</span>
           </a>
         </div>
         <div class="feed-summary">
-          <span class="lang-zh">在500美元以内找到一款好笔记本并非不可能。只是需要知道该关注什么，该忽略什么。对于大多数人来说，我推荐选择一款配备1080p显示屏的笔记本……</span>
+          <span class="lang-zh">找到不到500美元的优质笔记本电脑并非不可能。关键在于知道该关注什么，忽略什么。对于大多数人来说，我建议选择配备1080p显示屏的笔记本电脑和…</span>
           <span class="lang-en" style="display:none">Finding a great laptop for under $500 isn’t impossible. It just takes knowing what to pay attention to and what to ignore. For most people, I’d recommend opting for a laptop with a 1080p display and…</span>
         </div>
         <div class="feed-reason">
           <strong class="lang-zh">推荐理由：</strong><strong class="lang-en" style="display:none">Why it matters: </strong>
-          <span class="lang-zh">该报道提供了解析低价笔记本电脑成本结构的见解，有助于理解1080p显示屏等关键组件的成本影响。</span>
-          <span class="lang-en" style="display:none">The report provides insights into the cost structure of budget laptops, helping to understand the cost impacts of key components such as 1080p displays.</span>
+          <span class="lang-zh">该文章分析了500美元以内笔记本电脑的关键配置，有助于降低整机成本，为消费者挑选性价比高的产品提供参考。</span>
+          <span class="lang-en" style="display:none">The article analyzes key configurations for laptops under $500, helping to reduce overall costs and providing a reference for consumers to choose high-value products.</span>
         </div>
       </article>
-      <article class="feed-item" data-cat="AI与芯片" data-title="谷歌确认谷歌图书预购将于9月21日开始 google confirms googlebook pre-orders start september 21" data-cost="0">
+      <article class="feed-item" data-cat="OEM品牌" data-title="iqoo发布新款高端游戏平板，或将与即将推出的legion tab竞争 iqoo unveils new high-end gaming tablet set to rival upcoming legion tab" data-cost="0">
         <div class="feed-meta">
-          <span class="feed-time">07:47</span>
-          <span class="feed-source">TechPowerUp</span>
-          <span class="cat-tag" data-cat-key="AI与芯片">AI与芯片</span>
+          <span class="feed-time">15:04</span>
+          <span class="feed-source">Notebookcheck</span>
+          <span class="cat-tag" data-cat-key="OEM品牌">OEM品牌</span>
+          
+          <span class="feed-heat">145 热度</span>
+        </div>
+        <div class="feed-title">
+          <a href="https://www.notebookcheck.net/iQOO-unveils-new-high-end-gaming-tablet-set-to-rival-upcoming-Legion-Tab.1400727.0.html" target="_blank" rel="noopener">
+            <span class="lang-zh">iQOO发布新款高端游戏平板，或将与即将推出的Legion Tab竞争</span>
+            <span class="lang-en" style="display:none">iQOO unveils new high-end gaming tablet set to rival upcoming Legion Tab</span>
+          </a>
+        </div>
+        <div class="feed-summary">
+          <span class="lang-zh">iQOO Pad Ultra 已正式亮相。除了展示这款游戏平板的背面设计，该公司还宣布推出两款配件，与联想为…提供的配件类似。</span>
+          <span class="lang-en" style="display:none">The iQOO Pad Ultra has been officially showcased. Alongside revealing the rear design of this gaming tablet, the company has announced two accessories, which are similar to what Lenovo offers for the…</span>
+        </div>
+        <div class="feed-reason">
+          <strong class="lang-zh">推荐理由：</strong><strong class="lang-en" style="display:none">Why it matters: </strong>
+          <span class="lang-zh">为PC用户带来高性能游戏体验，iQOO Pad Ultra与Lenovo Legion Tab竞争，提升平板电脑市场标准。</span>
+          <span class="lang-en" style="display:none">Bringing high-performance gaming experiences to PC users, the iQOO Pad Ultra competes with the Lenovo Legion Tab, raising the bar for the tablet market.</span>
+        </div>
+      </article>
+      <article class="feed-item" data-cat="OEM品牌" data-title="惠普推出巨无霸16英寸笔记本，最高配192gb ram和16核ryzen apu hp intros monstrous 16-inch laptop with up to 192 gb ram and 16-core ryzen apu" data-cost="0">
+        <div class="feed-meta">
+          <span class="feed-time">11:01</span>
+          <span class="feed-source">Notebookcheck</span>
+          <span class="cat-tag" data-cat-key="OEM品牌">OEM品牌</span>
           
           <span class="feed-heat">120 热度</span>
         </div>
         <div class="feed-title">
-          <a href="https://www.techpowerup.com/352740/google-confirms-googlebook-pre-orders-start-september-21" target="_blank" rel="noopener">
-            <span class="lang-zh">谷歌确认谷歌图书预购将于9月21日开始</span>
-            <span class="lang-en" style="display:none">Google Confirms Googlebook Pre-Orders Start September 21</span>
+          <a href="https://www.notebookcheck.net/HP-intros-monstrous-16-inch-laptop-with-up-to-192-GB-RAM-and-16-core-Ryzen-APU.1400266.0.html" target="_blank" rel="noopener">
+            <span class="lang-zh">惠普推出巨无霸16英寸笔记本，最高配192GB RAM和16核Ryzen APU</span>
+            <span class="lang-en" style="display:none">HP intros monstrous 16-inch laptop with up to 192 GB RAM and 16-core Ryzen APU</span>
           </a>
         </div>
         <div class="feed-summary">
-          <span class="lang-zh">谷歌将于美国东部时间9月21日上午9点开放其首款Googlebook笔记本电脑的预订。该公司已通过邮件告知提前注册的用户，并在官网确认了这一日期。</span>
-          <span class="lang-en" style="display:none">Google will open pre-orders for its first Googlebook laptops on September 21 at 9 AM ET. The company confirmed the date in an email to people who signed up for updates, and the same date now appears…</span>
+          <span class="lang-zh">惠普推出了一款名为ZBook Ultra G3a的新高端笔记本，配备高达192 GB的RAM。这要归功于AMD的巨无霸Gorgon Halo APU，搭载了16个Zen 5核心和一个强大的……</span>
+          <span class="lang-en" style="display:none">HP has introduced a new high-end laptop, dubbed ZBook Ultra G3a, featuring up to a whopping 192 GB of RAM. This is courtesy of AMD&#x27;s monstrous Gorgon Halo APU featuring 16 Zen 5 cores and a powerful…</span>
         </div>
         <div class="feed-reason">
           <strong class="lang-zh">推荐理由：</strong><strong class="lang-en" style="display:none">Why it matters: </strong>
-          <span class="lang-zh">为PC用户提供了新的选择，行业动态关注点。</span>
-          <span class="lang-en" style="display:none">New choices for PC users, focusing on industry highlights.</span>
+          <span class="lang-zh">为专业用户带来极致性能体验，16核APU搭配192GB RAM，大幅提升多任务处理能力，引领行业新标准。</span>
+          <span class="lang-en" style="display:none">For professional users, this APU features 16 cores and 192GB RAM, significantly enhancing multitasking capabilities and setting a new industry standard.</span>
         </div>
       </article>
-      <article class="feed-item" data-cat="AI与芯片" data-title="惠普宣布推出搭载amd ryzen ai max+ pro处理器的zbook ultra g3a 笔记本电脑 (pr) hp announces the zbook ultra g3a laptops with amd ryzen ai max+ pro" data-cost="0">
+      <article class="feed-item" data-cat="AI与芯片" data-title="谷歌确认google books预购从9月21日开始 google confirms googlebook pre-orders start september 21" data-cost="0">
         <div class="feed-meta">
-          <span class="feed-time">00:51</span>
+          <span class="feed-time">07:47</span>
           <span class="feed-source">TechPowerUp</span>
           <span class="cat-tag" data-cat-key="AI与芯片">AI与芯片</span>
           
           <span class="feed-heat">100 热度</span>
         </div>
         <div class="feed-title">
+          <a href="https://www.techpowerup.com/352740/google-confirms-googlebook-pre-orders-start-september-21" target="_blank" rel="noopener">
+            <span class="lang-zh">谷歌确认Google Books预购从9月21日开始</span>
+            <span class="lang-en" style="display:none">Google Confirms Googlebook Pre-Orders Start September 21</span>
+          </a>
+        </div>
+        <div class="feed-summary">
+          <span class="lang-zh">谷歌将于美国东部时间9月21日上午9点开放其首款Googlebook笔记本电脑的预售。该公司已在邮件中确认了这一日期，现在该日期也出现在了相关页面上……</span>
+          <span class="lang-en" style="display:none">Google will open pre-orders for its first Googlebook laptops on September 21 at 9 AM ET. The company confirmed the date in an email to people who signed up for updates, and the same date now appears…</span>
+        </div>
+        <div class="feed-reason">
+          <strong class="lang-zh">推荐理由：</strong><strong class="lang-en" style="display:none">Why it matters: </strong>
+          <span class="lang-zh">为PC用户提供了新的选择，行业关注Googlebook性能与定价，或重塑轻薄本市场。</span>
+          <span class="lang-en" style="display:none">This offers new choices for PC users, with industry attention focused on Google Books&#x27; performance and pricing, or its potential to reshape the ultrabook market.</span>
+        </div>
+      </article>
+      <article class="feed-item" data-cat="AI与芯片" data-title="(pr) hp announces the zbook ultra g3a laptops with amd ryzen ai max+ pro (pr) hp announces the zbook ultra g3a laptops with amd ryzen ai max+ pro" data-cost="0">
+        <div class="feed-meta">
+          <span class="feed-time">00:51</span>
+          <span class="feed-source">TechPowerUp</span>
+          <span class="cat-tag" data-cat-key="AI与芯片">AI与芯片</span>
+          
+          <span class="feed-heat">85 热度</span>
+        </div>
+        <div class="feed-title">
           <a href="https://www.techpowerup.com/352722/hp-announces-the-zbook-ultra-g3a-laptops-with-amd-ryzen-ai-max-pro" target="_blank" rel="noopener">
-            <span class="lang-zh">惠普宣布推出搭载AMD Ryzen AI Max+ PRO处理器的ZBook Ultra G3a 笔记本电脑</span>
+            <span class="lang-zh">(PR) HP Announces the ZBook Ultra G3a Laptops With AMD Ryzen AI Max+ PRO</span>
             <span class="lang-en" style="display:none">(PR) HP Announces the ZBook Ultra G3a Laptops With AMD Ryzen AI Max+ PRO</span>
           </a>
         </div>
         <div class="feed-summary">
-          <span class="lang-zh">惠普今天推出了HP ZBook Ultra G3a移动工作站，这款工作站从设计之初就旨在成为专业人士的个人AI工厂，搭载AMD处理器并由Perplexity增强……</span>
+          <span class="lang-zh">HP Inc. today announced the HP ZBook Ultra G3a, a new mobile workstation designed from the ground up to serve as a personal AI factory for professionals. Powered by AMD and enhanced by Perplexity,…</span>
           <span class="lang-en" style="display:none">HP Inc. today announced the HP ZBook Ultra G3a, a new mobile workstation designed from the ground up to serve as a personal AI factory for professionals. Powered by AMD and enhanced by Perplexity,…</span>
         </div>
         <div class="feed-reason">
           <strong class="lang-zh">推荐理由：</strong><strong class="lang-en" style="display:none">Why it matters: </strong>
-          <span class="lang-zh">为AI专业人士量身打造，HP ZBook Ultra G3a配备AMD Ryzen AI Max+ PRO，提升移动工作站性能与效率。</span>
-          <span class="lang-en" style="display:none">Tailored for AI professionals, the HP ZBook Ultra G3a features AMD Ryzen AI Max+ PRO, enhancing the performance and efficiency of mobile workstations.</span>
+          <span class="lang-zh">AI PC / NPU / 端侧算力相关，影响下一代笔记本产品定义。</span>
+          <span class="lang-en" style="display:none">AI PC / NPU / 端侧算力相关，影响下一代笔记本产品定义。</span>
         </div>
       </article>
-      <article class="feed-item" data-cat="成本价格" data-title="惠普发布 zbook ultra g3a 16 移动工作站：支持本地运行 300b llm 惠普发布 zbook ultra g3a 16 移动工作站：支持本地运行 300b llm" data-cost="1">
+      <article class="feed-item" data-cat="成本价格" data-title="ai 持续“耗电”，集邦咨询预计今年全球数据中心用电需求同比增长 31% ai 持续“耗电”，集邦咨询预计今年全球数据中心用电需求同比增长 31%" data-cost="1">
         <div class="feed-meta">
-          <span class="feed-time">09:39</span>
+          <span class="feed-time">15:29</span>
           <span class="feed-source">IT之家</span>
           <span class="cat-tag" data-cat-key="成本价格">成本价格</span>
           <span class="cost-badge">成本相关</span>
-          <span class="feed-heat">110 热度</span>
+          <span class="feed-heat">97 热度</span>
         </div>
         <div class="feed-title">
-          <a href="https://www.ithome.com/1/002/877.htm" target="_blank" rel="noopener">
-            <span class="lang-zh">惠普发布 ZBook Ultra G3a 16 移动工作站：支持本地运行 300B LLM</span>
-            <span class="lang-en" style="display:none">惠普发布 ZBook Ultra G3a 16 移动工作站：支持本地运行 300B LLM</span>
+          <a href="https://www.ithome.com/1/003/101.htm" target="_blank" rel="noopener">
+            <span class="lang-zh">AI 持续“耗电”，集邦咨询预计今年全球数据中心用电需求同比增长 31%</span>
+            <span class="lang-en" style="display:none">AI 持续“耗电”，集邦咨询预计今年全球数据中心用电需求同比增长 31%</span>
           </a>
         </div>
         <div class="feed-summary">
-          <span class="lang-zh">IT之家 9 月 16 日消息，HP (惠普) 当地时间昨日发布了移动工作站新品 ZBook Ultra G3a 16。这一型号基于 AMD 锐龙 AI Max PRO 400 &quot;Gorgon Halo&quot; 处理器，支持 192GB 统一内存，可将 160GB 分配为显存，从而在本地运行 300B 参数规模的大语言模型。ZBook Ultra G3a 16 起始质量 4.2 磅（约 1.9…</span>
-          <span class="lang-en" style="display:none">IT之家 9 月 16 日消息，HP (惠普) 当地时间昨日发布了移动工作站新品 ZBook Ultra G3a 16。这一型号基于 AMD 锐龙 AI Max PRO 400 &quot;Gorgon Halo&quot; 处理器，支持 192GB 统一内存，可将 160GB 分配为显存，从而在本地运行 300B 参数规模的大语言模型。ZBook Ultra G3a 16 起始质量 4.2 磅（约 1.9…</span>
+          <span class="lang-zh">IT之家 9 月 16 日消息，根据 TrendForce 集邦咨询今天（16 日）发布的最新 AI Server 产业研究，为满足骤增的 AI 应用需求，云端服务供应商（CSP）加速部署相关基础设施，预估 2026 年全球数据中心电力需求容量将达 161GW，同比增幅约 31%，主要增长来源为 AI Server，预估占整体需求容量达 33.4%。观察近年全球数据中心电力需求容量变化，2025…</span>
+          <span class="lang-en" style="display:none">IT之家 9 月 16 日消息，根据 TrendForce 集邦咨询今天（16 日）发布的最新 AI Server 产业研究，为满足骤增的 AI 应用需求，云端服务供应商（CSP）加速部署相关基础设施，预估 2026 年全球数据中心电力需求容量将达 161GW，同比增幅约 31%，主要增长来源为 AI Server，预估占整体需求容量达 33.4%。观察近年全球数据中心电力需求容量变化，2025…</span>
         </div>
         <div class="feed-reason">
           <strong class="lang-zh">推荐理由：</strong><strong class="lang-en" style="display:none">Why it matters: </strong>
@@ -540,23 +592,95 @@
           <span class="lang-en" style="display:none">涉及价格或供应链变化，对笔记本整机成本与出货影响较大。</span>
         </div>
       </article>
-      <article class="feed-item" data-cat="成本价格" data-title="patriot 推出 rog 联名版 steel 5 infinite rgb ddr5 内存模组，至高 7600mt/s patriot 推出 rog 联名版 steel 5 infinite rgb ddr5 内存模组，至高 7600mt/s" data-cost="1">
+      <article class="feed-item" data-cat="成本价格" data-title="astera labs 推出 leo x 智能内存控制器：将 kv cache 从加速器卸载到外部内存 astera labs 推出 leo x 智能内存控制器：将 kv cache 从加速器卸载到外部内存" data-cost="1">
         <div class="feed-meta">
-          <span class="feed-time">09:01</span>
+          <span class="feed-time">15:09</span>
           <span class="feed-source">IT之家</span>
           <span class="cat-tag" data-cat-key="成本价格">成本价格</span>
           <span class="cost-badge">成本相关</span>
-          <span class="feed-heat">97 热度</span>
+          <span class="feed-heat">85 热度</span>
         </div>
         <div class="feed-title">
-          <a href="https://www.ithome.com/1/002/861.htm" target="_blank" rel="noopener">
-            <span class="lang-zh">Patriot 推出 ROG 联名版 Steel 5 Infinite RGB DDR5 内存模组，至高 7600MT/s</span>
-            <span class="lang-en" style="display:none">Patriot 推出 ROG 联名版 Steel 5 Infinite RGB DDR5 内存模组，至高 7600MT/s</span>
+          <a href="https://www.ithome.com/1/003/090.htm" target="_blank" rel="noopener">
+            <span class="lang-zh">Astera Labs 推出 Leo X 智能内存控制器：将 KV Cache 从加速器卸载到外部内存</span>
+            <span class="lang-en" style="display:none">Astera Labs 推出 Leo X 智能内存控制器：将 KV Cache 从加速器卸载到外部内存</span>
           </a>
         </div>
         <div class="feed-summary">
-          <span class="lang-zh">IT之家 9 月 16 日消息，存储器模组企业 Patriot（博帝）昨日正式宣布推出 Viper Steel 5 Infinite RGB DDR5 ROG Edition 联名版内存模组。作为联名产品，其搭配 ROG Certified BIOS 后可解锁更高传输速率。这款华硕 ROG 联名产品基于 10 层 PCB 设计；采用客制化雾面碳黑铝合金散热片，其上嵌有 ROG Certified…</span>
-          <span class="lang-en" style="display:none">IT之家 9 月 16 日消息，存储器模组企业 Patriot（博帝）昨日正式宣布推出 Viper Steel 5 Infinite RGB DDR5 ROG Edition 联名版内存模组。作为联名产品，其搭配 ROG Certified BIOS 后可解锁更高传输速率。这款华硕 ROG 联名产品基于 10 层 PCB 设计；采用客制化雾面碳黑铝合金散热片，其上嵌有 ROG Certified…</span>
+          <span class="lang-zh">IT之家 9 月 16 日消息，芯片高速互连初创企业 Astera Labs 美国加州当地时间 15 日宣布以 Leo X、Leo 2 E、Leo 2 P 三系列丰富其 Leo 智能内存控制器产品线。Leo 2 E、Leo 2 P 是符合标准 CXL 3.2 规范的芯片，支持 4 个下游 DDR4 / DDR5 内存控制器。Leo 2 E 支持 PCIe Gen6 1×16 单端口配置；Leo…</span>
+          <span class="lang-en" style="display:none">IT之家 9 月 16 日消息，芯片高速互连初创企业 Astera Labs 美国加州当地时间 15 日宣布以 Leo X、Leo 2 E、Leo 2 P 三系列丰富其 Leo 智能内存控制器产品线。Leo 2 E、Leo 2 P 是符合标准 CXL 3.2 规范的芯片，支持 4 个下游 DDR4 / DDR5 内存控制器。Leo 2 E 支持 PCIe Gen6 1×16 单端口配置；Leo…</span>
+        </div>
+        <div class="feed-reason">
+          <strong class="lang-zh">推荐理由：</strong><strong class="lang-en" style="display:none">Why it matters: </strong>
+          <span class="lang-zh">涉及价格或供应链变化，对笔记本整机成本与出货影响较大。</span>
+          <span class="lang-en" style="display:none">涉及价格或供应链变化，对笔记本整机成本与出货影响较大。</span>
+        </div>
+      </article>
+      <article class="feed-item" data-cat="成本价格" data-title="“第二代豆包手机”努比亚 navix ultra 发布：“全球首款 ai 智能体手机”，5999 元起 “第二代豆包手机”努比亚 navix ultra 发布：“全球首款 ai 智能体手机”，5999 元起" data-cost="1">
+        <div class="feed-meta">
+          <span class="feed-time">15:06</span>
+          <span class="feed-source">IT之家</span>
+          <span class="cat-tag" data-cat-key="成本价格">成本价格</span>
+          <span class="cost-badge">成本相关</span>
+          <span class="feed-heat">77 热度</span>
+        </div>
+        <div class="feed-title">
+          <a href="https://www.ithome.com/1/003/087.htm" target="_blank" rel="noopener">
+            <span class="lang-zh">“第二代豆包手机”努比亚 NaviX Ultra 发布：“全球首款 AI 智能体手机”，5999 元起</span>
+            <span class="lang-en" style="display:none">“第二代豆包手机”努比亚 NaviX Ultra 发布：“全球首款 AI 智能体手机”，5999 元起</span>
+          </a>
+        </div>
+        <div class="feed-summary">
+          <span class="lang-zh">IT之家 9 月 16 日消息，努比亚 NaviX Ultra 手机今日正式发布，也就是大家俗称的第二代豆包手机，售价 5999 元起，国补到手价 5499 元起。12GB + 512GB 售价 5999 元16GB + 512GB 售价 6499 元16GB + 1TB 售价 7499 元努比亚 NaviX Ultra 宣称是“全球首款 AI…</span>
+          <span class="lang-en" style="display:none">IT之家 9 月 16 日消息，努比亚 NaviX Ultra 手机今日正式发布，也就是大家俗称的第二代豆包手机，售价 5999 元起，国补到手价 5499 元起。12GB + 512GB 售价 5999 元16GB + 512GB 售价 6499 元16GB + 1TB 售价 7499 元努比亚 NaviX Ultra 宣称是“全球首款 AI…</span>
+        </div>
+        <div class="feed-reason">
+          <strong class="lang-zh">推荐理由：</strong><strong class="lang-en" style="display:none">Why it matters: </strong>
+          <span class="lang-zh">涉及价格或供应链变化，对笔记本整机成本与出货影响较大。</span>
+          <span class="lang-en" style="display:none">涉及价格或供应链变化，对笔记本整机成本与出货影响较大。</span>
+        </div>
+      </article>
+      <article class="feed-item" data-cat="成本价格" data-title="not even the us president can dodge ramageddon, as the trump t1 gets a price hike not even the us president can dodge ramageddon, as the trump t1 gets a price hike" data-cost="1">
+        <div class="feed-meta">
+          <span class="feed-time">14:02</span>
+          <span class="feed-source">Notebookcheck</span>
+          <span class="cat-tag" data-cat-key="成本价格">成本价格</span>
+          <span class="cost-badge">成本相关</span>
+          <span class="feed-heat">70 热度</span>
+        </div>
+        <div class="feed-title">
+          <a href="https://www.notebookcheck.net/Not-even-the-US-president-can-dodge-RAMageddon-as-the-Trump-T1-gets-a-price-hike.1400050.0.html" target="_blank" rel="noopener">
+            <span class="lang-zh">Not even the US president can dodge RAMageddon, as the Trump T1 gets a price hike</span>
+            <span class="lang-en" style="display:none">Not even the US president can dodge RAMageddon, as the Trump T1 gets a price hike</span>
+          </a>
+        </div>
+        <div class="feed-summary">
+          <span class="lang-zh">Trump Mobile quietly hiked the T1 Phone&#x27;s price from $499 to $749—a 50 percent increase despite no corresponding hardware changes—joining Apple and others in passing rising memory chip costs on to…</span>
+          <span class="lang-en" style="display:none">Trump Mobile quietly hiked the T1 Phone&#x27;s price from $499 to $749—a 50 percent increase despite no corresponding hardware changes—joining Apple and others in passing rising memory chip costs on to…</span>
+        </div>
+        <div class="feed-reason">
+          <strong class="lang-zh">推荐理由：</strong><strong class="lang-en" style="display:none">Why it matters: </strong>
+          <span class="lang-zh">涉及价格或供应链变化，对笔记本整机成本与出货影响较大。</span>
+          <span class="lang-en" style="display:none">涉及价格或供应链变化，对笔记本整机成本与出货影响较大。</span>
+        </div>
+      </article>
+      <article class="feed-item" data-cat="成本价格" data-title="sonnet launches thunderbolt 5 egpu box with 850 w psu and triple-slot gpu support sonnet launches thunderbolt 5 egpu box with 850 w psu and triple-slot gpu support" data-cost="1">
+        <div class="feed-meta">
+          <span class="feed-time">12:38</span>
+          <span class="feed-source">TechPowerUp</span>
+          <span class="cat-tag" data-cat-key="成本价格">成本价格</span>
+          <span class="cost-badge">成本相关</span>
+          <span class="feed-heat">65 热度</span>
+        </div>
+        <div class="feed-title">
+          <a href="https://www.techpowerup.com/352743/sonnet-launches-thunderbolt-5-egpu-box-with-850-w-psu-and-triple-slot-gpu-support" target="_blank" rel="noopener">
+            <span class="lang-zh">Sonnet Launches Thunderbolt 5 eGPU Box with 850 W PSU and Triple-Slot GPU Support</span>
+            <span class="lang-en" style="display:none">Sonnet Launches Thunderbolt 5 eGPU Box with 850 W PSU and Triple-Slot GPU Support</span>
+          </a>
+        </div>
+        <div class="feed-summary">
+          <span class="lang-zh">Sonnet, the US-based accessory maker who previously launched the Echo 20 and 21 Thunderbolt 5 docking stations with 10 GbE, has officially released the Breakaway Box 850 T5, a Thunderbolt 5-based…</span>
+          <span class="lang-en" style="display:none">Sonnet, the US-based accessory maker who previously launched the Echo 20 and 21 Thunderbolt 5 docking stations with 10 GbE, has officially released the Breakaway Box 850 T5, a Thunderbolt 5-based…</span>
         </div>
         <div class="feed-reason">
           <strong class="lang-zh">推荐理由：</strong><strong class="lang-en" style="display:none">Why it matters: </strong>
@@ -566,11 +690,11 @@
       </article>
       <article class="feed-item" data-cat="成本价格" data-title="acemagic mini pc deals, save up to 40%, prices start at $359.99 acemagic mini pc deals, save up to 40%, prices start at $359.99" data-cost="1">
         <div class="feed-meta">
-          <span class="feed-time">07:54</span>
+          <span class="feed-time">09:41</span>
           <span class="feed-source">TechPowerUp</span>
           <span class="cat-tag" data-cat-key="成本价格">成本价格</span>
           <span class="cost-badge">成本相关</span>
-          <span class="feed-heat">85 热度</span>
+          <span class="feed-heat">60 热度</span>
         </div>
         <div class="feed-title">
           <a href="https://www.techpowerup.com/352687/acemagic-mini-pc-deals-save-up-to-40-prices-start-at-usd-359-99" target="_blank" rel="noopener">
@@ -588,37 +712,13 @@
           <span class="lang-en" style="display:none">涉及价格或供应链变化，对笔记本整机成本与出货影响较大。</span>
         </div>
       </article>
-      <article class="feed-item" data-cat="成本价格" data-title="lenovo launches ai nas with 64 gb ram and powerful processors lenovo launches ai nas with 64 gb ram and powerful processors" data-cost="1">
-        <div class="feed-meta">
-          <span class="feed-time">02:05</span>
-          <span class="feed-source">Notebookcheck</span>
-          <span class="cat-tag" data-cat-key="成本价格">成本价格</span>
-          <span class="cost-badge">成本相关</span>
-          <span class="feed-heat">77 热度</span>
-        </div>
-        <div class="feed-title">
-          <a href="https://www.notebookcheck.net/Lenovo-launches-AI-NAS-with-64-GB-RAM-and-powerful-processors.1394449.0.html" target="_blank" rel="noopener">
-            <span class="lang-zh">Lenovo launches AI NAS with 64 GB RAM and powerful processors</span>
-            <span class="lang-en" style="display:none">Lenovo launches AI NAS with 64 GB RAM and powerful processors</span>
-          </a>
-        </div>
-        <div class="feed-summary">
-          <span class="lang-zh">Update | (Pricing, availability updated) Lenovo has launched the Lecoo Bellator AI NAS 900 series in China with Intel Panther Lake processors, up to 64 GB of LPDDR5 RAM and four M.2 PCIe 4.0 SSD…</span>
-          <span class="lang-en" style="display:none">Update | (Pricing, availability updated) Lenovo has launched the Lecoo Bellator AI NAS 900 series in China with Intel Panther Lake processors, up to 64 GB of LPDDR5 RAM and four M.2 PCIe 4.0 SSD…</span>
-        </div>
-        <div class="feed-reason">
-          <strong class="lang-zh">推荐理由：</strong><strong class="lang-en" style="display:none">Why it matters: </strong>
-          <span class="lang-zh">涉及价格或供应链变化，对笔记本整机成本与出货影响较大。</span>
-          <span class="lang-en" style="display:none">涉及价格或供应链变化，对笔记本整机成本与出货影响较大。</span>
-        </div>
-      </article>
       <article class="feed-item" data-cat="成本价格" data-title="pc building isn&#x27;t dead: you can get the core of a quality gaming rig for $936 with these combo deals pc building isn&#x27;t dead: you can get the core of a quality gaming rig for $936 with these combo deals" data-cost="1">
         <div class="feed-meta">
           <span class="feed-time">00:33</span>
           <span class="feed-source">PC Gamer</span>
           <span class="cat-tag" data-cat-key="成本价格">成本价格</span>
           <span class="cost-badge">成本相关</span>
-          <span class="feed-heat">70 热度</span>
+          <span class="feed-heat">55 热度</span>
         </div>
         <div class="feed-title">
           <a href="https://www.pcgamer.com/hardware/pc-building-isnt-dead-you-can-get-the-core-of-a-quality-gaming-rig-for-usd936-with-these-combo-deals/" target="_blank" rel="noopener">
@@ -640,28 +740,28 @@
 <div class="day-block">
 <div class="day-title"><span class="lang-zh">昨天 09月15日</span><span class="lang-en" style="display:none">Yesterday 2026-09-15</span></div>
 
-      <article class="feed-item" data-cat="成本价格" data-title="今天的最佳笔记本电脑优惠：无论工作、学习、家用还是游戏，都能省大钱 today’s best laptop deals: save big on work, school, home use, and gaming" data-cost="1">
+      <article class="feed-item" data-cat="成本价格" data-title="今天的最佳笔记本电脑优惠：工作、学习、家用和游戏都能省大钱 today’s best laptop deals: save big on work, school, home use, and gaming" data-cost="1">
         <div class="feed-meta">
           <span class="feed-time">20:16</span>
           <span class="feed-source">PCWorld</span>
           <span class="cat-tag" data-cat-key="成本价格">成本价格</span>
           <span class="cost-badge">成本相关</span>
-          <span class="feed-heat">65 热度</span>
+          <span class="feed-heat">51 热度</span>
         </div>
         <div class="feed-title">
           <a href="https://www.pcworld.com/article/550968/best-laptop-deals-3.html" target="_blank" rel="noopener">
-            <span class="lang-zh">今天的最佳笔记本电脑优惠：无论工作、学习、家用还是游戏，都能省大钱</span>
+            <span class="lang-zh">今天的最佳笔记本电脑优惠：工作、学习、家用和游戏都能省大钱</span>
             <span class="lang-en" style="display:none">Today’s best laptop deals: Save big on work, school, home use, and gaming</span>
           </a>
         </div>
         <div class="feed-summary">
-          <span class="lang-zh">如果你在寻找不到500美元的经济型Windows电脑、极致 Gaming 怪兽，或是便携的2合1设备用于学习或工作，你有很多不错的选择……</span>
+          <span class="lang-zh">如果你在寻找不到500美元的经济型Windows电脑、需要高性能的游戏机器，或者需要一台便携的2合1设备用于学习或工作，你有很多不错的选择……</span>
           <span class="lang-en" style="display:none">If you’re looking for an affordable Windows machine under $500, a blazing fast gaming beast for those intense matches, or a portable 2-in-1 for school or work, you’ve got plenty of great choices…</span>
         </div>
         <div class="feed-reason">
           <strong class="lang-zh">推荐理由：</strong><strong class="lang-en" style="display:none">Why it matters: </strong>
-          <span class="lang-zh">提供多价位段选择，尤其在500美元内机型中降低成本，满足不同使用需求。</span>
-          <span class="lang-en" style="display:none">Offer a range of price points, particularly focusing on reducing costs in models under $500 to meet diverse usage needs.</span>
+          <span class="lang-zh">提供了多款不同需求下的高性价比选择，有助于优化PC整机成本。</span>
+          <span class="lang-en" style="display:none">It offers multiple high-performance-to-price ratio options that help optimize the overall cost of the PC build.</span>
         </div>
       </article>
       <article class="feed-item" data-cat="成本价格" data-title="今天购买这款lenovo rtx 5060 笔记本电脑，配备16gb内存，可节省650美元 save $650 on this lenovo rtx 5060 laptop with 16gb ram today" data-cost="1">
@@ -670,7 +770,7 @@
           <span class="feed-source">PCWorld</span>
           <span class="cat-tag" data-cat-key="成本价格">成本价格</span>
           <span class="cost-badge">成本相关</span>
-          <span class="feed-heat">60 热度</span>
+          <span class="feed-heat">47 热度</span>
         </div>
         <div class="feed-title">
           <a href="https://www.pcworld.com/article/3234894/save-650-on-this-lenovo-rtx-5060-laptop-with-16gb-ram-today.html" target="_blank" rel="noopener">
@@ -679,13 +779,13 @@
           </a>
         </div>
         <div class="feed-summary">
-          <span class="lang-zh">现在购买Lenovo LOQ游戏笔记本（15IRX11）立减650美元。当前PC硬件市场内存、存储和GPU都很贵……</span>
+          <span class="lang-zh">现在购买Lenovo LOQ游戏笔记本（15IRX11）立减650美元。由于PC硬件市场内存、存储和GPU都很贵，现在并不是买游戏本的好时机。</span>
           <span class="lang-en" style="display:none">NOW $650 OFF Lenovo LOQ Gaming Laptop (15IRX11) View Deal Now’s not a great time to buy a gaming laptop, what with the state of the PC hardware market—memory, storage, and GPUs are extra expensive…</span>
         </div>
         <div class="feed-reason">
           <strong class="lang-zh">推荐理由：</strong><strong class="lang-en" style="display:none">Why it matters: </strong>
-          <span class="lang-zh">此次优惠反映了当前PC硬件市场内存、GPU等组件价格高涨的情况。</span>
-          <span class="lang-en" style="display:none">This discount reflects the current high prices of components such as memory and GPUs in the PC hardware market.</span>
+          <span class="lang-zh">此次优惠反映了当前PC硬件市场内存和显卡价格高昂的现状，为消费者节省了大量成本。</span>
+          <span class="lang-en" style="display:none">This discount reflects the current high prices of memory and graphics cards in the PC hardware market, saving consumers a significant amount of money.</span>
         </div>
       </article>
       <article class="feed-item" data-cat="AI与芯片" data-title="googlebook preorders begin september 21 as google takes on macbooks googlebook preorders begin september 21 as google takes on macbooks" data-cost="0">
@@ -694,7 +794,7 @@
           <span class="feed-source">HotHardware</span>
           <span class="cat-tag" data-cat-key="AI与芯片">AI与芯片</span>
           
-          <span class="feed-heat">30 热度</span>
+          <span class="feed-heat">15 热度</span>
         </div>
         <div class="feed-title">
           <a href="https://hothardware.com/news/googlebook-preorders-begin-september-21-as-google-takes-on-macbooks" target="_blank" rel="noopener">
@@ -718,7 +818,7 @@
           <span class="feed-source">TechPowerUp</span>
           <span class="cat-tag" data-cat-key="成本价格">成本价格</span>
           <span class="cost-badge">成本相关</span>
-          <span class="feed-heat">51 热度</span>
+          <span class="feed-heat">40 热度</span>
         </div>
         <div class="feed-title">
           <a href="https://www.techpowerup.com/352720/steam-deck-2-plans-havent-changed-despite-ram-crisis-claims-valve" target="_blank" rel="noopener">
@@ -742,7 +842,7 @@
           <span class="feed-source">Tom&#x27;s Hardware</span>
           <span class="cat-tag" data-cat-key="成本价格">成本价格</span>
           <span class="cost-badge">成本相关</span>
-          <span class="feed-heat">47 热度</span>
+          <span class="feed-heat">40 热度</span>
         </div>
         <div class="feed-title">
           <a href="https://www.tomshardware.com/desktops/gaming-pcs/asus-ludicrous-20th-anniversary-bundle-is-now-the-cheapest-way-to-buy-an-rtx-5090-nvidias-flagship-gpu-stock-is-so-limited-that-this-usd10-850-bundle-with-a-3000w-psu-x870e-board-and-open-frame-case-is-actually-cheaper-than-some-scalper-listings" target="_blank" rel="noopener">
@@ -808,83 +908,11 @@
           <span class="lang-en" style="display:none">涉及价格或供应链变化，对笔记本整机成本与出货影响较大。</span>
         </div>
       </article>
-      <article class="feed-item" data-cat="成本价格" data-title="12 overlooked pc building tools i wish i’d started using years ago 12 overlooked pc building tools i wish i’d started using years ago" data-cost="1">
-        <div class="feed-meta">
-          <span class="feed-time">21:00</span>
-          <span class="feed-source">PCWorld</span>
-          <span class="cat-tag" data-cat-key="成本价格">成本价格</span>
-          <span class="cost-badge">成本相关</span>
-          <span class="feed-heat">40 热度</span>
-        </div>
-        <div class="feed-title">
-          <a href="https://www.pcworld.com/article/3229595/12-overlooked-pc-building-tools-i-wish-id-started-using-years-ago.html" target="_blank" rel="noopener">
-            <span class="lang-zh">12 overlooked PC building tools I wish I’d started using years ago</span>
-            <span class="lang-en" style="display:none">12 overlooked PC building tools I wish I’d started using years ago</span>
-          </a>
-        </div>
-        <div class="feed-summary">
-          <span class="lang-zh">I’ve been building PCs for over 20 years, and though I’ve gotten pretty good at it, a big part of that is due to the tools I use. Everyone knows you need a decent Phillips screwdriver and enough…</span>
-          <span class="lang-en" style="display:none">I’ve been building PCs for over 20 years, and though I’ve gotten pretty good at it, a big part of that is due to the tools I use. Everyone knows you need a decent Phillips screwdriver and enough…</span>
-        </div>
-        <div class="feed-reason">
-          <strong class="lang-zh">推荐理由：</strong><strong class="lang-en" style="display:none">Why it matters: </strong>
-          <span class="lang-zh">涉及价格或供应链变化，对笔记本整机成本与出货影响较大。</span>
-          <span class="lang-en" style="display:none">涉及价格或供应链变化，对笔记本整机成本与出货影响较大。</span>
-        </div>
-      </article>
-      <article class="feed-item" data-cat="成本价格" data-title="keychron q13 ultra 8k 机械键盘国行发售：96% alice 配列，1601 元 keychron q13 ultra 8k 机械键盘国行发售：96% alice 配列，1601 元" data-cost="1">
-        <div class="feed-meta">
-          <span class="feed-time">20:10</span>
-          <span class="feed-source">IT之家</span>
-          <span class="cat-tag" data-cat-key="成本价格">成本价格</span>
-          <span class="cost-badge">成本相关</span>
-          <span class="feed-heat">40 热度</span>
-        </div>
-        <div class="feed-title">
-          <a href="https://www.ithome.com/1/002/755.htm" target="_blank" rel="noopener">
-            <span class="lang-zh">Keychron Q13 Ultra 8K 机械键盘国行发售：96% Alice 配列，1601 元</span>
-            <span class="lang-en" style="display:none">Keychron Q13 Ultra 8K 机械键盘国行发售：96% Alice 配列，1601 元</span>
-          </a>
-        </div>
-        <div class="feed-summary">
-          <span class="lang-zh">IT之家 9 月 15 日消息，Keychron（渴创）的 96% Alice 配列全铝三模机械键盘 Q13 Ultra 8K 现已在中国大陆电商平台发售。其可选黑 / 白 2 种配色、红 / 茶 / 香蕉 3 种 Silk POM 轴体，到手价 1601 元。Q13 Ultra 8K 内部采用 6 层阻尼填充 Gasket 结构，PCB 支持轴体热插拔、集成南向 RGB LED 背光，预装…</span>
-          <span class="lang-en" style="display:none">IT之家 9 月 15 日消息，Keychron（渴创）的 96% Alice 配列全铝三模机械键盘 Q13 Ultra 8K 现已在中国大陆电商平台发售。其可选黑 / 白 2 种配色、红 / 茶 / 香蕉 3 种 Silk POM 轴体，到手价 1601 元。Q13 Ultra 8K 内部采用 6 层阻尼填充 Gasket 结构，PCB 支持轴体热插拔、集成南向 RGB LED 背光，预装…</span>
-        </div>
-        <div class="feed-reason">
-          <strong class="lang-zh">推荐理由：</strong><strong class="lang-en" style="display:none">Why it matters: </strong>
-          <span class="lang-zh">涉及价格或供应链变化，对笔记本整机成本与出货影响较大。</span>
-          <span class="lang-en" style="display:none">涉及价格或供应链变化，对笔记本整机成本与出货影响较大。</span>
-        </div>
-      </article>
-      <article class="feed-item" data-cat="成本价格" data-title="when will gta 6 hit pc? let’s look at rockstar’s release history when will gta 6 hit pc? let’s look at rockstar’s release history" data-cost="1">
-        <div class="feed-meta">
-          <span class="feed-time">20:00</span>
-          <span class="feed-source">PCWorld</span>
-          <span class="cat-tag" data-cat-key="成本价格">成本价格</span>
-          <span class="cost-badge">成本相关</span>
-          <span class="feed-heat">40 热度</span>
-        </div>
-        <div class="feed-title">
-          <a href="https://www.pcworld.com/article/3234659/rockstar-wont-say-when-gta-6-hits-pc-so-i-did-the-math.html" target="_blank" rel="noopener">
-            <span class="lang-zh">When will GTA 6 hit PC? Let’s look at Rockstar’s release history</span>
-            <span class="lang-en" style="display:none">When will GTA 6 hit PC? Let’s look at Rockstar’s release history</span>
-          </a>
-        </div>
-        <div class="feed-summary">
-          <span class="lang-zh">Grand Theft Auto VI will be, barring some sort of disaster, the biggest piece of media released in 2026. Doctor Doom, eat your cold, stony little heart out. It’s practically guaranteed to be the…</span>
-          <span class="lang-en" style="display:none">Grand Theft Auto VI will be, barring some sort of disaster, the biggest piece of media released in 2026. Doctor Doom, eat your cold, stony little heart out. It’s practically guaranteed to be the…</span>
-        </div>
-        <div class="feed-reason">
-          <strong class="lang-zh">推荐理由：</strong><strong class="lang-en" style="display:none">Why it matters: </strong>
-          <span class="lang-zh">涉及价格或供应链变化，对笔记本整机成本与出货影响较大。</span>
-          <span class="lang-en" style="display:none">涉及价格或供应链变化，对笔记本整机成本与出货影响较大。</span>
-        </div>
-      </article>
 </div>
 <div class="day-block">
 <div class="day-title"><span class="lang-zh">更早内容</span><span class="lang-en" style="display:none">Earlier</span></div>
 
-      <article class="feed-item" data-cat="成本价格" data-title="macbook替代品：最佳购买将16gb联想笔记本电脑售价降至499.99美元 macbook neo alternative: best buy drops 16gb lenovo laptop to $499.99" data-cost="1">
+      <article class="feed-item" data-cat="成本价格" data-title="macbook 替代品：最佳购买将16gblenovo笔记本电脑售价降至499.99美元 macbook neo alternative: best buy drops 16gb lenovo laptop to $499.99" data-cost="1">
         <div class="feed-meta">
           <span class="feed-time">22:33</span>
           <span class="feed-source">HotHardware</span>
@@ -894,7 +922,7 @@
         </div>
         <div class="feed-title">
           <a href="https://hothardware.com/news/best-buy-drops-16gb-lenovo-laptop-499" target="_blank" rel="noopener">
-            <span class="lang-zh">MacBook替代品：最佳购买将16GB联想笔记本电脑售价降至499.99美元</span>
+            <span class="lang-zh">MacBook 替代品：最佳购买将16GBLenovo笔记本电脑售价降至499.99美元</span>
             <span class="lang-en" style="display:none">MacBook Neo Alternative: Best Buy Drops 16GB Lenovo Laptop To $499.99</span>
           </a>
         </div>
@@ -904,11 +932,11 @@
         </div>
         <div class="feed-reason">
           <strong class="lang-zh">推荐理由：</strong><strong class="lang-en" style="display:none">Why it matters: </strong>
-          <span class="lang-zh">Lenovo笔记本降价至499.99美元，或影响MacBook Neo成本结构，降低整机售价可能性增加。</span>
-          <span class="lang-en" style="display:none">The Lenovo laptop is priced at $499.99, which could impact the cost structure of the MacBook Neo and increase the likelihood of a lower overall price.</span>
+          <span class="lang-zh">Lenovo笔记本降价至499.99美元，或影响MacBook替代品市场，压缩PC整机成本。</span>
+          <span class="lang-en" style="display:none">Lenovo laptops have been priced at $499.99, potentially impacting the market for MacBook alternatives and reducing the overall cost of PC systems.</span>
         </div>
       </article>
-      <article class="feed-item" data-cat="成本价格" data-title="我最喜欢的轻薄笔记本今天便宜了近500元 my favorite lightweight laptop is almost $500 off today" data-cost="1">
+      <article class="feed-item" data-cat="成本价格" data-title="我最喜欢的轻薄本今天便宜了近500元 my favorite lightweight laptop is almost $500 off today" data-cost="1">
         <div class="feed-meta">
           <span class="feed-time">22:08</span>
           <span class="feed-source">PCWorld</span>
@@ -918,21 +946,21 @@
         </div>
         <div class="feed-title">
           <a href="https://www.pcworld.com/article/3234607/my-favorite-lightweight-laptop-is-almost-500-off-today.html" target="_blank" rel="noopener">
-            <span class="lang-zh">我最喜欢的轻薄笔记本今天便宜了近500元</span>
+            <span class="lang-zh">我最喜欢的轻薄本今天便宜了近500元</span>
             <span class="lang-en" style="display:none">My favorite lightweight laptop is almost $500 off today</span>
           </a>
         </div>
         <div class="feed-summary">
-          <span class="lang-zh">原价880美元，现优惠470美元，Asus Zenbook A14，16GB内存，去看看deal吧。2026年真的很难找到满意的笔记本优惠，更别提一个你还会喜欢用的。但这次……</span>
+          <span class="lang-zh">原价880美元，现降价470美元——Asus Zenbook A14，16GB内存，去看看deal吧。2026年想找一款称心的笔记本都很难，更别提打折的了。但我挑的这款……</span>
           <span class="lang-en" style="display:none">$880 — $470 off regular price Asus Zenbook A14 with 16GB of RAM SEE DEAL It’s dang hard to find a decent deal on a laptop in 2026, nevermind one that you’d actually enjoy using. But the one I picked…</span>
         </div>
         <div class="feed-reason">
           <strong class="lang-zh">推荐理由：</strong><strong class="lang-en" style="display:none">Why it matters: </strong>
-          <span class="lang-zh">此次优惠大幅降低了轻薄本整机成本，为消费者带来实惠。</span>
-          <span class="lang-en" style="display:none">This discount significantly reduces the overall cost of thin and light laptops, bringing实惠to consumers.</span>
+          <span class="lang-zh">此次大幅度降价对PC整机成本影响显著，或将推动轻薄本市场迎来更多优惠。</span>
+          <span class="lang-en" style="display:none">Significant price reductions will have a noticeable impact on the overall cost of PC systems, potentially leading to more discounts in the ultrabook market.</span>
         </div>
       </article>
-      <article class="feed-item" data-cat="成本价格" data-title="框架获得了一批较低成本的lpcamm2模块。 framework scores “a limited quantity” of lower cost lpcamm2 modules" data-cost="1">
+      <article class="feed-item" data-cat="成本价格" data-title="框架获得了一批较低成本的lpcamm2模块的有限数量。 framework scores “a limited quantity” of lower cost lpcamm2 modules" data-cost="1">
         <div class="feed-meta">
           <span class="feed-time">04:05</span>
           <span class="feed-source">PC Perspective</span>
@@ -942,7 +970,7 @@
         </div>
         <div class="feed-title">
           <a href="https://pcper.com/2026/09/framework-scores-a-limited-quantity-lpcamm2-modules/" target="_blank" rel="noopener">
-            <span class="lang-zh">框架获得了一批较低成本的LPCAMM2模块。</span>
+            <span class="lang-zh">框架获得了一批较低成本的LPCAMM2模块的有限数量。</span>
             <span class="lang-en" style="display:none">Framework Scores “A limited quantity” Of Lower Cost LPCAMM2 Modules</span>
           </a>
         </div>
@@ -952,8 +980,8 @@
         </div>
         <div class="feed-reason">
           <strong class="lang-zh">推荐理由：</strong><strong class="lang-en" style="display:none">Why it matters: </strong>
-          <span class="lang-zh">Framework提供有限数量的低成本LPCAMM2模块，有助于降低整机成本。</span>
-          <span class="lang-en" style="display:none">The Framework provides a limited number of low-cost LPCAMM2 modules, helping to reduce the overall system cost.</span>
+          <span class="lang-zh">Framework提供退款并限量供应较低成本LPCAMM2模块，有助于降低整体PC成本。</span>
+          <span class="lang-en" style="display:none">The Framework offers refunds and limits the supply of lower-cost LPCAMM2 modules, helping to reduce the overall PC cost.</span>
         </div>
       </article>
       <article class="feed-item" data-cat="成本价格" data-title="框架取消了为其笔记本电脑定制的低 profile 键盘模块：“我们无法将成本控制在可行的范围内。” framework cancels custom low profile keyboard module for its laptops: &#x27;we weren’t able to bring costs to a place where the product economics worked&#x27;" data-cost="1">
@@ -976,8 +1004,8 @@
         </div>
         <div class="feed-reason">
           <strong class="lang-zh">推荐理由：</strong><strong class="lang-en" style="display:none">Why it matters: </strong>
-          <span class="lang-zh">Framework取消自定义低-profile键盘以控制成本，反映PC组件成本压力。</span>
-          <span class="lang-en" style="display:none">Framework cancels custom low-profile keyboards to control costs and reflects pressure on PC component costs.</span>
+          <span class="lang-zh">Framework取消自研低-profile键盘以控制成本，反映PC组件价格波动影响整机经济性。</span>
+          <span class="lang-en" style="display:none">Framework has discontinued its in-house low-profile keyboard to control costs, reflecting the impact of price fluctuations in PC components on the overall economics of the product.</span>
         </div>
       </article>
       <article class="feed-item" data-cat="成本价格" data-title="500美元以内难觅佳品——2025年推荐的4款高性价比笔记本 a great laptop under $500 is hard to find — here are the 4 best budget laptops i recommend in 2025" data-cost="1">
@@ -995,16 +1023,16 @@
           </a>
         </div>
         <div class="feed-summary">
-          <span class="lang-zh">我们在不到500美元的价格范围内，为每种形态的笔记本找到了最佳预算机型：传统笔记本、Chromebook和二合一混合本。</span>
+          <span class="lang-zh">我们在不到500美元的价格范围内，为每种类型找到了最佳预算笔记本电脑：传统笔记本、Chromebook和二合一混合型。</span>
           <span class="lang-en" style="display:none">We&#x27;ve found the best budget laptops under $500 in every form factor: clamshells, Chromebooks, and 2-in-1 hybrids.</span>
         </div>
         <div class="feed-reason">
           <strong class="lang-zh">推荐理由：</strong><strong class="lang-en" style="display:none">Why it matters: </strong>
-          <span class="lang-zh">虽然难以找到低于500美元的优秀笔记本，但文中推荐的四款预算本在整机成本控制上表现出色。</span>
-          <span class="lang-en" style="display:none">While it is difficult to find excellent laptops for under $500, the four budget laptops recommended in the article excel in terms of overall cost control.</span>
+          <span class="lang-zh">尽管价格亲民，但这些笔记本在成本控制上面临挑战，显示了预算内高性能配置的难度。</span>
+          <span class="lang-en" style="display:none">Despite their affordable prices, these laptops face challenges in cost control, highlighting the difficulty of achieving high-performance configurations within budget constraints.</span>
         </div>
       </article>
-      <article class="feed-item" data-cat="成本价格" data-title="性能、电池寿命和性价比——当前最佳的1000元以内笔记本电脑top5 power, battery life, and value — these are the 5 best laptops under $1,000 right now" data-cost="1">
+      <article class="feed-item" data-cat="成本价格" data-title="功率、电池寿命和性价比——目前最佳的1000元以内笔记本电脑top5 power, battery life, and value — these are the 5 best laptops under $1,000 right now" data-cost="1">
         <div class="feed-meta">
           <span class="feed-time">03:35</span>
           <span class="feed-source">Laptop Mag</span>
@@ -1014,7 +1042,7 @@
         </div>
         <div class="feed-title">
           <a href="https://www.laptopmag.com/articles/best-laptop-under-1000" target="_blank" rel="noopener">
-            <span class="lang-zh">性能、电池寿命和性价比——当前最佳的1000元以内笔记本电脑TOP5</span>
+            <span class="lang-zh">功率、电池寿命和性价比——目前最佳的1000元以内笔记本电脑TOP5</span>
             <span class="lang-en" style="display:none">Power, battery life, and value — these are the 5 best laptops under $1,000 right now</span>
           </a>
         </div>
@@ -1024,11 +1052,11 @@
         </div>
         <div class="feed-reason">
           <strong class="lang-zh">推荐理由：</strong><strong class="lang-en" style="display:none">Why it matters: </strong>
-          <span class="lang-zh">精选多款高性能、长续航且价格亲民的笔记本，助力优化PC整机成本。</span>
-          <span class="lang-en" style="display:none">Selecting a range of high-performance, long-lasting, and budget-friendly laptops to help optimize the overall PC system cost.</span>
+          <span class="lang-zh">精选产品在控制成本的同时提升了性能和续航，为预算有限的消费者提供了高性价比选择。</span>
+          <span class="lang-en" style="display:none">Select products offer improved performance and battery life while controlling costs, providing high-value options for budget-conscious consumers.</span>
         </div>
       </article>
-      <article class="feed-item" data-cat="成本价格" data-title="是的，你需要一个笔记本电脑 docking 站。以下是最佳的 7 款，它们在端口、电源和性能方面都很出色。 yes, you need a laptop docking station. and these 7 are the best for ports, power, and performance." data-cost="1">
+      <article class="feed-item" data-cat="成本价格" data-title="是的，你需要一个笔记本电脑扩展站。而下面这7款在端口、电源和性能方面都是最佳选择。 yes, you need a laptop docking station. and these 7 are the best for ports, power, and performance." data-cost="1">
         <div class="feed-meta">
           <span class="feed-time">02:43</span>
           <span class="feed-source">Laptop Mag</span>
@@ -1038,18 +1066,18 @@
         </div>
         <div class="feed-title">
           <a href="https://www.laptopmag.com/articles/best-docking-station" target="_blank" rel="noopener">
-            <span class="lang-zh">是的，你需要一个笔记本电脑 docking 站。以下是最佳的 7 款，它们在端口、电源和性能方面都很出色。</span>
+            <span class="lang-zh">是的，你需要一个笔记本电脑扩展站。而下面这7款在端口、电源和性能方面都是最佳选择。</span>
             <span class="lang-en" style="display:none">Yes, you need a laptop docking station. And these 7 are the best for ports, power, and performance.</span>
           </a>
         </div>
         <div class="feed-summary">
-          <span class="lang-zh">在测试和审查了数十款 docking 站之后，我们根据端口、电源、性能、外观和价格，挑选出了2025年最佳 docking 站。</span>
+          <span class="lang-zh">经过测试和审查数十款Docking站后，我们根据端口、电源、性能、外观和价格，挑选出了2025年最佳Docking站。</span>
           <span class="lang-en" style="display:none">After testing and reviewing dozens of docking stations, here are our picks for the best docking stations in 2025 based on ports, power, performance, presentation, and price.</span>
         </div>
         <div class="feed-reason">
           <strong class="lang-zh">推荐理由：</strong><strong class="lang-en" style="display:none">Why it matters: </strong>
-          <span class="lang-zh">精选 docking 站提升笔记本扩展性，虽初期投入增加，长期节省外接设备成本。</span>
-          <span class="lang-en" style="display:none">Selecting docking stations enhances notebook flexibility,虽初期投入增加，长期节省外接设备成本。Although there is an initial increased investment, it ultimately saves costs on external devices in the long term.</span>
+          <span class="lang-zh">精选款 docking 站提升接口与性能，虽成本稍增，但延长笔记本使用寿命，性价比高。</span>
+          <span class="lang-en" style="display:none">The精选款 docking station enhances interfaces and performance,虽 at a slightly higher cost, it extends the lifespan of laptops, offering good value for money.</span>
         </div>
       </article>
       <article class="feed-item" data-cat="AI与芯片" data-title="hp and lenovo laptops are the latest victims of a windows 11 update hp and lenovo laptops are the latest victims of a windows 11 update" data-cost="0">
@@ -1702,10 +1730,20 @@
       </article>
 </div>
 
+    </div><!-- /todayView -->
+    <div id="historyView" style="display:none">
+      <div class="section-header">
+        <h2 id="historyTitle" data-i18n="archiveTitle">历史归档</h2>
+        <span class="date" id="historyCount"></span>
+      </div>
+      <div id="historyContainer"></div>
+    </div>
+    </div><!-- /content -->
+    </div><!-- /layout -->
   </main>
   <footer>
     <p data-i18n="footer1"><strong>PC HOT</strong> — 聚焦笔记本电脑 · OEM / ODM · AI PC</p>
-    <p>更新于 2026-09-16 10:03 (北京时间)</p>
+    <p>更新于 2026-09-16 15:43 (北京时间)</p>
   </footer>
   <script>
     const I18N = {
@@ -1719,6 +1757,14 @@
         footer1: "PC HOT — 聚焦笔记本电脑 · OEM / ODM · AI PC",
         costBadge: "成本相关",
         heat: "热度",
+        timeRange: "时间范围",
+        today: "今天",
+        lastWeek: "近一周",
+        lastMonth: "近一月",
+        allHistory: "全部历史",
+        archiveTitle: "历史归档",
+        noData: "暂无数据",
+        items: "条",
         cats: {
           "AI与芯片": "AI与芯片", "OEM品牌": "OEM品牌", "ODM代工": "ODM代工",
           "成本价格": "成本价格", "市场出货": "市场出货", "产品发布": "产品发布", "综合": "综合"
@@ -1734,6 +1780,14 @@
         footer1: "PC HOT — Laptop Industry · OEM / ODM · AI PC",
         costBadge: "Cost",
         heat: "heat",
+        timeRange: "Time Range",
+        today: "Today",
+        lastWeek: "Last Week",
+        lastMonth: "Last Month",
+        allHistory: "All History",
+        archiveTitle: "Archive",
+        noData: "No data",
+        items: "items",
         cats: {
           "AI与芯片": "AI & Chips", "OEM品牌": "OEM Brands", "ODM代工": "ODM",
           "成本价格": "Cost & Price", "市场出货": "Shipments", "产品发布": "Launches", "综合": "General"
@@ -1804,6 +1858,85 @@
         item.classList.toggle("hidden", !match);
       });
     }
+
+    // ==================== 历史归档 ====================
+    const HISTORY_DATA = [{"id": "f3467534026deee97cef", "title": "长安马自达 EZ-60 激光版将于成都车展开启预售，高速 + 城区双域领航", "summary": "IT之家 8 月 17 日消息，据易车今日报道，长安马自达 MAZDA EZ-60 激光版将于成都车展开启预售。新车带来高速 + 城区双域领航、全场景泊车、全域主动安全三大能力升级。IT之家注意到，在售的马自达 EZ-60 马年特别版车型于今年 4 月上市，提供增程 / 纯电版本，售价 13.99 万元起。该车采用封闭式前脸设计，配有可发光的车标，车辆匹配隐藏式门把手，可选电子外后视镜。马自达…", "link": "https://www.ithome.com/0/990/638.htm", "source": "IT之家", "published_at": "2026-08-17T07:00:35+00:00", "first_collected_at": "2026-08-17T15:24:03.210453+08:00", "last_seen_at": "2026-08-17T15:24:03.210453+08:00", "category": "成本价格", "reason": "新增双域领航功能，提升驾驶智能化水平，值得关注。", "ai_enhanced": true}, {"id": "9f65e42efd68ba99c9a6", "title": "鸿蒙智行享界 G9 首发华为智擎自适应差速锁电驱：通过连续交叉轴脱困测试，预售价 43.98 万元起", "summary": "IT之家 8 月 17 日消息，鸿蒙智行享界汽车官方今日宣布，享界 G9 在 50cm 对角高差交叉轴工况下，四门两盖流畅关闭无形变，顺利通过交叉轴扭转刚度测试（测试视频一镜到底）。另外，享界 G9 首发华为智擎自适应差速锁电驱，内置牙嵌式机械差速锁，支持毫秒速自动上锁，通过连续交叉轴脱困测试。据IT之家此前报道，鸿蒙智行首款科技豪华硬派 SUV 享界 G9 已定档 8 月 20 日发布，预售价…", "link": "https://www.ithome.com/0/990/635.htm", "source": "IT之家", "published_at": "2026-08-17T06:58:26+00:00", "first_collected_at": "2026-08-17T15:24:03.210516+08:00", "last_seen_at": "2026-08-17T15:24:03.210516+08:00", "category": "成本价格", "reason": "首发华为智擎自适应差速锁电驱，通过交叉轴脱困测试，性能出色。", "ai_enhanced": true}, {"id": "4b56bcfbc25583115207", "title": "TrendForce：液冷散热成高端 AI 基础设施标配，预估 2026 年渗透率可达 53%", "summary": "IT之家 8 月 17 日消息，TrendForce 集邦咨询近日发布新一期产业洞察，称英伟达、AMD、谷歌等厂商的 AI 芯片持续迭代，单芯片的 TDP 普遍已超越 1kW，整柜式 AI 服务器的功率更攀升至数百 kW，液冷散热逐步成为高端 AI 基础设施的标准配置。据悉，英伟达、AMD 等公司的芯片方案已全面采用液冷技术，随着 AI 芯片推陈出新、CSP（IT之家注：云服务供应商）加速升级…", "link": "https://www.ithome.com/0/990/633.htm", "source": "IT之家", "published_at": "2026-08-17T06:47:17+00:00", "first_collected_at": "2026-08-17T15:24:03.210528+08:00", "last_seen_at": "2026-08-17T15:24:03.210528+08:00", "category": "产品发布", "reason": "液冷散热成为高端AI服务器标配，提升散热效率，保障高性能芯片稳定运行。", "ai_enhanced": true}, {"id": "5a1e28447f038c82252a", "title": "This Week in Gaming (Week 34)", "summary": "Welcome to another week of new games releases and we start off the week with a sequel to a fairly popular ARPG game from 2020 that is currently in open beta for those that want to give it whirl…", "link": "https://www.techpowerup.com/351642/this-week-in-gaming-week-34", "source": "TechPowerUp", "published_at": "2026-08-17T06:23:52+00:00", "first_collected_at": "2026-08-17T15:24:03.210536+08:00", "last_seen_at": "2026-08-17T15:24:03.210536+08:00", "category": "综合", "reason": "开放beta测试的续作ARPG游戏，抢先体验精彩内容。", "ai_enhanced": true}, {"id": "03c62fef3401bda611e9", "title": "谷歌 Google Maps 搜索系统曝大范围故障，地图无法搜到大部分酒店", "summary": "IT之家 8 月 17 日消息，据外媒 AndroidHeadlines 报道，近期谷歌地图 Google Maps 搜索系统出现大范围故障，地图无法搜索到大部分酒店。外媒表示，目前来看这一故障主要影响酒店类型商家。用户尝试利用地图搜索餐厅、咖啡馆或当地景点时，地图上的红色位置标记仍能正常显示，但切换到酒店搜索后，地图却基本找不到任何信息。包括移动平台及 PC…", "link": "https://www.ithome.com/0/990/615.htm", "source": "IT之家", "published_at": "2026-08-17T06:22:20+00:00", "first_collected_at": "2026-08-17T15:24:03.210543+08:00", "last_seen_at": "2026-08-17T15:24:03.210543+08:00", "category": "综合", "reason": "搜索功能故障严重影响用户体验，值得关注修复进展。", "ai_enhanced": true}, {"id": "aff1d8af9820f7d01f8d", "title": "Podcast #880 – Xbox on Linux, Big Tech Hides AI Debt, RTX 50 Series Price, Woodgrain Motherboard, 8GB Windows 11 + MORE!", "summary": "Linux gaming support keeps improving, TPM hardware keeps gaining vulnerabilities, the AI tech sector keeps gaining debt linked to investments, and advertisers keep gaining sneakier ways to infiltrate…", "link": "https://pcper.com/2026/08/podcast-880/", "source": "PC Perspective", "published_at": "2026-08-17T00:10:09+00:00", "first_collected_at": "2026-08-17T15:24:03.210550+08:00", "last_seen_at": "2026-08-17T15:24:03.210550+08:00", "category": "成本价格", "reason": "RTX 50 系列显卡性能强劲，价格相对合理，值得关注。", "ai_enhanced": true}, {"id": "094d954033ea1e347b48", "title": "Best mini PC deals: Top Intel and AMD picks for performance, gaming, and more", "summary": "At a glance Top AMD mini PC deal picks Bosgame E5—$309 (19% off on Amazon) Bosgame P6—$540 (16% of on Amazon) GMKtec M7 Ultra—$650 (24% off on Amazon) Top Intel mini PC deal picks ACEMAGIC K1—$479.99…", "link": "https://www.pcworld.com/article/2999556/best-mini-pc-deals-top-picks-for-performance-gaming-and-more.html", "source": "PCWorld", "published_at": "2026-08-16T23:55:33+00:00", "first_collected_at": "2026-08-17T15:24:03.210556+08:00", "last_seen_at": "2026-08-17T15:24:03.210556+08:00", "category": "成本价格", "reason": "AMD和Intel顶级处理器加持， Bosgame E5和ACEMAGIC K1提供高性能游戏体验，值得关注。", "ai_enhanced": true}, {"id": "f21423b449df0a1e5866", "title": "Epic Games Store Is Coming To Linux With Native Steam Deck Support", "summary": "Comments made by employees in the Epic Games Discord seem to indicate that there are plans at Epic to push forward with a native Linux client for the Epic Games Store. While solutions like the Heroic…", "link": "https://hothardware.com/news/epic-games-store-is-coming-to-linux-with-native-steam-deck-support", "source": "HotHardware", "published_at": "2026-08-16T18:30:00+00:00", "first_collected_at": "2026-08-17T15:24:03.210563+08:00", "last_seen_at": "2026-08-17T15:24:03.210563+08:00", "category": "综合", "reason": "支持Steam Deck，为Linux用户带来Epic Games Store原生体验，扩展生态多样性。", "ai_enhanced": true}, {"id": "9d51aecd7e148c4c10a9", "title": "This portable, external CD/DVD drive comes with a 2.5-inch SATA and an SD Card slot for just $26 — Save 10% on a modern essential for keeping physical media alive", "summary": "If you have a bunch of old CDs or DVDs lying around and want something quick and simple to access them, this external drive can get the job done for you for less than $30 while offering extra…", "link": "https://www.tomshardware.com/pc-components/this-portable-external-cd-dvd-drive-comes-with-a-2-5-inch-sata-and-an-sd-card-slot-for-just-usd26-save-10-percent-on-a-modern-essential-for-keeping-physical-media-alive", "source": "Tom's Hardware", "published_at": "2026-08-16T15:18:31+00:00", "first_collected_at": "2026-08-17T15:24:03.210569+08:00", "last_seen_at": "2026-08-17T15:24:03.210569+08:00", "category": "成本价格", "reason": "价格亲民，兼容性强，适合保存和读取老旧光盘，性价比高。", "ai_enhanced": true}, {"id": "eb32aec928437250f59d", "title": "Nvidia's $5 billion Intel bet is now worth nearly $25 billion, and its SpaceX stake isn't far behind", "summary": "Nvidia bought $5 billion in Intel stock last year as part of the companies' AI infrastructure partnership, creating one of the company's most valuable equity positions. The stake was valued at $24.9…", "link": "https://www.techspot.com/news/113498-nvidia-5-billion-intel-bet-now-worth-nearly.html", "source": "TechSpot", "published_at": "2026-08-16T14:47:00+00:00", "first_collected_at": "2026-08-17T15:24:03.210576+08:00", "last_seen_at": "2026-08-17T15:24:03.210576+08:00", "category": "成本价格", "reason": "Nvidia持有的Intel股票价值飙升至近250亿美元，凸显其在AI领域的战略布局成效显著。", "ai_enhanced": true}, {"id": "a551e769c52a5538c28a", "title": "Dell CEO unveils new 'Dude, you’re getting a Dell (AI server rack)' video — PC maker recycles famous PC ad campaign to tout its new AI data center products", "summary": "Dell has created a humorous AI-era update to its iconic early-2000s 'Dude, you’re getting a Dell' series of commercials.", "link": "https://www.tomshardware.com/tech-industry/dude-youre-getting-a-dell-ai-server-rack-dell-recycles-famous-ad-campaign-to-appeal-to-its-new-ai-overlords", "source": "Tom's Hardware", "published_at": "2026-08-16T14:31:33+00:00", "first_collected_at": "2026-08-17T15:24:03.210582+08:00", "last_seen_at": "2026-08-17T15:24:03.210582+08:00", "category": "OEM品牌", "reason": "关注Dell新AI服务器机架，价格性能兼具，适合企业升级数据中心。", "ai_enhanced": true}, {"id": "b04177b46aa4080438d5", "title": "Windows 11 has transformed dramatically since launch, but three classic Windows tools remain untouched — and it’s time Microsoft finally modernizes them", "summary": "Microsoft continues to modernize Windows 11, but these three classic tools still need a major update without losing the advanced features users rely on.", "link": "https://www.windowscentral.com/microsoft/windows-11/3-classic-tools-i-want-microsoft-to-modernize-next-on-windows-11", "source": "Windows Central", "published_at": "2026-08-16T14:12:42+00:00", "first_collected_at": "2026-08-17T15:24:03.210588+08:00", "last_seen_at": "2026-08-17T15:24:03.210588+08:00", "category": "产品发布", "reason": "尽管Windows 11更新频繁，三大经典工具仍需现代化，提升用户体验。", "ai_enhanced": true}, {"id": "cc0800f018dbedc7a53b", "title": "Windows 11’s upcoming overhaul adds a movable taskbar, redesigned Start menu, and faster performance —  but should it just have been Windows 12?", "summary": "Microsoft’s upcoming Windows 11 update brings refreshed Start menu options, Taskbar improvements, and other quality fixes. Is this a missed opportunity to launch Windows 12?", "link": "https://www.windowscentral.com/microsoft/windows-11/windows-11-is-about-to-get-a-big-update-but-should-it-just-have-been-windows-12", "source": "Windows Central", "published_at": "2026-08-16T13:00:00+00:00", "first_collected_at": "2026-08-17T15:24:03.210593+08:00", "last_seen_at": "2026-08-17T15:24:03.210593+08:00", "category": "产品发布", "reason": "来自公开源聚合，点击标题可阅读原文。", "ai_enhanced": false}, {"id": "a515477700fb4c2f99dd", "title": "Google reportedly taps AMD to design next-generation TPU — hybrid AI ASIC could integrate on-package CPU cores for reinforcement learning", "summary": "Google may be building a TPU with on-package CPU cores specifically for agentic and reinforced learning workloads, according to a rumor.", "link": "https://www.tomshardware.com/tech-industry/artificial-intelligence/google-reportedly-taps-amd-to-design-next-generation-tpu-hybrid-ai-asic-could-integrate-on-package-cpu-cores-for-reinforcement-learning", "source": "Tom's Hardware", "published_at": "2026-08-16T12:40:00+00:00", "first_collected_at": "2026-08-17T15:24:03.210601+08:00", "last_seen_at": "2026-08-17T15:24:03.210601+08:00", "category": "综合", "reason": "处理器相关动态，Intel/AMD/Qualcomm/Nvidia 竞争值得关注。", "ai_enhanced": false}, {"id": "dfce742cc1c29d77a065", "title": "Lenovo Legion Go S Deal Drops Handheld To Record Low $533 At Woot", "summary": "Amazon's dedicated deals site, Woot, is offering an open-box deal on the Lenovo Legion Go S in Glacier White, cutting the price of the PC gaming handheld down to $533.49. This is the same handheld we…", "link": "https://hothardware.com/news/lenovo-legion-go-s-deal-drops-handheld-record-low-533", "source": "HotHardware", "published_at": "2026-08-16T12:34:00+00:00", "first_collected_at": "2026-08-17T15:24:03.210608+08:00", "last_seen_at": "2026-08-17T15:24:03.210608+08:00", "category": "成本价格", "reason": "市场出货、价格与供应链消息，反映行业走势。", "ai_enhanced": false}, {"id": "85b123c83b89818b69a3", "title": "Intel says it will launch new core with Nova Lake on desktop first, not in data center — VP Robert Hallock hopes enthusiasts ‘do the math’ compared to AMD", "summary": "Intel’s Robert Hallock says he hopes enthusiasts “do the math” compared to AMD, highlighting that the company’s new core architecture will release in consumer processors before the data center.", "link": "https://www.tomshardware.com/pc-components/cpus/intel-says-it-will-launch-new-core-with-nova-lake-on-desktop-first-not-in-data-center-vp-robert-hallock-hopes-enthusiasts-do-the-math-compared-to-amd", "source": "Tom's Hardware", "published_at": "2026-08-16T12:10:00+00:00", "first_collected_at": "2026-08-17T15:24:03.210614+08:00", "last_seen_at": "2026-08-17T15:24:03.210614+08:00", "category": "产品发布", "reason": "处理器相关动态，Intel/AMD/Qualcomm/Nvidia 竞争值得关注。", "ai_enhanced": false}, {"id": "9e50246a8d8e624b3034", "title": "The PC age began 45 years ago with the breakthrough Intel 8088 processor — 8-bit bus fueled 45 years of x86 dominance", "summary": "45 years ago, in August 1981, the PC age began in earnest with the launch of the IBM PC Model 5150. At its heart was the Intel 8088 microprocessor.", "link": "https://www.tomshardware.com/pc-components/cpus/the-pc-age-began-45-years-ago-with-the-breakthrough-intel-8088-processor-8-bit-bus-fueled-45-years-of-x86-dominance", "source": "Tom's Hardware", "published_at": "2026-08-16T11:20:00+00:00", "first_collected_at": "2026-08-17T15:24:03.210620+08:00", "last_seen_at": "2026-08-17T15:24:03.210620+08:00", "category": "产品发布", "reason": "处理器相关动态，Intel/AMD/Qualcomm/Nvidia 竞争值得关注。", "ai_enhanced": false}, {"id": "5ed95e43377228dbf095", "title": "Thieves swap RTX 5080 GPUs for RTX 3060s in Chinese gaming hotels — rogue 'downgrades' go unnoticed until sudden blackout exposes $12,000 heist", "summary": "Two thieves in China have been arrested after they were caught stealing high-end GPUs from gaming hotels. They'd check into rooms with RTX 5080s, replace them with RTX 3060s that looked similar, and…", "link": "https://www.tomshardware.com/pc-components/gpus/thieves-swap-rtx-5080-gpus-for-rtx-3060s-in-chinese-gaming-hotels-rogue-downgrades-go-unnoticed-until-sudden-blackout-exposes-usd12-000-heist", "source": "Tom's Hardware", "published_at": "2026-08-16T10:50:00+00:00", "first_collected_at": "2026-08-17T15:24:03.210626+08:00", "last_seen_at": "2026-08-17T15:24:03.210626+08:00", "category": "成本价格", "reason": "显卡动态，受 AI 与内存短缺影响较大，关注价格与供应。", "ai_enhanced": false}, {"id": "0341cee24bff597c4e8b", "title": "Rogue iOS developer creates app that simulates messages sent by carrier pigeon; messages only travel at 100mph — LA to NYC correspondence takes 22 hours to deliver; virtual birds can get distracted or even lost", "summary": "Carrier Pidge slows down your electronic communications to a more natural speed.", "link": "https://www.tomshardware.com/software/applications/rogue-ios-developer-creates-app-that-simulates-messages-sent-by-carrier-pigeon-messages-only-travel-at-100mph-la-to-nyc-correspondence-takes-22-hours-to-deliver-virtual-birds-can-get-distracted-or-even-lost", "source": "Tom's Hardware", "published_at": "2026-08-16T09:30:00+00:00", "first_collected_at": "2026-08-17T15:24:03.210632+08:00", "last_seen_at": "2026-08-17T15:24:03.210632+08:00", "category": "综合", "reason": "来自公开源聚合，点击标题可阅读原文。", "ai_enhanced": false}, {"id": "7eed95f9f4e2bca8e126", "title": "One lifetime AI plan replaces the model-hopping headache for $54.97", "summary": "TL;DR: Get lifetime access to ChatPlayground AI’s Unlimited Plan for $54.97, with 20+ AI models including ChatGPT, Gemini, and Claude all in one place. There are no usage limits or recurring fees.…", "link": "https://www.pcworld.com/article/3212788/one-lifetime-ai-plan-replaces-the-model-hopping-headache-for-54-97.html", "source": "PCWorld", "published_at": "2026-08-16T08:00:00+00:00", "first_collected_at": "2026-08-17T15:24:03.210638+08:00", "last_seen_at": "2026-08-17T15:24:03.210638+08:00", "category": "成本价格", "reason": "市场出货、价格与供应链消息，反映行业走势。", "ai_enhanced": false}, {"id": "5d458de96dff02157f3c", "title": "Poll: Do you turn your PC off at night?", "summary": "Sleep mode counts as leaving it on.", "link": "https://www.pcgamer.com/hardware/poll-do-you-turn-your-pc-off-at-night/", "source": "PC Gamer", "published_at": "2026-08-16T04:53:38+00:00", "first_collected_at": "2026-08-17T15:24:03.210644+08:00", "last_seen_at": "2026-08-17T15:24:03.210644+08:00", "category": "综合", "reason": "来自公开源聚合，点击标题可阅读原文。", "ai_enhanced": false}, {"id": "c0bed4b28d216ca7d95a", "title": "Grab this RTX 5070 gaming PC for just $1,499, saving $600 off list price — Acer Nitro 85 prebuilt comes with 16GB of RAM, Core Ultra 7 265F, and a 1TB PCIe 4.0 SSD", "summary": "The Acer Nitro 85 gaming desktop is currently on sale for $1,499, which is $600 off its regular price for a PC that would otherwise cost you $2,000 to spec out yourself.", "link": "https://www.tomshardware.com/desktops/gaming-pcs/grab-this-rtx-5070-gaming-pc-for-just-usd1-499-saving-usd600-off-list-price-acer-nitro-85-prebuilt-comes-with-16gb-of-ram-core-ultra-7-265f-and-a-1tb-pcie-4-0-ssd", "source": "Tom's Hardware", "published_at": "2026-08-15T20:53:34+00:00", "first_collected_at": "2026-08-17T15:24:03.210664+08:00", "last_seen_at": "2026-08-17T15:24:03.210664+08:00", "category": "成本价格", "reason": "处理器相关动态，Intel/AMD/Qualcomm/Nvidia 竞争值得关注。", "ai_enhanced": false}, {"id": "0390b4745b606c1e6923", "title": "I tried Windows 11's new customizable context menus, and they're a major improvement: Microsoft will let you restore Windows 10 style vertical layout for primary actions and more", "summary": "We go hands-on with the new customizable context menu options coming soon to Windows 11 that make them faster and easier to use!", "link": "https://www.windowscentral.com/microsoft/windows-11/i-tried-windows-11s-new-customizable-context-menus-and-theyre-a-major-improvement-microsoft-will-let-you-restore-windows-10-style-vertical-layout-for-primary-actions", "source": "Windows Central", "published_at": "2026-08-15T20:25:13+00:00", "first_collected_at": "2026-08-17T15:24:03.210673+08:00", "last_seen_at": "2026-08-17T15:24:03.210673+08:00", "category": "综合", "reason": "来自公开源聚合，点击标题可阅读原文。", "ai_enhanced": false}, {"id": "67f0a4fa57eaffb962b8", "title": "Three new Windows flaws can bypass security, gain system privileges, and even install malware remotely", "summary": "The \"Download More RAM\" vulnerability, which was presented at the 2026 USENIX Security Symposium in Baltimore, was discovered by researchers from the University of Birmingham and Durham University.…", "link": "https://www.techspot.com/news/113493-three-new-windows-flaws-can-bypass-security-gain.html", "source": "TechSpot", "published_at": "2026-08-15T17:09:00+00:00", "first_collected_at": "2026-08-17T15:24:03.210679+08:00", "last_seen_at": "2026-08-17T15:24:03.210679+08:00", "category": "综合", "reason": "内存与存储新闻，DRAM/NAND 价格是当前市场关键变量。", "ai_enhanced": false}, {"id": "994ece634ce026f455ec", "title": "Gamer drops laptop temperatures by up to 15°C by switching from a wooden desk to a metal table", "summary": "The user, MentalReserve2351, posted the results in r/GamingLaptops after testing the setup while playing Cyberpunk 2077 in an air-conditioned room. The laptop had been reaching 80-90°C on the wooden…", "link": "https://www.techspot.com/news/113496-gamer-drops-laptop-temperatures-up-15c-simply-switching.html", "source": "TechSpot", "published_at": "2026-08-15T15:48:00+00:00", "first_collected_at": "2026-08-17T15:24:03.210684+08:00", "last_seen_at": "2026-08-17T15:24:03.210684+08:00", "category": "AI与芯片", "reason": "笔记本/AI PC 方向，本地 AI 能力成为新定义标准。", "ai_enhanced": false}, {"id": "d058afa624d58b974b2e", "title": "Intel may refresh Raptor Lake for a third time as high DDR5 prices push buyers toward older hardware", "summary": "Robert Hallock, Intel's vice president and general manager of enthusiast channel business, recently told Tom's Hardware that the company plans to continue offering Raptor Lake CPUs, first launched in…", "link": "https://www.techspot.com/news/113495-intel-may-refresh-raptor-lake-third-time-ddr5.html", "source": "TechSpot", "published_at": "2026-08-15T14:59:00+00:00", "first_collected_at": "2026-08-17T15:24:03.210690+08:00", "last_seen_at": "2026-08-17T15:24:03.210690+08:00", "category": "成本价格", "reason": "处理器相关动态，Intel/AMD/Qualcomm/Nvidia 竞争值得关注。", "ai_enhanced": false}, {"id": "7c1bd9adfd70aa08d6c6", "title": "A Windows Defender bug is making VLC take 30 seconds to open an MP3 file", "summary": "Is VLC media player taking tens of seconds to load an MP3 file just because open-source software development is now in an embarrassing state? Jonathan Blow, designer of puzzle games Braid and The…", "link": "https://www.techspot.com/news/113491-windows-defender-bug-making-vlc-take-30-seconds.html", "source": "TechSpot", "published_at": "2026-08-15T14:03:00+00:00", "first_collected_at": "2026-08-17T15:24:03.210696+08:00", "last_seen_at": "2026-08-17T15:24:03.210696+08:00", "category": "综合", "reason": "内存与存储新闻，DRAM/NAND 价格是当前市场关键变量。", "ai_enhanced": false}, {"id": "84dd7245335f2ebb24e7", "title": "The Windows 11 Microsoft shipped in 2021 and the Windows 11 we have in 2026 are worlds apart — this is the full breakdown of what changed", "summary": "Windows 11 has evolved over the past five years. See how the Start menu, Taskbar, File Explorer, Search, AI, performance, and setup have changed.", "link": "https://www.windowscentral.com/microsoft/windows-11/windows-11-2021-vs-windows-11-2026-five-years-later-how-much-has-microsofts-operating-system-really-changed", "source": "Windows Central", "published_at": "2026-08-15T13:38:08+00:00", "first_collected_at": "2026-08-17T15:24:03.210702+08:00", "last_seen_at": "2026-08-17T15:24:03.210702+08:00", "category": "综合", "reason": "来自公开源聚合，点击标题可阅读原文。", "ai_enhanced": false}, {"id": "2d96ff51a1a28354c16f", "title": "I tested a CPU cooler that looks like a V8 engine — and this air-powered monster performs like one, too", "summary": "Cooler Master's V8 ACE 3DHP CPU air cooler includes extra heatpipes within an incredibly dense heatsink, and it comes at a cost that just might be worth it.", "link": "https://www.windowscentral.com/hardware/components/cooler-master-v8-ace-3dhp-review", "source": "Windows Central", "published_at": "2026-08-15T13:00:00+00:00", "first_collected_at": "2026-08-17T15:24:03.210707+08:00", "last_seen_at": "2026-08-17T15:24:03.210707+08:00", "category": "成本价格", "reason": "处理器相关动态，Intel/AMD/Qualcomm/Nvidia 竞争值得关注。", "ai_enhanced": false}, {"id": "7bd2bab7b761bb97223b", "title": "Walmart Slashes MSI Cyborg RTX 5060 Gaming Laptop To A Low $949", "summary": "The back-to-school shopping season is upon us and if you are looking for a great laptop deal, now is a great time to shop. Retailers know what time it is, as evidenced by new and discounted models…", "link": "https://hothardware.com/news/walmart-slashes-msi-cyborg-rtx-5060-gaming-laptop-949", "source": "HotHardware", "published_at": "2026-08-15T11:53:00+00:00", "first_collected_at": "2026-08-17T15:24:03.210712+08:00", "last_seen_at": "2026-08-17T15:24:03.210712+08:00", "category": "成本价格", "reason": "显卡动态，受 AI 与内存短缺影响较大，关注价格与供应。", "ai_enhanced": false}, {"id": "6e754421f942dcf8c81e", "title": "Lamborghini Revuelto SV Hybrid V12 Packs 1,050 HP To Top 214 MPH", "summary": "Lamborghini is taking its flagship plug-in hybrid supercar to extreme new heights with the official debut of the Revuelto SV (Super Veloce). Following in the track-focused footsteps of iconic V12…", "link": "https://hothardware.com/news/lamborghini-revuelto-sv-hybrid-v12-1050-hp-214-mph", "source": "HotHardware", "published_at": "2026-08-15T11:14:00+00:00", "first_collected_at": "2026-08-17T15:24:03.210719+08:00", "last_seen_at": "2026-08-17T15:24:03.210719+08:00", "category": "OEM品牌", "reason": "来自公开源聚合，点击标题可阅读原文。", "ai_enhanced": false}, {"id": "6fe3b114a17558a9af5e", "title": "New Dell XPS 13 reviews are in with positive marks and $699 price", "summary": "Dell's 2026 XPS 13 earns praise for its compact aluminum design, 120Hz touch display, and strong battery life at a $699 starting price. The entry-level model's 8GB of RAM is a compromise, with some…", "link": "https://www.techspot.com/products/laptops/dell-xps-13-2026.330899/", "source": "TechSpot", "published_at": "2026-08-15T10:39:00+00:00", "first_collected_at": "2026-08-17T15:24:03.210726+08:00", "last_seen_at": "2026-08-17T15:24:03.210726+08:00", "category": "成本价格", "reason": "内存与存储新闻，DRAM/NAND 价格是当前市场关键变量。", "ai_enhanced": false}, {"id": "441541950dfa31bc5595", "title": "Microsoft confirms that it will begin shipping major Windows 11 Taskbar and Start menu updates very soon: Big OS update enters final preview phase before public rollout begins", "summary": "The ability to move and resize the Taskbar, as well as customize the size and layout of the Start menu should begin rolling out imminently, if the latest Windows 11 preview builds are anything to go…", "link": "https://www.windowscentral.com/microsoft/windows-11/microsoft-confirms-that-it-will-begin-shipping-major-windows-11-taskbar-and-start-menu-updates-in-the-next-few-weeks-big-os-update-enters-final-preview-phase-before-public-rollout-begins", "source": "Windows Central", "published_at": "2026-08-15T10:16:32+00:00", "first_collected_at": "2026-08-17T15:24:03.210732+08:00", "last_seen_at": "2026-08-17T15:24:03.210732+08:00", "category": "综合", "reason": "来自公开源聚合，点击标题可阅读原文。", "ai_enhanced": false}, {"id": "53d5b45783774761e49e", "title": "Beat AI slop with Huion's back-to-school PC drawing tablet deals: Here are the top picks for artists of all levels", "summary": "Huion is launching a back-to-school campaign, discounting a large variety of its high-quality tablets for note-taking and creating art. Here are our top recommendations from this sale.", "link": "https://www.windowscentral.com/accessories/huion-back-to-school-pc-drawing-tablets", "source": "Windows Central", "published_at": "2026-08-15T09:00:00+00:00", "first_collected_at": "2026-08-17T15:24:03.210738+08:00", "last_seen_at": "2026-08-17T15:24:03.210738+08:00", "category": "产品发布", "reason": "来自公开源聚合，点击标题可阅读原文。", "ai_enhanced": false}, {"id": "795722bd813a77abac9a", "title": "Stop paying monthly to manage PDFs — PDF Agile is just $39.99 for lifetime access", "summary": "TL;DR: Skip the Adobe Acrobat subscription and get lifetime access to PDF Agile for just $39.99. Adobe Acrobat isn’t your only option for editing PDFs, and it isn’t exactly budget-friendly. If you’re…", "link": "https://www.pcworld.com/article/3212509/stop-paying-monthly-to-manage-pdfs-pdf-agile-is-just-39-99-for-lifetime-access.html", "source": "PCWorld", "published_at": "2026-08-15T08:00:00+00:00", "first_collected_at": "2026-08-17T15:24:03.210743+08:00", "last_seen_at": "2026-08-17T15:24:03.210743+08:00", "category": "成本价格", "reason": "市场出货、价格与供应链消息，反映行业走势。", "ai_enhanced": false}, {"id": "5831b3f8c8f6f8789cb3", "title": "Make your next PC upgrade painless with this $34.99 transfer bundle", "summary": "TL;DR: Get three lifetime PC utilities for $34.99: PCmover Professional to transfer your apps, files, and settings, DiskImage to back up and restore your entire system, and SafeErase to permanently…", "link": "https://www.pcworld.com/article/3212523/make-your-next-pc-upgrade-painless-with-this-34-99-transfer-bundle.html", "source": "PCWorld", "published_at": "2026-08-15T08:00:00+00:00", "first_collected_at": "2026-08-17T15:24:03.210749+08:00", "last_seen_at": "2026-08-17T15:24:03.210749+08:00", "category": "成本价格", "reason": "内存与存储新闻，DRAM/NAND 价格是当前市场关键变量。", "ai_enhanced": false}, {"id": "fdb1dfeddbf08bb7ba63", "title": "Injustice 2 Tops 9 Million Units Sold—7 Million More than \"Gods Among Us\"", "summary": "It turns out the Injustice game series is a lesson in how concurrent player counts don't necessarily predict a game's commercial success. Despite only drawing a peak concurrent Steam player count of…", "link": "https://www.techpowerup.com/351628/injustice-2-tops-9-million-units-sold-7-million-more-than-gods-among-us", "source": "TechPowerUp", "published_at": "2026-08-15T04:52:29+00:00", "first_collected_at": "2026-08-17T15:24:03.210763+08:00", "last_seen_at": "2026-08-17T15:24:03.210763+08:00", "category": "AI与芯片", "reason": "来自公开源聚合，点击标题可阅读原文。", "ai_enhanced": false}, {"id": "be095c2d06fa5650abd2", "title": "Compare GPT-4o, Claude, and Gemini Side by Side for $59.25", "summary": "Every major AI lab claims their model is the best one. ChatPlayground AI skips the debate by running one prompt across more than 20 models at once, including GPT-4o, Claude Sonnet 4, Gemini 1.5…", "link": "https://www.techpowerup.com/351503/compare-gpt-4o-claude-and-gemini-side-by-side-for-usd-59-25", "source": "TechPowerUp", "published_at": "2026-08-15T01:31:28+00:00", "first_collected_at": "2026-08-14T16:26:32.258718+08:00", "last_seen_at": "2026-08-17T15:24:03.210769+08:00", "category": "成本价格", "reason": "来自公开源聚合，点击标题可阅读原文。", "ai_enhanced": false}, {"id": "e9261b6a52084c570442", "title": "Google now lets you nix visible Gemini image watermarks", "summary": "On a week when AI watermarking is a hot topic, Google has just announced that Gemini will let you drop the visible watermarks from created images and videos. Of course, “visible” is the key word…", "link": "https://www.pcworld.com/article/3213409/google-now-lets-you-nix-visible-gemini-image-watermarks.html", "source": "PCWorld", "published_at": "2026-08-14T22:46:58+00:00", "first_collected_at": "2026-08-17T15:24:03.210785+08:00", "last_seen_at": "2026-08-17T15:24:03.210785+08:00", "category": "产品发布", "reason": "来自公开源聚合，点击标题可阅读原文。", "ai_enhanced": false}, {"id": "059b18a6eaa98ddcdd85", "title": "Resident Evil: Requiem Reaches Up to 55% Physical Sales in Some Regions", "summary": "Sony's move away from physical games has been the source of much criticism, but the gaming giant has remained insistent that the move is the correct one, arguing that the majority of game sales are…", "link": "https://www.techpowerup.com/351624/resident-evil-requiem-reaches-up-to-55-physical-sales-in-some-regions", "source": "TechPowerUp", "published_at": "2026-08-14T22:10:26+00:00", "first_collected_at": "2026-08-17T15:24:03.210791+08:00", "last_seen_at": "2026-08-17T15:24:03.210791+08:00", "category": "综合", "reason": "市场出货、价格与供应链消息，反映行业走势。", "ai_enhanced": false}, {"id": "8d7f16e65a55275e1546", "title": "(PR) S.T.A.L.K.E.R. 2: Heart of Chornobyl Update 2.0 Arrives August 20", "summary": "GSC Game World is thrilled to announce that Update 2.0 for S.T.A.L.K.E.R. 2: Heart of Chornobyl is launching on August 20, featuring a new version of the engine, a graphic overhaul, three types of…", "link": "https://www.techpowerup.com/351625/s-t-a-l-k-e-r-2-heart-of-chornobyl-update-2-0-arrives-august-20", "source": "TechPowerUp", "published_at": "2026-08-14T21:16:19+00:00", "first_collected_at": "2026-08-17T15:24:03.210796+08:00", "last_seen_at": "2026-08-17T15:24:03.210796+08:00", "category": "产品发布", "reason": "来自公开源聚合，点击标题可阅读原文。", "ai_enhanced": false}, {"id": "efa353592da81d1a0930", "title": "Windows 11 is finally on the brink of restoring full taskbar movement — a reversal of one of its most controversial design decisions", "summary": "You can now move your Windows 11 taskbar if you're an Insider. That option will ship in just a few weeks to non-Insiders.", "link": "https://www.windowscentral.com/microsoft/windows-11/windows-11-is-dangerously-close-to-letting-you-move-the-taskbar", "source": "Windows Central", "published_at": "2026-08-14T20:48:22+00:00", "first_collected_at": "2026-08-17T15:24:03.210802+08:00", "last_seen_at": "2026-08-17T15:24:03.210802+08:00", "category": "综合", "reason": "来自公开源聚合，点击标题可阅读原文。", "ai_enhanced": false}, {"id": "634d34393f32854f3d3a", "title": "S.T.A.L.K.E.R. 2 has shown off its free 2.0 Update with a gameplay trailer, and it makes it feel almost like a new game, even without the upcoming DLC", "summary": "GSC Game World has given players a glimpse at the new content coming to S.T.A.L.K.E.R. 2: Heart of Chornobyl's upcoming 2.0 update, which is set to launch on August 20, 2026, alongside the Hope of…", "link": "https://www.windowscentral.com/gaming/s-t-a-l-k-e-r-2-has-shown-off-its-free-2-0-update-with-a-gameplay-trailer-and-it-makes-it-feel-almost-like-a-new-game-even-without-the-upcoming-dlc", "source": "Windows Central", "published_at": "2026-08-14T20:25:05+00:00", "first_collected_at": "2026-08-17T15:24:03.210808+08:00", "last_seen_at": "2026-08-17T15:24:03.210808+08:00", "category": "产品发布", "reason": "主板与机箱相关更新。", "ai_enhanced": false}, {"id": "0ae24d2e77efc893c8b2", "title": "Arc Raiders Surpasses 16 Million Sales as Nexon Looks to Replicate its Success", "summary": "It's not news that Arc Raiders has been a successful game for both Embark and its parent company, Nexon, but a new 2026 Q2 earnings report has put a number on the game's success as it approaches its…", "link": "https://www.techpowerup.com/351623/arc-raiders-surpasses-16-million-sales-as-nexon-looks-to-replicate-its-success", "source": "TechPowerUp", "published_at": "2026-08-14T20:23:55+00:00", "first_collected_at": "2026-08-17T15:24:03.210813+08:00", "last_seen_at": "2026-08-17T15:24:03.210813+08:00", "category": "综合", "reason": "来自公开源聚合，点击标题可阅读原文。", "ai_enhanced": false}, {"id": "d70020d315d55f4ccfb3", "title": "Stop Putting It Off: Windows 11 Pro Drops to $11.23", "summary": "A full Windows 11 Pro license normally runs $199. Right now it's $11.23 with code Aug25, a one-time purchase that will add more value to your PC time. Why You Need to UpgradeBitLocker for full-disk…", "link": "https://www.techpowerup.com/351504/stop-putting-it-off-windows-11-pro-drops-to-usd-11-23", "source": "TechPowerUp", "published_at": "2026-08-14T19:30:19+00:00", "first_collected_at": "2026-08-14T16:26:32.258784+08:00", "last_seen_at": "2026-08-17T15:24:03.210819+08:00", "category": "成本价格", "reason": "来自公开源聚合，点击标题可阅读原文。", "ai_enhanced": false}, {"id": "3e5dd8cf0ef4b6cd42f2", "title": "技嘉“雕妹”系列扩展至显卡，AORUS GeForce RTX 5060 ARI 8G 上线", "summary": "IT之家 8 月 14 日消息，技嘉 (GIGABYTE) 今年早些时候将“雕妹”主题主板统一在 AORUS ARI 的旗帜下。而在最近，该企业又带来了首款“雕妹”显卡 AORUS GeForce RTX 5060 ARI 8G。这款显卡 IP 美术风格偏向慵懒可爱，与 B850 AORUS ELITE-P 拥有一致的主题设计。其三维 329×128×40 (mm)，GPU 加速频率可达…", "link": "https://www.ithome.com/0/989/794.htm", "source": "IT之家", "published_at": "2026-08-14T08:35:35+00:00", "first_collected_at": "2026-08-14T16:48:17.487278+08:00", "last_seen_at": "2026-08-14T16:48:17.487278+08:00", "category": "综合", "reason": "技嘉“雕妹”系列显卡上线，带来独特可爱设计与良好性能表现。", "ai_enhanced": true}, {"id": "1e722acbddf77d917780", "title": "AMD 旧款处理器被曝内存地址映射漏洞，可攻击硬件保护区域", "summary": "IT之家 8 月 14 日消息，安全研究人员 Christopher Domas 公布了一个针对 AMD Family 16h 处理器的攻击方法，该方法通过操纵内存控制器的地址转换逻辑，可读取甚至改写处理器中受硬件保护的敏感内存区域。相关研究成果及工具代码今日以“Skitter Creek Bath Salts”为名在 GitHub 上开源。IT之家注：AMD Family 16h 是 AMD…", "link": "https://www.ithome.com/0/989/793.htm", "source": "IT之家", "published_at": "2026-08-14T08:31:26+00:00", "first_collected_at": "2026-08-14T16:36:05.009211+08:00", "last_seen_at": "2026-08-14T16:48:17.487333+08:00", "category": "综合", "reason": "值得关注的是该漏洞可攻击处理器硬件保护区域，影响广泛且严重。", "ai_enhanced": true}, {"id": "ed2d18e1a267d1ca55bc", "title": "苹果 CEO 库克谈自身历史地位：希望外界记得他是善良、正直的人", "summary": "IT之家 8 月 14 日消息，苹果首席执行官蒂姆 · 库克今日接受外媒 CBS 采访。他在受访期间表示，自己的历史地位将交由他人评判。据IT之家此前报道，约翰 · 特努斯将于 9 月 1 日起担任苹果下一任首席执行官，库克的 CEO 任期还有不到一个月就要结束。库克的职业生涯和在任 CEO…", "link": "https://www.ithome.com/0/989/790.htm", "source": "IT之家", "published_at": "2026-08-14T08:13:04+00:00", "first_collected_at": "2026-08-14T16:26:32.258536+08:00", "last_seen_at": "2026-08-14T16:48:17.487354+08:00", "category": "综合", "reason": "关注库克关于自身历史地位的观点，折射出苹果领导层的平稳过渡与企业文化的传承。", "ai_enhanced": true}, {"id": "482f5c567e8d6de44233", "title": "WIKO 新款 Hi MateBook D 16 锐龙版笔记本电脑开售：AMD R7 H 255 + 24G + 512G 售 6199 元", "summary": "IT之家 8 月 14 日消息，WIKO 旗下 Hi MateBook D 16 锐龙版新机上市，该机搭载锐龙 7 H 255 处理器，配备 24GB 内存和 512GB SSD，定价为 6199 元，叠加国补后 5269.15 元。京东 WIKO Hi Matebook D 16 锐龙版笔记本 6199 元直达链接2026 年数码家电政府补贴持续进行中，IT…", "link": "https://www.ithome.com/0/989/786.htm", "source": "IT之家", "published_at": "2026-08-14T08:00:02+00:00", "first_collected_at": "2026-08-14T16:26:32.258613+08:00", "last_seen_at": "2026-08-14T16:48:17.487366+08:00", "category": "成本价格", "reason": "搭载AMD锐龙7标压处理器，性能强劲且价格合理。", "ai_enhanced": true}, {"id": "7bce6561da505c06eaed", "title": "If your PC needs Office and Windows 11 Pro, this $33 lifetime bundle handles both", "summary": "TL;DR: Get lifetime licenses for both Microsoft Office and Windows 11 Pro for just $32.97 through August 16 at 11:59 p.m. PT (MSRP $418.99). Pay once and skip the recurring cost of Microsoft 365 and…", "link": "https://www.pcworld.com/article/3211697/if-your-pc-needs-office-and-windows-11-pro-this-33-lifetime-bundle-handles-both.html", "source": "PCWorld", "published_at": "2026-08-14T08:00:00+00:00", "first_collected_at": "2026-08-14T16:26:32.258627+08:00", "last_seen_at": "2026-08-14T16:48:17.487376+08:00", "category": "成本价格", "reason": "提供终身使用权限，性价比高，适合需要Office和Windows 11 Pro的用户。", "ai_enhanced": true}, {"id": "46c03c68bbf41168a795", "title": "Stop paying for multiple AI subscriptions and put 50+ models under one roof for $39.99", "summary": "TL;DR: Get lifetime access to 50+ AI models with AskAnyModel AI Pro for just $39.99 (MSRP $499). Compare up to six responses side by side, use unlimited chat and image generation on supported models,…", "link": "https://www.pcworld.com/article/3211701/stop-paying-for-multiple-ai-subscriptions-and-put-50-models-under-one-roof-for-39-99.html", "source": "PCWorld", "published_at": "2026-08-14T08:00:00+00:00", "first_collected_at": "2026-08-14T16:26:32.258636+08:00", "last_seen_at": "2026-08-14T16:48:17.487390+08:00", "category": "成本价格", "reason": "提供 lifetime 访问 50+ AI 模型，仅需 $39.99，性价比超高。", "ai_enhanced": true}, {"id": "6f76685a171e98fd076c", "title": "上下均提供开机键：CHIEFTEC 带来 VISTA Max GX-30B-OP 机箱", "summary": "IT之家 8 月 14 日消息，PC 硬件品牌 CHIEFTEC 近日宣布推出全视“海景房”机箱 VISTA Max GX-30B-OP。该产品采用了上下均提供开机键的人性化设计，这意味着其无论放在桌上还是桌下均可方便开机，提升了使用便利性。GX-30B-OP 三维 452×239×526 (mm)，以 0.7mm SPCC 钢板搭配 2 块“落地式”玻璃面板。其具备 7 条扩展槽，兼容 ATX…", "link": "https://www.ithome.com/0/989/785.htm", "source": "IT之家", "published_at": "2026-08-14T07:57:50+00:00", "first_collected_at": "2026-08-14T16:26:32.258645+08:00", "last_seen_at": "2026-08-14T16:48:17.487398+08:00", "category": "综合", "reason": "上下均设开机键，提升使用便利性，值得关注。", "ai_enhanced": true}, {"id": "ec45781f29cdfd71b961", "title": "网易《逆水寒：新世界》首个赛事《剑影杯》S4 定档，“跨服联赛”大优化", "summary": "IT之家 8 月 14 日消息，网易《逆水寒：新世界》今日官宣，新世界首个平台赛事《剑影杯》S4 正式定档，将于 4.1.3 版本（8 月 28…", "link": "https://www.ithome.com/0/989/784.htm", "source": "IT之家", "published_at": "2026-08-14T07:56:40+00:00", "first_collected_at": "2026-08-14T16:26:32.258652+08:00", "last_seen_at": "2026-08-14T16:48:17.487406+08:00", "category": "综合", "reason": "优化跨服联赛机制，提升玩家竞技体验。", "ai_enhanced": true}, {"id": "ed78969992d76f98fc6e", "title": "飞牛 fnOS 鸿蒙原生客户端正式上线：功能对标安卓无阉割，已在华为应用商店提交审核", "summary": "IT之家 8 月 14 日消息，飞牛私有云（fnOS）鸿蒙原生客户端正式上线。该版本提供完整的客户端能力，功能对标安卓版本，无阉割、无缩水。飞牛鸿蒙 App 版本号为 v1.33.6，目前已在华为应用商店提交审核。在商店正式上架前，用户可通过鸿蒙 App Test 参与公测下载体验。相册功能方面，飞牛新版本支持鸿蒙动图、HEIC…", "link": "https://www.ithome.com/0/989/749.htm", "source": "IT之家", "published_at": "2026-08-14T07:44:05+00:00", "first_collected_at": "2026-08-14T16:26:32.258660+08:00", "last_seen_at": "2026-08-14T16:48:17.487413+08:00", "category": "综合", "reason": "提供完整安卓功能无阉割版，值得关注其在鸿蒙生态中的表现与优化。", "ai_enhanced": true}, {"id": "c0335a96dc85dcad66e2", "title": "芯擎科技自研车规级 7 纳米 AI 加速芯片“天工 100”量产，实现千元级硬件成本", "summary": "IT之家 8 月 14 日消息，8 月 12 日，芯擎科技宣布自研车规级 7 纳米 AI 加速芯片“天工 100”（NNA100）全面量产，同步向整车厂、Tier1 等生态伙伴批量供货。据官方介绍，作为国内首款面向端侧智能体 AI 应用、即插即用的独立车规大模型加速芯片，“天工…", "link": "https://www.ithome.com/0/989/739.htm", "source": "IT之家", "published_at": "2026-08-14T07:31:08+00:00", "first_collected_at": "2026-08-14T16:26:32.258666+08:00", "last_seen_at": "2026-08-14T16:36:05.009326+08:00", "category": "成本价格", "reason": "实现了国产7纳米车规级AI芯片量产，大幅降低硬件成本，值得关注。", "ai_enhanced": true}, {"id": "c1acdb37e88a0505edf8", "title": "Epic Games Launcher Coming \"Soon\" to Linux", "summary": "Following the launch of the Valve Steam Deck, there has been a growing tide of game and software developers looking to bring their products and projects to the growing body of Linux gamers. Epic…", "link": "https://www.techpowerup.com/351601/epic-games-launcher-coming-soon-to-linux", "source": "TechPowerUp", "published_at": "2026-08-14T05:07:26+00:00", "first_collected_at": "2026-08-14T16:26:32.258674+08:00", "last_seen_at": "2026-08-14T16:48:17.487420+08:00", "category": "产品发布", "reason": "支持Epic Games作品的Linux用户将获得更多选择，提升游戏生态多样性。", "ai_enhanced": true}, {"id": "22c15500ce8ffe6c245c", "title": "Payday 2 Gets New Engine 13 Years Post-Launch and Officially Loses Native Linux Version", "summary": "Payday 2 launch in 2013, but the co-op shooter still regularly brings in over 30,000 concurrent daily players, despite its age. Now, 13 years on, the developer, Overkill, has announced the official…", "link": "https://www.techpowerup.com/351600/payday-2-gets-new-engine-13-years-post-launch-and-officially-loses-native-linux-version", "source": "TechPowerUp", "published_at": "2026-08-14T03:50:20+00:00", "first_collected_at": "2026-08-14T16:26:32.258681+08:00", "last_seen_at": "2026-08-14T16:48:17.487427+08:00", "category": "产品发布", "reason": "尽管推出已有13年，Payday 2依然拥有大量玩家基础，新引擎的升级值得关注。", "ai_enhanced": true}, {"id": "8520c5b277b7f9314634", "title": "Duskfade Launches as \"Love Letter to Classic 3D Action Platformers\"", "summary": "Duskfade, a new 3D action platformer from indie studio, Weird Beluga, has officially launched on Steam. The developer describes Duskfade as \"a love letter to classic 3D action platformers.\" It…", "link": "https://www.techpowerup.com/351594/duskfade-launches-as-love-letter-to-classic-3d-action-platformers", "source": "TechPowerUp", "published_at": "2026-08-13T22:04:01+00:00", "first_collected_at": "2026-08-14T16:26:32.258687+08:00", "last_seen_at": "2026-08-14T16:48:17.487434+08:00", "category": "产品发布", "reason": "致敬经典3D动作平台游戏，提供怀旧体验与新颖挑战。", "ai_enhanced": true}, {"id": "e95e0036b193895e02a9", "title": "Disgruntled security researcher just dropped another Windows zero-day, right on schedule", "summary": "NightmareEclipse and Microsoft keep clashing over zero-day vulnerabilities in Windows. The researcher, who pledged to give Redmond security hell, is back with ShieldBreak, a new flaw in Windows…", "link": "https://www.techspot.com/news/113477-disgruntled-security-researcher-dropped-another-windows-zero-day.html", "source": "TechSpot", "published_at": "2026-08-13T21:53:00+00:00", "first_collected_at": "2026-08-14T16:36:05.009351+08:00", "last_seen_at": "2026-08-14T16:36:05.009351+08:00", "category": "综合", "reason": "来自公开源聚合，点击标题可阅读原文。", "ai_enhanced": false}, {"id": "c729678f66b1038937cd", "title": "(PR) Lam Research Announces Plans to Invest More than $3B to Expand Global Lab Network", "summary": "Lam Research Corp. (NASDAQ: LRCX) today announced that it intends to invest more than $3 billion over the next five years to expand its global research and development (R&D) lab network. The planned…", "link": "https://www.techpowerup.com/351595/lam-research-announces-plans-to-invest-more-than-usd-3b-to-expand-global-lab-network", "source": "TechPowerUp", "published_at": "2026-08-13T21:12:53+00:00", "first_collected_at": "2026-08-14T16:26:32.258694+08:00", "last_seen_at": "2026-08-14T16:48:17.487441+08:00", "category": "成本价格", "reason": "该投资将增强Lam Research的研发实力，有望推动半导体制造技术进步。值得关注其对未来供应链的影响。", "ai_enhanced": true}, {"id": "53f1b11fd679257c1f4f", "title": "Hawk 370 Slotket Breathes New Life Into Intel’s Legendary 440BX Chipset", "summary": "If you're an enthusiast of a certain age, you may recall that there was a weird diversion between the Socket 7 platform used by the original Pentium and the Socket 370 platform used by the Pentium…", "link": "https://hothardware.com/news/hawk-370-slotket-supports-tualatins-slot-1-motherboards", "source": "HotHardware", "published_at": "2026-08-13T20:30:00+00:00", "first_collected_at": "2026-08-14T16:26:32.258701+08:00", "last_seen_at": "2026-08-14T16:48:17.487452+08:00", "category": "综合", "reason": "处理器相关动态，Intel/AMD/Qualcomm/Nvidia 竞争值得关注。", "ai_enhanced": false}, {"id": "40f71dca07d45d2c2a0a", "title": "Chosfox Announces Init40 40% Wireless Mechanical Keyboard", "summary": "Chosfox, the niche mechanical keyboard maker responsible for the Geonix48 ortholinear keyboard series, has officially announced the Init40 as its latest take on the 40% layout. Instead of the…", "link": "https://www.techpowerup.com/351593/chosfox-announces-init40-40-wireless-mechanical-keyboard", "source": "TechPowerUp", "published_at": "2026-08-13T19:48:13+00:00", "first_collected_at": "2026-08-14T16:26:32.258710+08:00", "last_seen_at": "2026-08-14T16:48:17.487461+08:00", "category": "产品发布", "reason": "来自公开源聚合，点击标题可阅读原文。", "ai_enhanced": false}, {"id": "ea62a903c2e6a42a0549", "title": "Qualcomm's Snapdragon C wants to be the Arm chip for $300 laptops", "summary": "The processor has eight Qualcomm Kryo CPU cores. Qualcomm lists a maximum clock speed of 3 GHz for single-core workloads and 2 GHz for multi-core workloads, along with 2 MB of total cache. Its…", "link": "https://www.techspot.com/news/113466-qualcomm-snapdragon-c-wants-arm-chip-300-laptops.html", "source": "TechSpot", "published_at": "2026-08-13T19:47:00+00:00", "first_collected_at": "2026-08-14T16:36:05.009381+08:00", "last_seen_at": "2026-08-14T16:36:05.009381+08:00", "category": "成本价格", "reason": "处理器相关动态，Intel/AMD/Qualcomm/Nvidia 竞争值得关注。", "ai_enhanced": false}, {"id": "eb1079bc8ecada26843c", "title": "Pixel Buds Pro 2 And 2A Gain Sweet New Features And Big Discounts", "summary": "Google delivered its excellent Pixel Buds 2a and Pixel Buds Pro 2 last year, and the company is continuing to put in the work to make these earbuds even better. An upcoming software update will bring…", "link": "https://hothardware.com/news/pixel-buds-pro-2-and-2a-new-features", "source": "HotHardware", "published_at": "2026-08-13T19:09:00+00:00", "first_collected_at": "2026-08-14T16:26:32.258725+08:00", "last_seen_at": "2026-08-14T16:48:17.487475+08:00", "category": "综合", "reason": "来自公开源聚合，点击标题可阅读原文。", "ai_enhanced": false}, {"id": "5d11db173558d48f660b", "title": "Windows 11's new CPU-boosting speed trick is rolling out to all apps", "summary": "Microsoft began rolling out the new Low Latency Profile (LLP) feature to all Windows 11 users earlier this week. The change is part of KB5121003, this month's Patch Tuesday update for all supported…", "link": "https://www.techspot.com/news/113459-microsoft-expands-cpu-boosting-feature-all-windows-11.html", "source": "TechSpot", "published_at": "2026-08-13T19:02:00+00:00", "first_collected_at": "2026-08-14T16:36:05.009398+08:00", "last_seen_at": "2026-08-14T16:36:05.009398+08:00", "category": "综合", "reason": "处理器相关动态，Intel/AMD/Qualcomm/Nvidia 竞争值得关注。", "ai_enhanced": false}, {"id": "c4223a4ef2d11e99aba2", "title": "(PR) Apple Opens Advanced Manufacturing Center in Houston", "summary": "Apple today opened its new Advanced Manufacturing Center (AMC) in Houston. The center offers free training and educational sessions for small- and medium-sized businesses, giving them direct…", "link": "https://www.techpowerup.com/351592/apple-opens-advanced-manufacturing-center-in-houston", "source": "TechPowerUp", "published_at": "2026-08-13T18:59:28+00:00", "first_collected_at": "2026-08-14T16:26:32.258754+08:00", "last_seen_at": "2026-08-14T16:48:17.487482+08:00", "category": "综合", "reason": "内存与存储新闻，DRAM/NAND 价格是当前市场关键变量。", "ai_enhanced": false}, {"id": "072568aa5ede80cc8edf", "title": "Nightmare Eclipse Now Has A Top 10 Windows 11 Vulnerability List", "summary": "ShieldBreak is the 10th zero-day vulnerability which Nightmare Eclipse has posted to GitHub. These releases are not good for sysdamin's blood pressure and Microsoft is livid that this person or group…", "link": "https://pcper.com/2026/08/nightmare-eclipse-now-has-a-top-10-windows-11-vulnerability-list/", "source": "PC Perspective", "published_at": "2026-08-13T18:48:21+00:00", "first_collected_at": "2026-08-14T16:36:05.009408+08:00", "last_seen_at": "2026-08-14T16:36:05.009408+08:00", "category": "综合", "reason": "来自公开源聚合，点击标题可阅读原文。", "ai_enhanced": false}, {"id": "b389c88a5e5e032e91c7", "title": "ASUS Fixes Another Severe Security Flaw In Armoury Crate, Update ASAP", "summary": "ASUS has patched another serious security vulnerability in Armoury Crate and several other hardware-management utilities that could let an unprivileged application gain kernel-level access on Windows…", "link": "https://hothardware.com/news/asus-fixes-another-severe-armoury-crate-flaw", "source": "HotHardware", "published_at": "2026-08-13T18:15:00+00:00", "first_collected_at": "2026-08-14T16:26:32.258762+08:00", "last_seen_at": "2026-08-14T16:48:17.487489+08:00", "category": "OEM品牌", "reason": "来自公开源聚合，点击标题可阅读原文。", "ai_enhanced": false}, {"id": "85d0e3e8ed505bdcedf6", "title": "Comet gets you a free AI assistant directly into your web browser", "summary": "Comet combines a familiar Chromium browsing experience with Perplexity's AI assistant that can summarize pages, answer questions, and help with tasks across tabs. For more browser options, including…", "link": "https://www.techspot.com/downloads/7794-comet.html", "source": "TechSpot", "published_at": "2026-08-13T18:03:00+00:00", "first_collected_at": "2026-08-14T16:36:05.009419+08:00", "last_seen_at": "2026-08-14T16:36:05.009419+08:00", "category": "综合", "reason": "来自公开源聚合，点击标题可阅读原文。", "ai_enhanced": false}, {"id": "bc5bdd23504ea92b6199", "title": "Microsoft Unifies Copilot Features Into a Super App", "summary": "Microsoft is finally scaling back on creating numerous Copilot variants for every use case and is instead consolidating many Copilot buttons, icons, and functions into the main Copilot app. According…", "link": "https://www.techpowerup.com/351589/microsoft-unifies-copilot-features-into-a-super-app", "source": "TechPowerUp", "published_at": "2026-08-13T17:39:30+00:00", "first_collected_at": "2026-08-14T16:26:32.258769+08:00", "last_seen_at": "2026-08-14T16:48:17.487496+08:00", "category": "AI与芯片", "reason": "主板与机箱相关更新。", "ai_enhanced": false}, {"id": "dfd4ff43fc7891a3ae6c", "title": "Microsoft's nemesis drops new zero-day privilege escalation vulnerability — attack grants system-level privileges, but it could already be patched", "summary": "Nightmare Eclipse drops ShieldBreak, another Windows zero-day privilege escalation vulnerability, but Microsoft has rushed quickly to block it with Defender", "link": "https://www.tomshardware.com/tech-industry/cyber-security/microsofts-nemesis-drops-new-zero-day-privilege-escalation-vulnerability-attack-grants-system-level-privileges-but-it-could-already-be-patched", "source": "Tom's Hardware", "published_at": "2026-08-13T17:36:40+00:00", "first_collected_at": "2026-08-14T16:26:32.258777+08:00", "last_seen_at": "2026-08-14T16:48:17.487503+08:00", "category": "综合", "reason": "来自公开源聚合，点击标题可阅读原文。", "ai_enhanced": false}, {"id": "88489d1420069533f39b", "title": "(PR) Razer Unveils the Artisan Keycap, Triple-Headed Snake Edition", "summary": "Razer, the leading global lifestyle brand for gamers, today announced the Razer Artisan Keycap - Triple-Headed Snake Edition, the brand's first artisan keycap and the next step towards the ultimate…", "link": "https://www.techpowerup.com/351588/razer-unveils-the-artisan-keycap-triple-headed-snake-edition", "source": "TechPowerUp", "published_at": "2026-08-13T17:17:07+00:00", "first_collected_at": "2026-08-14T16:26:32.258792+08:00", "last_seen_at": "2026-08-14T16:48:17.487517+08:00", "category": "OEM品牌", "reason": "来自公开源聚合，点击标题可阅读原文。", "ai_enhanced": false}, {"id": "3543361763f09e48b9d3", "title": "(PR) Honeycomb Aeronautical Launches the Foxtrot Takeoff Kit", "summary": "Honeycomb Aeronautical, a leading name in professional-grade flight simulation hardware, announced today that the Foxtrot Takeoff Kit will be released on August 31st at the official Honeycomb…", "link": "https://www.techpowerup.com/351587/honeycomb-aeronautical-launches-the-foxtrot-takeoff-kit", "source": "TechPowerUp", "published_at": "2026-08-13T17:12:47+00:00", "first_collected_at": "2026-08-14T16:26:32.258800+08:00", "last_seen_at": "2026-08-14T16:48:17.487524+08:00", "category": "产品发布", "reason": "市场出货、价格与供应链消息，反映行业走势。", "ai_enhanced": false}, {"id": "04dc1cde63a4542d4e53", "title": "Call of Duty: Black Ops 7 Zombies comes to its dramatic conclusion in Season 05 Reloaded — here's when you can play", "summary": "Call of Duty: Black Ops 7's latest mid-season refresh is bringing the Zombies saga to a close, at least for now. Here's when you can play the final map, Rex Infernus.", "link": "https://www.windowscentral.com/gaming/call-of-duty/call-of-duty-black-ops-7-zombies-comes-to-its-dramatic-conclusion-in-season-05-reloaded-heres-when-you-can-play", "source": "Windows Central", "published_at": "2026-08-13T17:01:04+00:00", "first_collected_at": "2026-08-14T16:26:32.258807+08:00", "last_seen_at": "2026-08-14T16:48:17.487531+08:00", "category": "产品发布", "reason": "内存与存储新闻，DRAM/NAND 价格是当前市场关键变量。", "ai_enhanced": false}, {"id": "a76801f571bd590b92b3", "title": "This Logitech mouse is rarely discounted, but it’s $20 off now", "summary": "NOW $20 OFF Logitech MX Master 3S Mouse View Deal The Logitech MX Master 3S released back in June 2022, but it’s still one of our favorite productivity mice. It’s so popular that it rarely goes on…", "link": "https://www.pcworld.com/article/3212628/this-logitech-mouse-is-rarely-discounted-but-its-20-off-now.html", "source": "PCWorld", "published_at": "2026-08-13T16:57:04+00:00", "first_collected_at": "2026-08-14T16:26:32.258814+08:00", "last_seen_at": "2026-08-14T16:48:17.487538+08:00", "category": "成本价格", "reason": "市场出货、价格与供应链消息，反映行业走势。", "ai_enhanced": false}, {"id": "3b3045a53554f0812a52", "title": "A YouTuber just stress-tested a Snapdragon X2 laptop for 17 hours straight", "summary": "YouTuber DevonDoesTech ran a 17-hour live stream on the Lenovo Yoga Slim 7x powered by Qualcomm's Snapdragon X2 Elite.", "link": "https://www.windowscentral.com/hardware/qualcomm/a-youtuber-just-stress-tested-a-snapdragon-x2-laptop-for-17-hours-straight", "source": "Windows Central", "published_at": "2026-08-13T16:44:54+00:00", "first_collected_at": "2026-08-14T16:26:32.258821+08:00", "last_seen_at": "2026-08-14T16:48:17.487545+08:00", "category": "AI与芯片", "reason": "处理器相关动态，Intel/AMD/Qualcomm/Nvidia 竞争值得关注。", "ai_enhanced": false}, {"id": "9f1304a73a6b3d41a291", "title": "This modder shrunk a Steam Deck down to Game Boy size", "summary": "Fitting the AMOLED panel, completing the adapter board and applying the BIOS modification will determine whether the device can function as a self-contained handheld.Read Entire Article", "link": "https://www.techspot.com/news/113468-modder-shrunk-steam-deck-down-game-boy-size.html", "source": "TechSpot", "published_at": "2026-08-13T16:16:00+00:00", "first_collected_at": "2026-08-14T16:36:05.009471+08:00", "last_seen_at": "2026-08-14T16:36:05.009471+08:00", "category": "综合", "reason": "来自公开源聚合，点击标题可阅读原文。", "ai_enhanced": false}, {"id": "0ad350854d0d22e4d96e", "title": "Best Windows backup software 2026 for PCs and laptops", "summary": "By now, the importance of backing up your Windows PC or laptop goes without saying. It only takes a moment to consider how much of your data is at potential risk of a drive failure, natural disaster,…", "link": "https://www.pcworld.com/article/407021/best-windows-backup-software.html", "source": "PCWorld", "published_at": "2026-08-13T16:00:00+00:00", "first_collected_at": "2026-08-14T16:26:32.258828+08:00", "last_seen_at": "2026-08-14T16:48:17.487553+08:00", "category": "AI与芯片", "reason": "内存与存储新闻，DRAM/NAND 价格是当前市场关键变量。", "ai_enhanced": false}, {"id": "4f2c8f66155f2e7753b8", "title": "Best Chromebooks 2026: Top picks for work, school, and more", "summary": "If you want a fast, low-maintenance machine that mostly lives in the browser, few options are as compelling as a Chromebook. Chromebooks don’t try to do everything, which is exactly why they’re so…", "link": "https://www.pcworld.com/article/608636/best-chromebooks.html", "source": "PCWorld", "published_at": "2026-08-13T16:00:00+00:00", "first_collected_at": "2026-08-14T16:26:32.258836+08:00", "last_seen_at": "2026-08-14T16:48:17.487560+08:00", "category": "综合", "reason": "处理器相关动态，Intel/AMD/Qualcomm/Nvidia 竞争值得关注。", "ai_enhanced": false}, {"id": "03a07336abce6dc4fb37", "title": "NVIDIA GeForce NOW for Linux Officially Arrives", "summary": "NVIDIA's efforts to enhance gaming on Linux operating systems are increasing. The company announced today that the official, native port of the GeForce NOW cloud gaming service client app is out of…", "link": "https://www.techpowerup.com/351585/nvidia-geforce-now-for-linux-officially-arrives", "source": "TechPowerUp", "published_at": "2026-08-13T15:52:29+00:00", "first_collected_at": "2026-08-14T16:26:32.258842+08:00", "last_seen_at": "2026-08-14T16:48:17.487567+08:00", "category": "产品发布", "reason": "处理器相关动态，Intel/AMD/Qualcomm/Nvidia 竞争值得关注。", "ai_enhanced": false}, {"id": "25fb2a3813e92b0c2ef8", "title": "Firefox is now the last major browser that still supports uBlock Origin", "summary": "Firefox recently announced via Bluesky post: “Our support for uBlock Origin isn’t going anywhere.” The moment comes in response to news that Microsoft Edge is soon going to lock out uBlock Origin and…", "link": "https://www.pcworld.com/article/3212428/firefox-is-now-the-last-major-browser-that-still-supports-ublock-origin.html", "source": "PCWorld", "published_at": "2026-08-13T15:52:22+00:00", "first_collected_at": "2026-08-14T16:26:32.258850+08:00", "last_seen_at": "2026-08-14T16:48:17.487573+08:00", "category": "产品发布", "reason": "来自公开源聚合，点击标题可阅读原文。", "ai_enhanced": false}, {"id": "23c734700f133c75760c", "title": "TSMC Achieves 98% Yield on CoWoS-L with 5.5x Reticle Size, 14x Comes in 2029", "summary": "TSMC has reportedly achieved near-perfect packaging yields, establishing a baseline of about 98% for its current CoWoS advanced packaging. This technology accommodates a die area equivalent to 5.5…", "link": "https://www.techpowerup.com/351584/tsmc-achieves-98-yield-on-cowos-l-with-5-5x-reticle-size-14x-comes-in-2029", "source": "TechPowerUp", "published_at": "2026-08-13T15:37:44+00:00", "first_collected_at": "2026-08-14T16:26:32.258856+08:00", "last_seen_at": "2026-08-14T16:48:17.487580+08:00", "category": "综合", "reason": "来自公开源聚合，点击标题可阅读原文。", "ai_enhanced": false}, {"id": "b3fae3f018f7ceb9b631", "title": "Nvidia raises RTX Pro 6000 Blackwell price to a staggering $16,000", "summary": "The RTX Pro 6000 has gone through multiple price revisions since its launch, driven by the AI-fueled memory crunch. It originally went on pre-order for just over $7,600 in early 2025 before being…", "link": "https://www.techspot.com/news/113460-nvidia-raises-rtx-pro-6000-blackwell-price-staggering.html", "source": "TechSpot", "published_at": "2026-08-13T15:33:00+00:00", "first_collected_at": "2026-08-14T16:36:05.009503+08:00", "last_seen_at": "2026-08-14T16:36:05.009503+08:00", "category": "成本价格", "reason": "显卡动态，受 AI 与内存短缺影响较大，关注价格与供应。", "ai_enhanced": false}, {"id": "486e653a2dddc01947a0", "title": "8BitDo’s NES-style keyboard just dropped to $70, its lowest price yet", "summary": "NEW LOWEST PRICE 8BitDo Retro Wireless Mechanical Keyboard View Deal The 8BitDo Retro Wireless Mechanical Keyboard is such a solid pick for a board. It’s wireless, hot-swappable, comes with…", "link": "https://www.pcworld.com/article/3212457/8bitdo-nes-style-keyboard-just-dropped-to-70-its-lowest-price-yet.html", "source": "PCWorld", "published_at": "2026-08-13T15:28:28+00:00", "first_collected_at": "2026-08-14T16:26:32.258863+08:00", "last_seen_at": "2026-08-14T16:48:17.487587+08:00", "category": "成本价格", "reason": "内存与存储新闻，DRAM/NAND 价格是当前市场关键变量。", "ai_enhanced": false}, {"id": "da84052adb3bf301ace2", "title": "Gaming? Check. School? Check. Gigabyte’s X16 and A16 Laptops Do It All", "summary": "Shop Gigabyte’s Newest Laptops Find gaming and everyday options at Best Buy Shop Gigabyte Buying a new laptop in 2026 often feels like more compromise than anything else. High memory prices make it…", "link": "https://www.pcworld.com/article/3212556/gaming-check-school-check-gigabytes-x16-and-a16-laptops-do-it-all.html", "source": "PCWorld", "published_at": "2026-08-13T15:15:54+00:00", "first_collected_at": "2026-08-14T16:26:32.258870+08:00", "last_seen_at": "2026-08-14T16:48:17.487594+08:00", "category": "成本价格", "reason": "处理器相关动态，Intel/AMD/Qualcomm/Nvidia 竞争值得关注。", "ai_enhanced": false}, {"id": "fb93f5e3ea12fe884e71", "title": "The guy who built Windows Task Manager in 1996 just remade it with a cyberpunk vibe — but there's one big issue for PC users", "summary": "The creator of the original Windows Task Manager has returned with an updated version, and it probably doesn't look anything like what you think. The big problem? Task Manager OG is currently only…", "link": "https://www.windowscentral.com/microsoft/windows/dave-plummer-task-manager-creator-new-version-cyberpunk-mac-windows", "source": "Windows Central", "published_at": "2026-08-13T15:06:51+00:00", "first_collected_at": "2026-08-14T16:26:32.258876+08:00", "last_seen_at": "2026-08-14T16:48:17.487601+08:00", "category": "综合", "reason": "来自公开源聚合，点击标题可阅读原文。", "ai_enhanced": false}, {"id": "61f2f5412c12c167ff1a", "title": "Microsoft is cutting off new Office features on Windows 10 soon", "summary": "Microsoft is stepping up the pressure on Windows 10 users by winding down support for Microsoft 365 Apps on Windows 10, including Word, Excel, and PowerPoint. After August 2026, Microsoft 365 Apps on…", "link": "https://www.pcworld.com/article/3212424/microsoft-is-cutting-off-new-office-features-on-windows-10-soon.html", "source": "PCWorld", "published_at": "2026-08-13T14:57:45+00:00", "first_collected_at": "2026-08-14T16:26:32.258884+08:00", "last_seen_at": "2026-08-14T16:48:17.487607+08:00", "category": "综合", "reason": "笔记本/AI PC 方向，本地 AI 能力成为新定义标准。", "ai_enhanced": false}, {"id": "9e144f1981fb5f419048", "title": "Is it a bird? Is it a plane? No, it's the Steam Boy, a Steam Deck crammed inside a Game Boy-like chassis", "summary": "A legally distinct Game Boy-like chassis, of course.", "link": "https://www.pcgamer.com/hardware/handheld-gaming-pcs/is-it-a-bird-is-it-a-plane-no-its-the-steam-boy-a-steam-deck-crammed-inside-a-game-boy-like-chassis/", "source": "PC Gamer", "published_at": "2026-08-13T14:57:23+00:00", "first_collected_at": "2026-08-14T16:26:32.258891+08:00", "last_seen_at": "2026-08-14T16:48:17.487615+08:00", "category": "综合", "reason": "内存与存储新闻，DRAM/NAND 价格是当前市场关键变量。", "ai_enhanced": false}, {"id": "242626ee994936c347b2", "title": "JCB's hydrogen car Hydromax hits 406 mph record at Bonneville", "summary": "Green drove JCB's Hydromax, a specially built vehicle designed to test hydrogen combustion at extreme speeds. The British equipment manufacturer is developing hydrogen engines for its construction…", "link": "https://www.techspot.com/news/113471-jcb-hydrogen-powered-hydromax-hits-record-406-mph.html", "source": "TechSpot", "published_at": "2026-08-13T14:55:00+00:00", "first_collected_at": "2026-08-14T16:36:05.009534+08:00", "last_seen_at": "2026-08-14T16:36:05.009534+08:00", "category": "综合", "reason": "来自公开源聚合，点击标题可阅读原文。", "ai_enhanced": false}, {"id": "251ee439fc921b1a1b71", "title": "Stop packing your laptop charger. Bring this one instead", "summary": "One charger to rule them all UGREEN Nexode Pro Charger, 160W View Deal Do you still bring your laptop charger with you on business trips? I just realized that I do, and it’s a habit I need to break.…", "link": "https://www.pcworld.com/article/3188184/stop-packing-your-laptop-charger-bring-this-one-instead.html", "source": "PCWorld", "published_at": "2026-08-13T14:45:00+00:00", "first_collected_at": "2026-08-14T16:26:32.258897+08:00", "last_seen_at": "2026-08-14T16:48:17.487621+08:00", "category": "综合", "reason": "处理器相关动态，Intel/AMD/Qualcomm/Nvidia 竞争值得关注。", "ai_enhanced": false}, {"id": "395b819b19c206a00261", "title": "Windows 10’s latest patch keeps your Secure Boot certificates on track", "summary": "Earlier this week, Microsoft released KB5120249, a critical security update for Windows 10 versions 22H2 and 21H2, as well as Windows 10 Enterprise LTSC 2021 and Windows 10 IoT Enterprise LTSC 2021.…", "link": "https://www.pcworld.com/article/3212426/windows-10s-latest-patch-keeps-your-secure-boot-certificates-on-track.html", "source": "PCWorld", "published_at": "2026-08-13T14:32:13+00:00", "first_collected_at": "2026-08-14T16:26:32.258904+08:00", "last_seen_at": "2026-08-14T16:48:17.487628+08:00", "category": "综合", "reason": "内存与存储新闻，DRAM/NAND 价格是当前市场关键变量。", "ai_enhanced": false}, {"id": "1b0e79e61aca541acdd6", "title": "AMD Ryzen 9 9900X Bundle With Mobo, RAM And AIO Cooler Drops To $659", "summary": "Building a high-end desktop usually entails picking up parts in piecemeal fashion and, in today's market, watching costs quickly stack up. Before you skip your next build, though, consider Newegg's…", "link": "https://hothardware.com/news/amd-ryzen-9-9900x-bundle-mobo-ram-aio-cooler-drops-659", "source": "HotHardware", "published_at": "2026-08-13T14:13:00+00:00", "first_collected_at": "2026-08-14T16:26:32.258911+08:00", "last_seen_at": "2026-08-14T16:48:17.487635+08:00", "category": "成本价格", "reason": "处理器相关动态，Intel/AMD/Qualcomm/Nvidia 竞争值得关注。", "ai_enhanced": false}, {"id": "4cab8fbb5ec54b79b185", "title": "(PR) This Working Handheld Radio Only Picks Up Transmissions From Your Favorite Video Games", "summary": "BlueUplink has begun shipping the TACCOM v2, a handheld, out-of-game VoIP radio whose frequencies exist only inside multiplayer games. The TACCOM v2 is built for flight sims, space sims, and milsim…", "link": "https://www.techpowerup.com/351582/this-working-handheld-radio-only-picks-up-transmissions-from-your-favorite-video-games", "source": "TechPowerUp", "published_at": "2026-08-13T14:09:07+00:00", "first_collected_at": "2026-08-14T16:26:32.258917+08:00", "last_seen_at": "2026-08-14T16:48:17.487642+08:00", "category": "综合", "reason": "来自公开源聚合，点击标题可阅读原文。", "ai_enhanced": false}, {"id": "8598b7b7155d06436320", "title": "NVIDIA's Six-Years-Old A100 \"Ampere\" GPU to Remain in Use Until 2029", "summary": "With the expansion of AI, every bit of available computing power is being utilized, and even NVIDIA's six-year-old A100 \"Ampere\" accelerator is being fully utilized at CoreWeave. According to…", "link": "https://www.techpowerup.com/351581/nvidias-six-years-old-a100-ampere-gpu-to-remain-in-use-until-2029", "source": "TechPowerUp", "published_at": "2026-08-13T14:04:17+00:00", "first_collected_at": "2026-08-14T16:26:32.258924+08:00", "last_seen_at": "2026-08-14T16:48:17.487649+08:00", "category": "综合", "reason": "显卡动态，受 AI 与内存短缺影响较大，关注价格与供应。", "ai_enhanced": false}, {"id": "81510e1e8d4cbe3331dc", "title": "Anker’s 2,000W portable power station is $70 off. It powers 10 devices", "summary": "NOW $70 OFF Anker SOLIX C1000 Gen 2 Power Station 1,024Wh capacity / 2,000W output / 10 ports / Solar recharge View Deal Portable power stations are essential if you’re going on a long camping trip…", "link": "https://www.pcworld.com/article/3199783/ankers-2000w-portable-power-station-is-70-off-it-powers-10-devices.html", "source": "PCWorld", "published_at": "2026-08-13T14:00:00+00:00", "first_collected_at": "2026-08-14T16:26:32.258930+08:00", "last_seen_at": "2026-08-14T16:48:17.487656+08:00", "category": "成本价格", "reason": "笔记本/AI PC 方向，本地 AI 能力成为新定义标准。", "ai_enhanced": false}, {"id": "dd37ec7265ffececdffb", "title": "I found a prompt that keeps AI agents from taking tasks too far", "summary": "The new ChatGPT “superapp” boasts many powerful features, including the ability to organize the mess of files on your desktop PC. Of course, the idea of letting ChatGPT loose on your precious data…", "link": "https://www.pcworld.com/article/3211564/i-found-a-prompt-that-keeps-ai-agents-from-taking-tasks-too-far.html", "source": "PCWorld", "published_at": "2026-08-13T14:00:00+00:00", "first_collected_at": "2026-08-14T16:26:32.258936+08:00", "last_seen_at": "2026-08-14T16:48:17.487664+08:00", "category": "综合", "reason": "内存与存储新闻，DRAM/NAND 价格是当前市场关键变量。", "ai_enhanced": false}, {"id": "eca8e6e88dbc689bd4b8", "title": "(PR) Gears of War: E-Day Multiplayer Beta Opens With NVIDIA DLSS, No More Room In Hell 2 and Hell Let Loose: Vietnam Launches With DLSS 4.5", "summary": "Each week, new games and apps integrating NVIDIA DLSS, NVIDIA Reflex, and advanced ray-traced effects are released or announced, delivering the definitive PC experience for GeForce RTX players.…", "link": "https://www.techpowerup.com/351579/gears-of-war-e-day-multiplayer-beta-opens-with-nvidia-dlss-no-more-room-in-hell-2-and-hell-let-loose-vietnam-launches-with-dlss-4-5", "source": "TechPowerUp", "published_at": "2026-08-13T13:40:04+00:00", "first_collected_at": "2026-08-14T16:26:32.258944+08:00", "last_seen_at": "2026-08-14T16:48:17.487671+08:00", "category": "产品发布", "reason": "显卡动态，受 AI 与内存短缺影响较大，关注价格与供应。", "ai_enhanced": false}, {"id": "9bcc6ffe4a80c82c2fde", "title": "PS5 emulation arrives on Steam Deck, Astro Playroom showcased running at 0.6 FPS — milestone SharpEmu development shows promise, despite unplayable performance", "summary": "Astro's Playroom runs at 0.5 to 1 FPS on the Steam Deck when emulated through SharpEmu. It's not much — it's nothing at all, in fact — but just the proof-of-concept alone is enough to stir up…", "link": "https://www.tomshardware.com/video-games/playstation/ps5-emulation-arrives-on-steam-deck-astro-playroom-showcased-running-at-0-6-fps-milestone-sharpemu-development-shows-promise-despite-unplayable-performance", "source": "Tom's Hardware", "published_at": "2026-08-13T13:37:59+00:00", "first_collected_at": "2026-08-14T16:26:32.258951+08:00", "last_seen_at": "2026-08-14T16:26:32.258951+08:00", "category": "综合", "reason": "主板与机箱相关更新。", "ai_enhanced": false}];
+
+    function escapeHtml(s) {
+      const d = document.createElement('div');
+      d.textContent = s || '';
+      return d.innerHTML;
+    }
+
+    function renderHistoryView(days) {
+      const container = document.getElementById('historyContainer');
+      const countEl = document.getElementById('historyCount');
+      const now = new Date();
+      let filtered = HISTORY_DATA;
+      if (days > 0) {
+        const cutoff = new Date(now.getTime() - days * 86400000);
+        filtered = HISTORY_DATA.filter(item => {
+          const d = new Date(item.published_at || item.first_collected_at);
+          return d >= cutoff;
+        });
+      }
+      filtered.sort((a, b) => new Date(b.published_at || b.first_collected_at) - new Date(a.published_at || a.first_collected_at));
+
+      const groups = {};
+      filtered.forEach(item => {
+        const d = new Date(item.published_at || item.first_collected_at);
+        const key = d.toLocaleDateString('zh-CN');
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(item);
+      });
+      const sortedDates = Object.keys(groups).sort((a, b) => new Date(b) - new Date(a));
+
+      const t = I18N[currentLang];
+      let html = '';
+      for (const date of sortedDates) {
+        html += '<div class="day-block"><div class="day-title">' + date + '</div>';
+        for (const item of groups[date]) {
+          const d = new Date(item.published_at || item.first_collected_at);
+          const timeStr = d.toTimeString().slice(0, 5);
+          const cat = item.category || '综合';
+          const catLabel = (t.cats && t.cats[cat]) || cat;
+          const reasonLabel = currentLang === 'zh' ? '推荐理由：' : 'Why it matters: ';
+          html += '<article class="feed-item" data-cat="' + escapeHtml(cat) + '" data-title="' + escapeHtml((item.title || '').toLowerCase()) + '" data-cost="0">' +
+            '<div class="feed-meta">' +
+              '<span class="feed-time">' + timeStr + '</span>' +
+              '<span class="feed-source">' + escapeHtml(item.source || '') + '</span>' +
+              '<span class="cat-tag">' + escapeHtml(catLabel) + '</span>' +
+            '</div>' +
+            '<div class="feed-title"><a href="' + escapeHtml(item.link || '#') + '" target="_blank" rel="noopener">' + escapeHtml(item.title || '') + '</a></div>' +
+            '<div class="feed-summary">' + escapeHtml(item.summary || '') + '</div>' +
+            '<div class="feed-reason"><strong>' + reasonLabel + '</strong>' + escapeHtml(item.reason || '') + '</div>' +
+          '</article>';
+        }
+        html += '</div>';
+      }
+      container.innerHTML = html || '<p class="no-data">' + (t.noData || '暂无数据') + '</p>';
+      countEl.textContent = filtered.length + ' ' + t.items;
+    }
+
+    document.querySelectorAll('.time-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const range = btn.dataset.range;
+        if (range === 'today') {
+          document.getElementById('todayView').style.display = '';
+          document.getElementById('historyView').style.display = 'none';
+        } else {
+          tagBtns.forEach(b => b.classList.remove('active'));
+          document.querySelector('.tag-btn[data-filter="all"]').classList.add('active');
+          currentFilter = 'all';
+          document.getElementById('todayView').style.display = 'none';
+          document.getElementById('historyView').style.display = '';
+          renderHistoryView(parseInt(range));
+          filterItems();
+        }
+      });
+    });
 
     setLang(currentLang);
   </script>

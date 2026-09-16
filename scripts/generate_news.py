@@ -11,6 +11,8 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 import re
 import html
+import json
+import hashlib
 from collections import defaultdict
 
 # ==================== 配置 ====================
@@ -310,9 +312,30 @@ def heat_score(rank: int, cost_flag: bool = False) -> int:
         score = min(255, score + 25)  # 成本类加权
     return score
 
-def render_html(entries):
+def load_history(max_items=500):
+    """读取 data/news_history.jsonl，返回列表（最多 max_items 条，按时间倒序）"""
+    history_path = Path("data/news_history.jsonl")
+    if not history_path.exists():
+        return []
+    items = []
+    for line in history_path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        try:
+            items.append(json.loads(line))
+        except Exception:
+            continue
+    items.sort(
+        key=lambda x: x.get("published_at", x.get("first_collected_at", "")),
+        reverse=True,
+    )
+    return items[:max_items]
+
+
+def render_html(entries, history=None):
     now = datetime.now(timezone(timedelta(hours=8)))
     weekday = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"][now.weekday()]
+    history_json = json.dumps(history or [], ensure_ascii=False)
 
     # 热榜：成本相关优先展示
     cost_entries = [e for e in entries if e["cost_flag"]]
@@ -505,7 +528,17 @@ def render_html(entries):
       background-color: #111827;
     }}
 
-    main {{ max-width: 920px; margin: 0 auto; padding: 24px 20px 60px; }}
+    main {{ max-width: 1100px; margin: 0 auto; padding: 24px 20px 60px; }}
+    .layout {{ display: flex; gap: 24px; align-items: flex-start; }}
+    .sidebar {{ width: 180px; flex-shrink: 0; position: sticky; top: 80px; }}
+    .sidebar-section {{ background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); margin-bottom: 16px; }}
+    .sidebar-title {{ font-size: .78rem; font-weight: 700; color: var(--text2); margin-bottom: 12px; text-transform: uppercase; letter-spacing: .04em; }}
+    .time-filters {{ display: flex; flex-direction: column; gap: 6px; }}
+    .time-btn {{ background: transparent; border: 1px solid var(--border); padding: 9px 14px; border-radius: 8px; font-size: .85rem; cursor: pointer; color: var(--text2); text-align: left; transition: all .15s; font-weight: 500; }}
+    .time-btn:hover {{ border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }}
+    .time-btn.active {{ background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 2px 8px rgba(59,130,246,.3); }}
+    .content {{ flex: 1; min-width: 0; }}
+    .no-data {{ text-align: center; padding: 48px 20px; color: var(--muted); font-size: .9rem; }}
 
     .section-header {{
       display: flex; align-items: baseline; justify-content: space-between;
@@ -648,6 +681,10 @@ def render_html(entries):
       .search-box {{ max-width: 100%; order: 3; width: 100%; }}
       .hot-item {{ padding: 10px 14px; }}
       .feed-item {{ padding: 14px; }}
+      .layout {{ flex-direction: column; }}
+      .sidebar {{ width: 100%; position: static; }}
+      .time-filters {{ flex-direction: row; flex-wrap: wrap; }}
+      .time-btn {{ flex: 1; min-width: 80px; text-align: center; }}
     }}
   </style>
 
@@ -672,6 +709,20 @@ def render_html(entries):
     </div>
   </header>
   <main>
+    <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-section">
+        <h3 class="sidebar-title" data-i18n="timeRange">时间范围</h3>
+        <div class="time-filters">
+          <button class="time-btn active" data-range="today" data-i18n="today">今天</button>
+          <button class="time-btn" data-range="7" data-i18n="lastWeek">近一周</button>
+          <button class="time-btn" data-range="30" data-i18n="lastMonth">近一月</button>
+          <button class="time-btn" data-range="0" data-i18n="allHistory">全部历史</button>
+        </div>
+      </div>
+    </aside>
+    <div class="content">
+    <div id="todayView">
     <div class="section-header">
       <h2 data-i18n="hotTitle">精选热榜（笔记本 / AI PC）</h2>
       <span class="date">{now.strftime('%m月%d日')} · {weekday}</span>
@@ -688,6 +739,16 @@ def render_html(entries):
     </div>
     <div class="section-header"><h2 data-i18n="latestTitle">最新精选</h2></div>
     {feed_sections}
+    </div><!-- /todayView -->
+    <div id="historyView" style="display:none">
+      <div class="section-header">
+        <h2 id="historyTitle" data-i18n="archiveTitle">历史归档</h2>
+        <span class="date" id="historyCount"></span>
+      </div>
+      <div id="historyContainer"></div>
+    </div>
+    </div><!-- /content -->
+    </div><!-- /layout -->
   </main>
   <footer>
     <p data-i18n="footer1"><strong>PC HOT</strong> — 聚焦笔记本电脑 · OEM / ODM · AI PC</p>
@@ -705,6 +766,14 @@ def render_html(entries):
         footer1: "PC HOT — 聚焦笔记本电脑 · OEM / ODM · AI PC",
         costBadge: "成本相关",
         heat: "热度",
+        timeRange: "时间范围",
+        today: "今天",
+        lastWeek: "近一周",
+        lastMonth: "近一月",
+        allHistory: "全部历史",
+        archiveTitle: "历史归档",
+        noData: "暂无数据",
+        items: "条",
         cats: {{
           "AI与芯片": "AI与芯片", "OEM品牌": "OEM品牌", "ODM代工": "ODM代工",
           "成本价格": "成本价格", "市场出货": "市场出货", "产品发布": "产品发布", "综合": "综合"
@@ -720,6 +789,14 @@ def render_html(entries):
         footer1: "PC HOT — Laptop Industry · OEM / ODM · AI PC",
         costBadge: "Cost",
         heat: "heat",
+        timeRange: "Time Range",
+        today: "Today",
+        lastWeek: "Last Week",
+        lastMonth: "Last Month",
+        allHistory: "All History",
+        archiveTitle: "Archive",
+        noData: "No data",
+        items: "items",
         cats: {{
           "AI与芯片": "AI & Chips", "OEM品牌": "OEM Brands", "ODM代工": "ODM",
           "成本价格": "Cost & Price", "市场出货": "Shipments", "产品发布": "Launches", "综合": "General"
@@ -791,10 +868,129 @@ def render_html(entries):
       }});
     }}
 
+    // ==================== 历史归档 ====================
+    const HISTORY_DATA = {history_json};
+
+    function escapeHtml(s) {{
+      const d = document.createElement('div');
+      d.textContent = s || '';
+      return d.innerHTML;
+    }}
+
+    function renderHistoryView(days) {{
+      const container = document.getElementById('historyContainer');
+      const countEl = document.getElementById('historyCount');
+      const now = new Date();
+      let filtered = HISTORY_DATA;
+      if (days > 0) {{
+        const cutoff = new Date(now.getTime() - days * 86400000);
+        filtered = HISTORY_DATA.filter(item => {{
+          const d = new Date(item.published_at || item.first_collected_at);
+          return d >= cutoff;
+        }});
+      }}
+      filtered.sort((a, b) => new Date(b.published_at || b.first_collected_at) - new Date(a.published_at || a.first_collected_at));
+
+      const groups = {{}};
+      filtered.forEach(item => {{
+        const d = new Date(item.published_at || item.first_collected_at);
+        const key = d.toLocaleDateString('zh-CN');
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(item);
+      }});
+      const sortedDates = Object.keys(groups).sort((a, b) => new Date(b) - new Date(a));
+
+      const t = I18N[currentLang];
+      let html = '';
+      for (const date of sortedDates) {{
+        html += '<div class="day-block"><div class="day-title">' + date + '</div>';
+        for (const item of groups[date]) {{
+          const d = new Date(item.published_at || item.first_collected_at);
+          const timeStr = d.toTimeString().slice(0, 5);
+          const cat = item.category || '综合';
+          const catLabel = (t.cats && t.cats[cat]) || cat;
+          const reasonLabel = currentLang === 'zh' ? '推荐理由：' : 'Why it matters: ';
+          html += '<article class="feed-item" data-cat="' + escapeHtml(cat) + '" data-title="' + escapeHtml((item.title || '').toLowerCase()) + '" data-cost="0">' +
+            '<div class="feed-meta">' +
+              '<span class="feed-time">' + timeStr + '</span>' +
+              '<span class="feed-source">' + escapeHtml(item.source || '') + '</span>' +
+              '<span class="cat-tag">' + escapeHtml(catLabel) + '</span>' +
+            '</div>' +
+            '<div class="feed-title"><a href="' + escapeHtml(item.link || '#') + '" target="_blank" rel="noopener">' + escapeHtml(item.title || '') + '</a></div>' +
+            '<div class="feed-summary">' + escapeHtml(item.summary || '') + '</div>' +
+            '<div class="feed-reason"><strong>' + reasonLabel + '</strong>' + escapeHtml(item.reason || '') + '</div>' +
+          '</article>';
+        }}
+        html += '</div>';
+      }}
+      container.innerHTML = html || '<p class="no-data">' + (t.noData || '暂无数据') + '</p>';
+      countEl.textContent = filtered.length + ' ' + t.items;
+    }}
+
+    document.querySelectorAll('.time-btn').forEach(btn => {{
+      btn.addEventListener('click', () => {{
+        document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const range = btn.dataset.range;
+        if (range === 'today') {{
+          document.getElementById('todayView').style.display = '';
+          document.getElementById('historyView').style.display = 'none';
+        }} else {{
+          tagBtns.forEach(b => b.classList.remove('active'));
+          document.querySelector('.tag-btn[data-filter="all"]').classList.add('active');
+          currentFilter = 'all';
+          document.getElementById('todayView').style.display = 'none';
+          document.getElementById('historyView').style.display = '';
+          renderHistoryView(parseInt(range));
+          filterItems();
+        }}
+      }});
+    }});
+
     setLang(currentLang);
   </script>
 </body>
 </html>"""
+
+
+def save_history(entries):
+    """将本次抓取的条目追加到 data/news_history.jsonl（按 link 去重）"""
+    history_path = Path("data/news_history.jsonl")
+    history_path.parent.mkdir(exist_ok=True)
+
+    existing_links = set()
+    if history_path.exists():
+        for line in history_path.read_text(encoding="utf-8").splitlines():
+            try:
+                item = json.loads(line)
+                if item.get("link"):
+                    existing_links.add(item["link"])
+            except Exception:
+                continue
+
+    now_iso = datetime.now(timezone(timedelta(hours=8))).isoformat()
+    new_count = 0
+    with open(history_path, "a", encoding="utf-8") as f:
+        for e in entries:
+            if e["link"] in existing_links:
+                continue
+            existing_links.add(e["link"])
+            item = {
+                "id": hashlib.md5(e["link"].encode()).hexdigest()[:20],
+                "title": e.get("title_zh") or e["title"],
+                "summary": e.get("summary_zh") or e.get("summary") or "",
+                "link": e["link"],
+                "source": e["source"],
+                "published_at": e["dt"].astimezone(timezone.utc).isoformat(),
+                "first_collected_at": now_iso,
+                "last_seen_at": now_iso,
+                "category": e["category"],
+                "reason": e.get("reason") or default_reason(e["category"], e["cost_flag"]),
+                "ai_enhanced": USE_OLLAMA,
+            }
+            f.write(json.dumps(item, ensure_ascii=False) + "\n")
+            new_count += 1
+    print(f"历史记录: 新增 {new_count} 条 → {history_path}")
 
 
 def main():
@@ -845,9 +1041,11 @@ def main():
             e["reason_zh"] = e["reason"]
             e["reason_en"] = e["reason"]
 
-    html = render_html(entries)
+    html = render_html(entries, history=load_history())
     Path("index.html").write_text(html, encoding="utf-8")
     print(f"\n已生成 index.html")
+
+    save_history(entries)
 
     # 发送邮件通知
     try:
