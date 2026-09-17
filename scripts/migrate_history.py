@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""迁移脚本：用当前分类逻辑重新分类 news_history.jsonl 中的旧数据
+"""迁移脚本：重新分类 + 过滤无关条目 + 清理过期数据
 
 用法：
     python scripts/migrate_history.py
@@ -10,7 +10,7 @@ import json
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from generate_news import get_category
+from generate_news import get_category, is_relevant, cleanup_history
 
 
 def main():
@@ -21,6 +21,7 @@ def main():
 
     lines = history_path.read_text(encoding="utf-8").splitlines()
     updated = 0
+    removed = 0
     total = 0
     new_lines = []
 
@@ -30,8 +31,17 @@ def main():
         try:
             item = json.loads(line)
             total += 1
+            title = item.get("title", "")
+            summary = item.get("summary", "")
+
+            # 用新过滤逻辑剔除无关条目
+            if not is_relevant(title, summary):
+                removed += 1
+                continue
+
+            # 重新分类
             old_cat = item.get("category", "")
-            new_cat = get_category(item.get("title", ""), item.get("summary", ""))
+            new_cat = get_category(title, summary)
             if old_cat != new_cat:
                 item["category"] = new_cat
                 updated += 1
@@ -41,7 +51,10 @@ def main():
             new_lines.append(line)
 
     history_path.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
-    print(f"完成: 共 {total} 条，修正 {updated} 条分类")
+    print(f"重新分类: 共 {total} 条，修正 {updated} 条分类，删除 {removed} 条无关")
+
+    # 清理超期数据
+    cleanup_history()
 
 
 if __name__ == "__main__":

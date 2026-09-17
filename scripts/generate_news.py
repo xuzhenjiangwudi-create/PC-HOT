@@ -97,27 +97,45 @@ def is_relevant(title: str, summary: str = "") -> bool:
         "microsoft project professional", "word, excel, powerpoint",
         "instagram", "facebook", "儿童沉迷", "起诉 meta",
         "mortal shell", "sinking city", "viper v4 pro", "zalman cnps",
-        "iphone", "smartphone only"
+        "iphone", "smartphone only", "carrier pidge",
+        "马自达", "享界", "鸿蒙智行", "电动汽车", "充电桩",
+        "google maps", "spaceflight", "spacex",
+        "股票代码", "持股比例", "市值",
     ]
     if any(ex in text for ex in exclude):
         return False
 
-    # 笔记本 / AI PC / OEM / ODM / 相关芯片与供应链（保量）
-    keys = [
+    # 强信号：直接关于笔记本/PC，单条命中即通过
+    strong_keys = [
         "laptop", "notebook", "macbook", "ultrabook", "chromebook", "ai pc",
         "gaming laptop", "thinkpad", "yoga", "xps", "latitude", "elitebook",
         "zenbook", "vivobook", "spectre", "omen", "legion", "framework laptop",
-        "笔记本", "轻薄本", "游戏本", "商务本",
-        "lenovo", "dell", "hp ", "asus", "acer", "msi", "联想", "戴尔", "惠普", "华硕",
+        "笔记本", "轻薄本", "游戏本", "商务本", "二合一",
+        "mini pc", "gaming pc", "prebuilt", "desktop pc",
+        "snapdragon x", "ryzen ai", "core ultra", "lunar lake", "panther lake",
+        "strix point", "copilot+", "npu", "端侧",
         "quanta", "compal", "wistron", "pegatron", "inventec", "huaqin",
         "广达", "仁宝", "纬创", "和硕", "英业达", "华勤", "立讯", "odm",
-        "snapdragon x", "ryzen ai", "core ultra", "lunar lake", "panther lake",
-        "strix point", "npu", "copilot+", "骁龙", "端侧",
-        "memory", "dram", "ddr5", "hbm", "ssd", "涨价", "短缺", "出货", "shipment",
-        "pc market", "notebook shipment", "mobile rtx", "laptop gpu", "laptop cpu",
-        "windows on arm", "qualcomm", "intel", "amd", "nvidia"
+        "ddr5", "dram", "hbm", "ssd", "laptop gpu", "laptop cpu",
+        "mobile rtx", "rtx 50", "rtx 40", "rtx 30",
+        "pc market", "notebook shipment",
+        "windows on arm", "windows 11", "windows 12",
     ]
-    return any(k in text for k in keys)
+    if any(k in text for k in strong_keys):
+        return True
+
+    # 弱信号：芯片公司/OEM/通用词，需至少 2 个不同信号同时命中
+    weak_keys = [
+        "lenovo", "dell", "hp ", "asus", "acer", "msi", "razer",
+        "联想", "戴尔", "惠普", "华硕",
+        "intel", "amd", "nvidia", "qualcomm", "snapdragon",
+        "cpu", "gpu", "processor", "desktop", "motherboard",
+        "rtx", "radeon", "geforce",
+        "涨价", "短缺", "出货", "shipment", "price", "cost",
+        "内存", "硬盘", "主板",
+    ]
+    matches = sum(1 for k in weak_keys if k in text)
+    return matches >= 2
 
 
 def is_cost_related(title: str, summary: str = "") -> bool:
@@ -993,6 +1011,47 @@ def save_history(entries):
     print(f"历史记录: 新增 {new_count} 条 → {history_path}")
 
 
+def cleanup_history(max_days=90, max_items=2000):
+    """清理超过 max_days 天的历史数据，保留最多 max_items 条"""
+    history_path = Path("data/news_history.jsonl")
+    if not history_path.exists():
+        return 0
+
+    cutoff = datetime.now(timezone.utc) - timedelta(days=max_days)
+    kept = []
+    removed = 0
+
+    for line in history_path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        try:
+            item = json.loads(line)
+            dt_str = item.get("published_at", item.get("first_collected_at", ""))
+            if dt_str:
+                try:
+                    dt = datetime.fromisoformat(dt_str)
+                    if dt.tzinfo is None:
+                        dt = dt.replace(tzinfo=timezone.utc)
+                    if dt >= cutoff:
+                        kept.append(line)
+                    else:
+                        removed += 1
+                        continue
+                except Exception:
+                    kept.append(line)
+            else:
+                kept.append(line)
+        except Exception:
+            kept.append(line)
+
+    if len(kept) > max_items:
+        kept = kept[-max_items:]
+
+    history_path.write_text("\n".join(kept) + "\n", encoding="utf-8")
+    print(f"历史清理: 删除 {removed} 条超期数据，保留 {len(kept)} 条")
+    return removed
+
+
 def main():
     print("=" * 50)
     print("PC HOT · 聚焦 PC 行业 + 成本优先")
@@ -1046,6 +1105,7 @@ def main():
     print(f"\n已生成 index.html")
 
     save_history(entries)
+    cleanup_history()
 
     # 发送邮件通知
     try:
