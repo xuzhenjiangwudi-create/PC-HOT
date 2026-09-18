@@ -297,6 +297,87 @@ def extract_image(entry) -> str:
     return ""
 
 
+# 品牌 → 域名映射，用于通过 Google favicon 服务获取 logo
+BRAND_DOMAINS = {
+    # OEM
+    "lenovo": "lenovo.com", "联想": "lenovo.com",
+    "dell": "dell.com", "戴尔": "dell.com",
+    "hp ": "hp.com", "hewlett packard": "hp.com", "惠普": "hp.com",
+    "asus": "asus.com", "华硕": "asus.com",
+    "acer": "acer.com", "宏碁": "acer.com",
+    "msi": "msi.com", "微星": "msi.com",
+    "razer": "razer.com",
+    "samsung": "samsung.com", "三星": "samsung.com",
+    "apple": "apple.com", "苹果": "apple.com",
+    "framework": "frame.work",
+    "lg ": "lg.com", "lg gram": "lg.com",
+    # 芯片
+    "intel": "intel.com", "英特尔": "intel.com",
+    "amd": "amd.com", "超威": "amd.com",
+    "nvidia": "nvidia.com", "英伟达": "nvidia.com",
+    "qualcomm": "qualcomm.com", "高通": "qualcomm.com",
+    "snapdragon": "qualcomm.com",
+    "mediatek": "mediatek.com", "联发科": "mediatek.com",
+    # 存储
+    "micron": "micron.com", "美光": "micron.com",
+    "samsung": "samsung.com",
+    "sk hynix": "skhynix.com", "海力士": "skhynix.com",
+    "crucial": "crucial.com",
+    "kingston": "kingston.com", "金士顿": "kingston.com",
+    "western digital": "wd.com", "wd ": "wd.com", "西数": "wd.com",
+    "seagate": "seagate.com", "希捷": "seagate.com",
+    "kioxia": "kioxia.com", "铠侠": "kioxia.com",
+    # ODM
+    "quanta": "quanta.com", "广达": "quanta.com",
+    "compal": "compal.com", "仁宝": "compal.com",
+    "wistron": "wistron.com", "纬创": "wistron.com",
+    "pegatron": "pegatron.com", "和硕": "pegatron.com",
+    "inventec": "inventec.com", "英业达": "inventec.com",
+    "huaqin": "huaqin.com", "华勤": "huaqin.com",
+    "luxshare": "luxshare.com.cn", "立讯": "luxshare.com.cn",
+    # OS / 平台
+    "microsoft": "microsoft.com", "微软": "microsoft.com",
+    "windows": "microsoft.com",
+    "google": "google.com", "谷歌": "google.com",
+    # 其他
+    "asrock": "asrock.com",
+    "gigabyte": "gigabyte.com", "技嘉": "gigabyte.com",
+    "corsair": "corsair.com", "海盗船": "corsair.com",
+    "logitech": "logitech.com", "罗技": "logitech.com",
+    "sony": "sony.com", "索尼": "sony.com",
+    "huawei": "huawei.com", "华为": "huawei.com",
+    "xiaomi": "mi.com", "小米": "mi.com",
+    "tcl": "tcl.com",
+    "honor": "honor.com", "荣耀": "honor.com",
+}
+
+# 缓存已生成的 logo URL
+_brand_cache = {}
+
+
+def detect_brand(title: str, summary: str = "") -> str:
+    """检测新闻中涉及的品牌，返回品牌名（用于显示），无匹配返回空字符串"""
+    cache_key = title[:80] + summary[:80]
+    if cache_key in _brand_cache:
+        return _brand_cache[cache_key]
+
+    text = (title + " " + summary).lower()
+    for brand, domain in BRAND_DOMAINS.items():
+        if brand in text:
+            _brand_cache[cache_key] = brand.strip()
+            return brand.strip()
+    _brand_cache[cache_key] = ""
+    return ""
+
+
+def brand_logo_url(brand: str) -> str:
+    """通过 Google favicon 服务获取品牌 logo URL"""
+    if not brand:
+        return ""
+    domain = BRAND_DOMAINS.get(brand, brand)
+    return f"https://www.google.com/s2/favicons?domain={domain}&sz=64"
+
+
 def fetch_entries(max_items: int = 55):
     entries = []
     headers = {"User-Agent": "Mozilla/5.0 (compatible; PC-HOT-Bot/1.4)"}
@@ -324,6 +405,7 @@ def fetch_entries(max_items: int = 55):
                 cost_flag = is_cost_related(title, summary)
                 cat = get_category(title, summary)
                 image = extract_image(entry)
+                brand = detect_brand(title, summary)
                 entries.append({
                     "title": title,
                     "summary": clean_text(summary),
@@ -334,6 +416,7 @@ def fetch_entries(max_items: int = 55):
                     "cost_flag": cost_flag,
                     "reason": "",
                     "image": image,
+                    "brand": brand,
                 })
                 count += 1
             print(f"  → {count} 条")
@@ -387,6 +470,7 @@ def render_html(entries, history=None):
     now = datetime.now(timezone(timedelta(hours=8)))
     weekday = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"][now.weekday()]
     history_json = json.dumps(history or [], ensure_ascii=False)
+    brand_domains_json = json.dumps(BRAND_DOMAINS, ensure_ascii=False)
 
     # 热榜：成本相关优先展示
     cost_entries = [e for e in entries if e["cost_flag"]]
@@ -399,9 +483,13 @@ def render_html(entries, history=None):
         cost_mark = " · 成本" if e["cost_flag"] else ""
         t_zh = html.escape(e.get("title_zh") or e["title"])
         t_en = html.escape(e.get("title_en") or e["title"])
+        brand = e.get("brand") or ""
+        brand_logo = brand_logo_url(brand) if brand else ""
+        brand_html = f'<img class="brand-logo" src="{html.escape(brand_logo)}" alt="{html.escape(brand)}" title="{html.escape(brand)}" loading="lazy" onerror="this.remove()">' if brand_logo else ""
         hot_html += f"""
       <div class="hot-item">
         <div class="hot-rank {rank_class}">{i+1}</div>
+        {brand_html}
         {f'<img class="hot-thumb" src="{html.escape(e.get("image") or "")}" alt="" loading="lazy" onerror="this.remove()">' if e.get("image") else ""}
         <div class="hot-content">
           <div class="hot-title">
@@ -466,8 +554,14 @@ def render_html(entries, history=None):
             reason_zh = e.get("reason_zh") or reason
             reason_en = e.get("reason_en") or reason
 
+            brand = e.get("brand") or ""
+            brand_logo = brand_logo_url(brand) if brand else ""
+            brand_html = f'<img class="brand-logo feed-brand" src="{html.escape(brand_logo)}" alt="{html.escape(brand)}" title="{html.escape(brand)}" loading="lazy" onerror="this.remove()">' if brand_logo else ""
+
             feed_sections += f"""
       <article class="feed-item" data-cat="{html.escape(e['category'])}" data-title="{html.escape((title_zh + ' ' + title_en).lower())}" data-cost="{'1' if e['cost_flag'] else '0'}">
+        {brand_html}
+        <div class="feed-main">
         <div class="feed-meta">
           <span class="feed-time">{time_str}</span>
           <span class="feed-source">{html.escape(e['source'])}</span>
@@ -495,6 +589,7 @@ def render_html(entries, history=None):
           <span class="lang-zh">{html.escape(reason_zh)}</span>
           <span class="lang-en" style="display:none">{html.escape(reason_en)}</span>
         </div>
+        </div><!-- /feed-main -->
       </article>"""
         feed_sections += "\n</div>\n"
 
@@ -651,6 +746,11 @@ def render_html(entries, history=None):
       width: 52px; height: 52px; border-radius: 8px; object-fit: cover;
       flex-shrink: 0; border: 1px solid var(--border);
     }}
+    .brand-logo {{
+      width: 28px; height: 28px; border-radius: 6px; flex-shrink: 0;
+      object-fit: contain; background: #f8fafc; padding: 3px;
+      border: 1px solid var(--border);
+    }}
     .hot-heat {{
       font-size: .78rem; color: var(--hot); font-weight: 600;
       white-space: nowrap; padding-top: 2px;
@@ -676,6 +776,7 @@ def render_html(entries, history=None):
       background: var(--card); border: 1px solid var(--border);
       border-radius: var(--radius); padding: 16px 18px; margin-bottom: 12px;
       box-shadow: var(--shadow); transition: all .2s;
+      display: flex; gap: 12px; align-items: flex-start;
     }}
     .feed-item:hover {{
       border-color: #c7d2fe;
@@ -683,6 +784,8 @@ def render_html(entries, history=None):
       transform: translateY(-1px);
     }}
     .feed-item.hidden {{ display: none; }}
+    .feed-main {{ flex: 1; min-width: 0; }}
+    .feed-brand {{ margin-top: 2px; }}
     .feed-meta {{
       display: flex; align-items: center; gap: 8px;
       font-size: .78rem; color: var(--muted); margin-bottom: 8px; flex-wrap: wrap;
@@ -755,6 +858,7 @@ def render_html(entries, history=None):
       .time-btn {{ flex: 1; min-width: 80px; text-align: center; }}
       .feed-thumb {{ width: 90px; height: 60px; }}
       .hot-thumb {{ width: 40px; height: 40px; }}
+      .brand-logo {{ width: 24px; height: 24px; }}
     }}
   </style>
 
@@ -980,7 +1084,14 @@ def render_html(entries, history=None):
           const cat = item.category || '综合';
           const catLabel = (t.cats && t.cats[cat]) || cat;
           const reasonLabel = currentLang === 'zh' ? '推荐理由：' : 'Why it matters: ';
+          const brandDomains = JSON.parse('{brand_domains_json}');
+          let brandHtml = '';
+          if (item.brand && brandDomains[item.brand]) {{
+            brandHtml = '<img class="brand-logo feed-brand" src="https://www.google.com/s2/favicons?domain=' + brandDomains[item.brand] + '&sz=64" alt="' + escapeHtml(item.brand) + '" title="' + escapeHtml(item.brand) + '" loading="lazy" onerror="this.remove()">';
+          }}
           html += '<article class="feed-item" data-cat="' + escapeHtml(cat) + '" data-title="' + escapeHtml((item.title || '').toLowerCase()) + '" data-cost="0">' +
+            brandHtml +
+            '<div class="feed-main">' +
             '<div class="feed-meta">' +
               '<span class="feed-time">' + timeStr + '</span>' +
               '<span class="feed-source">' + escapeHtml(item.source || '') + '</span>' +
@@ -994,6 +1105,7 @@ def render_html(entries, history=None):
               '</div>' +
             '</div>' +
             '<div class="feed-reason"><strong>' + reasonLabel + '</strong>' + escapeHtml(item.reason || '') + '</div>' +
+            '</div>' +
           '</article>';
         }}
         html += '</div>';
@@ -1063,6 +1175,7 @@ def save_history(entries):
                 "reason": e.get("reason") or default_reason(e["category"], e["cost_flag"]),
                 "ai_enhanced": USE_OLLAMA,
                 "image": e.get("image") or "",
+                "brand": e.get("brand") or "",
             }
             f.write(json.dumps(item, ensure_ascii=False) + "\n")
             new_count += 1
