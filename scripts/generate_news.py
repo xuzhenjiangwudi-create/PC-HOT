@@ -266,6 +266,37 @@ def bilingual_fields(title: str, summary: str, reason: str, cost_flag: bool, cat
     return title_zh, title_en, summary_zh, summary_en, reason_zh, reason_en
 
 
+def extract_image(entry) -> str:
+    """从 RSS entry 中提取图片 URL，找不到返回空字符串"""
+    # media:thumbnail / media:content
+    for media_key in ["media_thumbnail", "media_content"]:
+        media_list = entry.get(media_key, [])
+        if media_list:
+            url = media_list[0].get("url", "")
+            if url and url.startswith("http"):
+                return url
+    # enclosure (image type)
+    for enc in entry.get("enclosures", []):
+        href = enc.get("href", "")
+        mtype = enc.get("type", "")
+        if href.startswith("http") and ("image" in mtype or href.lower().endswith((".jpg", ".jpeg", ".png", ".webp"))):
+            return href
+    # <img> inside summary/content
+    for field in ["summary", "content", "description", "summary_detail"]:
+        raw = entry.get(field, "")
+        if isinstance(raw, dict):
+            raw = raw.get("value", "")
+        if raw:
+            m = re.search(r'<img[^>]+src=["\']([^"\']+)["\']', raw)
+            if m:
+                url = m.group(1)
+                if url.startswith("http"):
+                    return url
+                if url.startswith("//"):
+                    return "https:" + url
+    return ""
+
+
 def fetch_entries(max_items: int = 55):
     entries = []
     headers = {"User-Agent": "Mozilla/5.0 (compatible; PC-HOT-Bot/1.4)"}
@@ -292,6 +323,7 @@ def fetch_entries(max_items: int = 55):
                         pass
                 cost_flag = is_cost_related(title, summary)
                 cat = get_category(title, summary)
+                image = extract_image(entry)
                 entries.append({
                     "title": title,
                     "summary": clean_text(summary),
@@ -301,6 +333,7 @@ def fetch_entries(max_items: int = 55):
                     "category": cat,
                     "cost_flag": cost_flag,
                     "reason": "",
+                    "image": image,
                 })
                 count += 1
             print(f"  → {count} 条")
@@ -369,6 +402,7 @@ def render_html(entries, history=None):
         hot_html += f"""
       <div class="hot-item">
         <div class="hot-rank {rank_class}">{i+1}</div>
+        {f'<img class="hot-thumb" src="{html.escape(e.get("image") or "")}" alt="" loading="lazy" onerror="this.remove()">' if e.get("image") else ""}
         <div class="hot-content">
           <div class="hot-title">
             <span class="lang-zh">{t_zh}</span>
@@ -441,15 +475,20 @@ def render_html(entries, history=None):
           {cost_badge}
           <span class="feed-heat">{heat} 热度</span>
         </div>
-        <div class="feed-title">
-          <a href="{html.escape(e['link'])}" target="_blank" rel="noopener">
-            <span class="lang-zh">{html.escape(title_zh)}</span>
-            <span class="lang-en" style="display:none">{html.escape(title_en)}</span>
-          </a>
-        </div>
-        <div class="feed-summary">
-          <span class="lang-zh">{html.escape(summary_zh) or '（暂无摘要）'}</span>
-          <span class="lang-en" style="display:none">{html.escape(summary_en) or '(No summary)'}</span>
+        <div class="feed-body">
+          {'<div class="feed-thumb-wrap"><img class="feed-thumb" src="' + html.escape(e.get('image') or '') + '" alt="" loading="lazy" onerror="this.parentElement.remove()"></div>' if e.get('image') else ''}
+          <div class="feed-text">
+            <div class="feed-title">
+              <a href="{html.escape(e['link'])}" target="_blank" rel="noopener">
+                <span class="lang-zh">{html.escape(title_zh)}</span>
+                <span class="lang-en" style="display:none">{html.escape(title_en)}</span>
+              </a>
+            </div>
+            <div class="feed-summary">
+              <span class="lang-zh">{html.escape(summary_zh) or '（暂无摘要）'}</span>
+              <span class="lang-en" style="display:none">{html.escape(summary_en) or '(No summary)'}</span>
+            </div>
+          </div>
         </div>
         <div class="feed-reason">
           <strong class="lang-zh">推荐理由：</strong><strong class="lang-en" style="display:none">Why it matters: </strong>
@@ -608,6 +647,10 @@ def render_html(entries, history=None):
     }}
     .hot-content {{ flex: 1; min-width: 0; }}
     .hot-title {{ font-size: .95rem; font-weight: 550; line-height: 1.4; }}
+    .hot-thumb {{
+      width: 52px; height: 52px; border-radius: 8px; object-fit: cover;
+      flex-shrink: 0; border: 1px solid var(--border);
+    }}
     .hot-heat {{
       font-size: .78rem; color: var(--hot); font-weight: 600;
       white-space: nowrap; padding-top: 2px;
@@ -655,6 +698,13 @@ def render_html(entries, history=None):
       padding: 2px 9px; border-radius: 6px; font-size: .74rem; font-weight: 600;
     }}
     .feed-heat {{ margin-left: auto; color: var(--hot); font-weight: 600; }}
+    .feed-body {{ display: flex; gap: 14px; margin-bottom: 8px; }}
+    .feed-thumb-wrap {{ flex-shrink: 0; }}
+    .feed-thumb {{
+      width: 120px; height: 80px; border-radius: 8px; object-fit: cover;
+      border: 1px solid var(--border);
+    }}
+    .feed-text {{ flex: 1; min-width: 0; }}
     .feed-title {{
       font-size: 1.02rem; font-weight: 650; margin-bottom: 8px;
       line-height: 1.45; letter-spacing: -0.01em;
@@ -703,6 +753,8 @@ def render_html(entries, history=None):
       .sidebar {{ width: 100%; position: static; }}
       .time-filters {{ flex-direction: row; flex-wrap: wrap; }}
       .time-btn {{ flex: 1; min-width: 80px; text-align: center; }}
+      .feed-thumb {{ width: 90px; height: 60px; }}
+      .hot-thumb {{ width: 40px; height: 40px; }}
     }}
   </style>
 
@@ -934,8 +986,13 @@ def render_html(entries, history=None):
               '<span class="feed-source">' + escapeHtml(item.source || '') + '</span>' +
               '<span class="cat-tag">' + escapeHtml(catLabel) + '</span>' +
             '</div>' +
-            '<div class="feed-title"><a href="' + escapeHtml(item.link || '#') + '" target="_blank" rel="noopener">' + escapeHtml(item.title || '') + '</a></div>' +
-            '<div class="feed-summary">' + escapeHtml(item.summary || '') + '</div>' +
+            '<div class="feed-body">' +
+              (item.image ? '<div class="feed-thumb-wrap"><img class="feed-thumb" src="' + escapeHtml(item.image) + '" alt="" loading="lazy" onerror="this.parentElement.remove()"></div>' : '') +
+              '<div class="feed-text">' +
+                '<div class="feed-title"><a href="' + escapeHtml(item.link || '#') + '" target="_blank" rel="noopener">' + escapeHtml(item.title || '') + '</a></div>' +
+                '<div class="feed-summary">' + escapeHtml(item.summary || '') + '</div>' +
+              '</div>' +
+            '</div>' +
             '<div class="feed-reason"><strong>' + reasonLabel + '</strong>' + escapeHtml(item.reason || '') + '</div>' +
           '</article>';
         }}
@@ -1005,6 +1062,7 @@ def save_history(entries):
                 "category": e["category"],
                 "reason": e.get("reason") or default_reason(e["category"], e["cost_flag"]),
                 "ai_enhanced": USE_OLLAMA,
+                "image": e.get("image") or "",
             }
             f.write(json.dumps(item, ensure_ascii=False) + "\n")
             new_count += 1
