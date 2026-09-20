@@ -19,6 +19,23 @@ PASSWORD = os.environ.get("PC_HOT_SMTP_PASS", "")
 # 收件人：只改这里
 RECEIVERS = [
         "1043643759@qq.com",
+        "markgao@lenovo.com",
+        "xuzj12@lenovo.com",
+        "tbeaufort@lenovo.com",
+        "fanying4@lenovo.com",
+        "chrislin@lenovo.com",
+        "wanghq15@lenovo.com",
+        "bizh2@lenovo.com",
+        "kanke1@lenovo.com",
+        "niedang1@lenovo.com",
+        "jackyzj@lenovo.com",
+        "yumin8@lenovo.com",
+        "pengsj2@lenovo.com",
+        "lawranceye@lenovo.com",
+        "wangxg12@lenovo.com",
+        "wangling11@lenovo.com",
+        "waltersw@lenovo.com",
+        "tanzh3@lenovo.com",
 ]
 
 SITE_URL = "https://xuzhenjiangwudi-create.github.io/PC-HOT/"
