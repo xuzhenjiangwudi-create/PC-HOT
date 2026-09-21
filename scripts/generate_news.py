@@ -371,11 +371,19 @@ def detect_brand(title: str, summary: str = "") -> str:
 
 
 def brand_logo_url(brand: str) -> str:
-    """通过 Google favicon 服务获取品牌 logo URL"""
+    """获取品牌 logo 的主 URL（favicon.im，国内可访问）"""
     if not brand:
         return ""
     domain = BRAND_DOMAINS.get(brand, brand)
-    return f"https://www.google.com/s2/favicons?domain={domain}&sz=64"
+    return f"https://favicon.im/{domain}?larger=true"
+
+
+def brand_logo_fallback(brand: str) -> str:
+    """获取备用 logo URL（国内 CDN）"""
+    if not brand:
+        return ""
+    domain = BRAND_DOMAINS.get(brand, brand)
+    return f"https://api.iowen.cn/favicon/{domain}.png"
 
 
 def fetch_entries(max_items: int = 55):
@@ -484,8 +492,8 @@ def render_html(entries, history=None):
         t_zh = html.escape(e.get("title_zh") or e["title"])
         t_en = html.escape(e.get("title_en") or e["title"])
         brand = e.get("brand") or ""
-        brand_logo = brand_logo_url(brand) if brand else ""
-        brand_html = f'<img class="brand-logo" src="{html.escape(brand_logo)}" alt="{html.escape(brand)}" title="{html.escape(brand)}" loading="lazy" onerror="this.remove()">' if brand_logo else ""
+        brand_domain = BRAND_DOMAINS.get(brand, brand) if brand else ""
+        brand_html = f'<img class="brand-logo" src="{html.escape(brand_logo_url(brand))}" data-domain="{html.escape(brand_domain)}" data-try="0" alt="{html.escape(brand)}" title="{html.escape(brand)}" loading="lazy" onerror="fixFavicon(this)">' if brand else ""
         hot_html += f"""
       <div class="hot-item">
         <div class="hot-rank {rank_class}">{i+1}</div>
@@ -555,8 +563,8 @@ def render_html(entries, history=None):
             reason_en = e.get("reason_en") or reason
 
             brand = e.get("brand") or ""
-            brand_logo = brand_logo_url(brand) if brand else ""
-            brand_html = f'<img class="brand-logo feed-brand" src="{html.escape(brand_logo)}" alt="{html.escape(brand)}" title="{html.escape(brand)}" loading="lazy" onerror="this.remove()">' if brand_logo else ""
+            brand_domain = BRAND_DOMAINS.get(brand, brand) if brand else ""
+            brand_html = f'<img class="brand-logo feed-brand" src="{html.escape(brand_logo_url(brand))}" data-domain="{html.escape(brand_domain)}" data-try="0" alt="{html.escape(brand)}" title="{html.escape(brand)}" loading="lazy" onerror="fixFavicon(this)">' if brand else ""
 
             feed_sections += f"""
       <article class="feed-item" data-cat="{html.escape(e['category'])}" data-title="{html.escape((title_zh + ' ' + title_en).lower())}" data-cost="{'1' if e['cost_flag'] else '0'}">
@@ -1017,6 +1025,23 @@ def render_html(entries, history=None):
       document.querySelectorAll(".lang-en").forEach(el => {{ el.style.display = showZh ? "none" : ""; }});
     }}
 
+    function fixFavicon(img) {{
+      const domain = img.dataset.domain;
+      if (!domain) {{ img.remove(); return; }}
+      const tryNum = parseInt(img.dataset.try || '0');
+      const sources = [
+        'https://api.iowen.cn/favicon/' + domain + '.png',
+        'https://icons.duckduckgo.com/ip3/' + domain + '.ico',
+        'https://www.google.com/s2/favicons?domain=' + domain + '&sz=64'
+      ];
+      if (tryNum < sources.length) {{
+        img.dataset.try = String(tryNum + 1);
+        img.src = sources[tryNum];
+      }} else {{
+        img.remove();
+      }}
+    }}
+
     const searchInput = document.getElementById("searchInput");
     const tagBtns = document.querySelectorAll(".tag-btn");
     let currentFilter = "all";
@@ -1087,7 +1112,8 @@ def render_html(entries, history=None):
           const brandDomains = JSON.parse('{brand_domains_json}');
           let brandHtml = '';
           if (item.brand && brandDomains[item.brand]) {{
-            brandHtml = '<img class="brand-logo feed-brand" src="https://www.google.com/s2/favicons?domain=' + brandDomains[item.brand] + '&sz=64" alt="' + escapeHtml(item.brand) + '" title="' + escapeHtml(item.brand) + '" loading="lazy" onerror="this.remove()">';
+            const bd = brandDomains[item.brand];
+            brandHtml = '<img class="brand-logo feed-brand" src="https://favicon.im/' + bd + '?larger=true" data-domain="' + bd + '" data-try="0" alt="' + escapeHtml(item.brand) + '" title="' + escapeHtml(item.brand) + '" loading="lazy" onerror="fixFavicon(this)">';
           }}
           html += '<article class="feed-item" data-cat="' + escapeHtml(cat) + '" data-title="' + escapeHtml((item.title || '').toLowerCase()) + '" data-cost="0">' +
             brandHtml +
