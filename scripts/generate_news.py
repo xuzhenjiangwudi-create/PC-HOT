@@ -498,11 +498,13 @@ def render_html(entries, history=None):
       <div class="hot-item">
         <div class="hot-rank {rank_class}">{i+1}</div>
         {brand_html}
-        {f'<img class="hot-thumb" src="{html.escape(e.get("image") or "")}" alt="" loading="lazy" onerror="this.remove()">' if e.get("image") else ""}
+        {f'<a href="{html.escape(e["link"])}" target="_blank" rel="noopener" class="hot-thumb-link"><img class="hot-thumb" src="{html.escape(e.get("image") or "")}" alt="" loading="lazy" onerror="this.parentElement.remove()"></a>' if e.get("image") else ""}
         <div class="hot-content">
           <div class="hot-title">
-            <span class="lang-zh">{t_zh}</span>
-            <span class="lang-en" style="display:none">{t_en}</span>
+            <a href="{html.escape(e['link'])}" target="_blank" rel="noopener" class="hot-link">
+              <span class="lang-zh">{t_zh}</span>
+              <span class="lang-en" style="display:none">{t_en}</span>
+            </a>
           </div>
         </div>
         <div class="hot-heat">
@@ -577,26 +579,22 @@ def render_html(entries, history=None):
           {cost_badge}
           <span class="feed-heat">{heat} 热度</span>
         </div>
-        <div class="feed-body">
-          {'<div class="feed-thumb-wrap"><img class="feed-thumb" src="' + html.escape(e.get('image') or '') + '" alt="" loading="lazy" onerror="this.parentElement.remove()"></div>' if e.get('image') else ''}
-          <div class="feed-text">
-            <div class="feed-title">
-              <a href="{html.escape(e['link'])}" target="_blank" rel="noopener">
-                <span class="lang-zh">{html.escape(title_zh)}</span>
-                <span class="lang-en" style="display:none">{html.escape(title_en)}</span>
-              </a>
-            </div>
-            <div class="feed-summary">
-              <span class="lang-zh">{html.escape(summary_zh) or '（暂无摘要）'}</span>
-              <span class="lang-en" style="display:none">{html.escape(summary_en) or '(No summary)'}</span>
-            </div>
-          </div>
+        <div class="feed-title">
+          <a href="{html.escape(e['link'])}" target="_blank" rel="noopener">
+            <span class="lang-zh">{html.escape(title_zh)}</span>
+            <span class="lang-en" style="display:none">{html.escape(title_en)}</span>
+          </a>
+        </div>
+        <div class="feed-summary">
+          <span class="lang-zh">{html.escape(summary_zh) or '（暂无摘要）'}</span>
+          <span class="lang-en" style="display:none">{html.escape(summary_en) or '(No summary)'}</span>
         </div>
         <div class="feed-reason">
           <strong class="lang-zh">推荐理由：</strong><strong class="lang-en" style="display:none">Why it matters: </strong>
           <span class="lang-zh">{html.escape(reason_zh)}</span>
           <span class="lang-en" style="display:none">{html.escape(reason_en)}</span>
         </div>
+        {f'<div class="feed-image-wrap"><img class="feed-image" src="{html.escape(e.get("image") or "")}" alt="" loading="lazy" onerror="this.parentElement.remove()"></div>' if e.get("image") else ""}
         </div><!-- /feed-main -->
       </article>"""
         feed_sections += "\n</div>\n"
@@ -750,6 +748,9 @@ def render_html(entries, history=None):
     }}
     .hot-content {{ flex: 1; min-width: 0; }}
     .hot-title {{ font-size: .95rem; font-weight: 550; line-height: 1.4; }}
+    .hot-link {{ color: inherit; text-decoration: none; display: block; }}
+    .hot-link:hover {{ color: var(--accent); }}
+    .hot-thumb-link {{ display: inline-flex; }}
     .hot-thumb {{
       width: 52px; height: 52px; border-radius: 8px; object-fit: cover;
       flex-shrink: 0; border: 1px solid var(--border);
@@ -809,19 +810,17 @@ def render_html(entries, history=None):
       padding: 2px 9px; border-radius: 6px; font-size: .74rem; font-weight: 600;
     }}
     .feed-heat {{ margin-left: auto; color: var(--hot); font-weight: 600; }}
-    .feed-body {{ display: flex; gap: 14px; margin-bottom: 8px; }}
-    .feed-thumb-wrap {{ flex-shrink: 0; }}
-    .feed-thumb {{
-      width: 120px; height: 80px; border-radius: 8px; object-fit: cover;
-      border: 1px solid var(--border);
-    }}
-    .feed-text {{ flex: 1; min-width: 0; }}
     .feed-title {{
       font-size: 1.02rem; font-weight: 650; margin-bottom: 8px;
       line-height: 1.45; letter-spacing: -0.01em;
     }}
     .feed-summary {{
       font-size: .9rem; color: var(--text2); margin-bottom: 10px; line-height: 1.55;
+    }}
+    .feed-image-wrap {{ margin-top: 10px; }}
+    .feed-image {{
+      width: 100%; max-height: 280px; border-radius: 8px; object-fit: cover;
+      border: 1px solid var(--border);
     }}
     .feed-reason {{
       font-size: .84rem; color: var(--text2);
@@ -864,7 +863,7 @@ def render_html(entries, history=None):
       .sidebar {{ width: 100%; position: static; }}
       .time-filters {{ flex-direction: row; flex-wrap: wrap; }}
       .time-btn {{ flex: 1; min-width: 80px; text-align: center; }}
-      .feed-thumb {{ width: 90px; height: 60px; }}
+      .feed-image {{ max-height: 200px; }}
       .hot-thumb {{ width: 40px; height: 40px; }}
       .brand-logo {{ width: 24px; height: 24px; }}
     }}
@@ -1123,14 +1122,10 @@ def render_html(entries, history=None):
               '<span class="feed-source">' + escapeHtml(item.source || '') + '</span>' +
               '<span class="cat-tag">' + escapeHtml(catLabel) + '</span>' +
             '</div>' +
-            '<div class="feed-body">' +
-              (item.image ? '<div class="feed-thumb-wrap"><img class="feed-thumb" src="' + escapeHtml(item.image) + '" alt="" loading="lazy" onerror="this.parentElement.remove()"></div>' : '') +
-              '<div class="feed-text">' +
-                '<div class="feed-title"><a href="' + escapeHtml(item.link || '#') + '" target="_blank" rel="noopener">' + escapeHtml(item.title || '') + '</a></div>' +
-                '<div class="feed-summary">' + escapeHtml(item.summary || '') + '</div>' +
-              '</div>' +
-            '</div>' +
+            '<div class="feed-title"><a href="' + escapeHtml(item.link || '#') + '" target="_blank" rel="noopener">' + escapeHtml(item.title || '') + '</a></div>' +
+            '<div class="feed-summary">' + escapeHtml(item.summary || '') + '</div>' +
             '<div class="feed-reason"><strong>' + reasonLabel + '</strong>' + escapeHtml(item.reason || '') + '</div>' +
+            (item.image ? '<div class="feed-image-wrap"><img class="feed-image" src="' + escapeHtml(item.image) + '" alt="" loading="lazy" onerror="this.parentElement.remove()"></div>' : '') +
             '</div>' +
           '</article>';
         }}
