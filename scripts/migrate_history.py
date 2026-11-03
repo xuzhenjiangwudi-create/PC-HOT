@@ -10,7 +10,7 @@ import json
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from generate_news import get_category, is_relevant, cleanup_history
+from generate_news import get_category, is_relevant, cleanup_history, bilingual_fields, default_reason
 
 
 def main():
@@ -45,6 +45,25 @@ def main():
             if old_cat != new_cat:
                 item["category"] = new_cat
                 updated += 1
+
+            # 补全双语字段
+            reason = item.get("reason") or default_reason(new_cat, False)
+            tz, te, sz, se, rz, re_ = bilingual_fields(
+                title, summary, reason, False, new_cat
+            )
+            needs_update = False
+            if not item.get("title_en"):
+                item["title_en"] = te
+                needs_update = True
+            if not item.get("summary_en"):
+                item["summary_en"] = se
+                needs_update = True
+            if not item.get("reason_en"):
+                item["reason_en"] = re_
+                needs_update = True
+            if needs_update:
+                updated += 1
+
             new_lines.append(json.dumps(item, ensure_ascii=False))
         except Exception as e:
             print(f"  跳过无法解析的行: {e}")

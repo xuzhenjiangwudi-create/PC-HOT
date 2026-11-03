@@ -386,6 +386,48 @@ def brand_logo_fallback(brand: str) -> str:
     return f"https://api.iowen.cn/favicon/{domain}.png"
 
 
+def fetch_stock_price() -> dict:
+    """
+    获取联想集团（00992.HK）股价，失败返回空 dict。
+    使用 Yahoo Finance chart API（无需 key）。
+    """
+    try:
+        url = "https://query1.finance.yahoo.com/v8/finance/chart/0992.HK"
+        headers = {"User-Agent": "Mozilla/5.0"}
+        resp = requests.get(url, headers=headers, timeout=8)
+        if resp.status_code != 200:
+            return {}
+        data = resp.json()
+        meta = data.get("chart", {}).get("result", [{}])[0].get("meta", {})
+        if not meta:
+            return {}
+        price = meta.get("regularMarketPrice")
+        prev_close = meta.get("chartPreviousClose") or meta.get("previousClose")
+        currency = meta.get("currency", "HKD")
+        if price is None:
+            return {}
+        change = price - prev_close if prev_close else 0
+        change_pct = (change / prev_close * 100) if prev_close else 0
+        ts = meta.get("regularMarketTime")
+        from datetime import datetime as dt, timezone as tz, timedelta as td
+        market_time = ""
+        if ts:
+            market_time = dt.fromtimestamp(ts, tz(td(hours=8))).strftime("%m-%d %H:%M")
+        return {
+            "price": round(price, 2),
+            "change": round(change, 2),
+            "change_pct": round(change_pct, 2),
+            "currency": currency,
+            "symbol": "00992.HK",
+            "name": "联想集团",
+            "time": market_time,
+            "up": change >= 0,
+        }
+    except Exception as e:
+        print(f"[WARN] 股价获取失败: {e}")
+        return {}
+
+
 def fetch_entries(max_items: int = 55):
     entries = []
     headers = {"User-Agent": "Mozilla/5.0 (compatible; PC-HOT-Bot/1.4)"}
@@ -480,6 +522,100 @@ def render_html(entries, history=None):
     history_json = json.dumps(history or [], ensure_ascii=False)
     brand_domains_json = json.dumps(BRAND_DOMAINS, ensure_ascii=False)
 
+    # 数据来源列表
+    source_list_html = " · ".join(
+        f'<a href="{html.escape(url)}" target="_blank" rel="noopener">{html.escape(name)}</a>'
+        for name, url in RSS_SOURCES
+    )
+
+    # 品牌热度统计（右栏）
+    brand_counts = {}
+    for e in entries:
+        b = e.get("brand")
+        if b:
+            brand_counts[b] = brand_counts.get(b, 0) + 1
+    top_brands = sorted(brand_counts.items(), key=lambda x: -x[1])[:8]
+    max_brand_count = top_brands[0][1] if top_brands else 1
+    brand_rank_html = ""
+    for i, (brand, count) in enumerate(top_brands):
+        rank_class = "brand-rank-top" if i < 3 else ""
+        bar_width = int(count / max_brand_count * 100)
+        brand_domain = BRAND_DOMAINS.get(brand, brand)
+        initial = brand[0].upper()
+        brand_rank_html += f"""
+          <div class="brand-rank-item">
+            <span class="brand-rank-num {rank_class}">{i+1}</span>
+            <div class="brand-rank-avatar">
+              <img src="{html.escape(brand_logo_url(brand))}" data-domain="{html.escape(brand_domain)}" data-try="0" alt="{html.escape(brand)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+              <span class="brand-rank-initial" style="display:none">{initial}</span>
+            </div>
+            <div class="brand-rank-info">
+              <div class="brand-rank-name">{html.escape(brand)}</div>
+              <div class="brand-rank-bar"><div class="brand-rank-bar-fill" style="width:{bar_width}%"></div></div>
+            </div>
+            <span class="brand-rank-count">{count}</span>
+          </div>"""
+    if not top_brands:
+        brand_rank_html = '<p class="sidebar-empty">暂无品牌数据</p>'
+
+    # 分类占比统计（右栏）
+    cat_counts = {}
+    for e in entries:
+        c = e["category"]
+        cat_counts[c] = cat_counts.get(c, 0) + 1
+    total_entries = len(entries)
+    cat_stat_html = ""
+    CATEGORY_ORDER = ["AI与芯片", "OEM品牌", "ODM代工", "成本价格", "市场出货", "产品发布", "综合"]
+    cat_colors = {
+        "AI与芯片": "#8b5cf6", "OEM品牌": "#3b82f6", "ODM代工": "#06b6d4",
+        "成本价格": "#f59e0b", "市场出货": "#10b981", "产品发布": "#ec4899", "综合": "#64748b"
+    }
+    for cat in CATEGORY_ORDER:
+        if cat not in cat_counts: continue
+        count = cat_counts[cat]
+        pct = round(count / total_entries * 100, 1) if total_entries else 0
+        color = cat_colors.get(cat, "#64748b")
+        cat_stat_html += f"""
+          <div class="cat-stat-item" data-cat-key="{html.escape(cat)}">
+            <div class="cat-stat-label">
+              <span class="cat-stat-dot" style="background:{color}"></span>
+              <span>{html.escape(cat)}</span>
+              <span class="cat-stat-num">{count}</span>
+            </div>
+            <div class="cat-stat-bar"><div class="cat-stat-bar-fill" style="width:{pct}%;background:{color}"></div></div>
+          </div>"""
+
+    # 分类标签（左栏用，带计数）
+    cat_tags = ""
+    for cat in CATEGORIES:
+        if cat not in cat_counts: continue
+        count = cat_counts[cat]
+        cat_tags += f'<button class="tag-btn" data-filter="{html.escape(cat)}">{html.escape(cat)} ({count})</button>'
+
+    # 股价卡片（右栏）
+    stock = fetch_stock_price()
+    if stock:
+        up_class = "stock-up" if stock["up"] else "stock-down"
+        arrow = "↑" if stock["up"] else "↓"
+        sign = "+" if stock["up"] else ""
+        stock_html = f"""
+        <div class="sidebar-section stock-card">
+          <div class="stock-header">
+            <div class="stock-title">
+              <span class="stock-name">{html.escape(stock['name'])}</span>
+              <span class="stock-symbol">{stock['symbol']}</span>
+            </div>
+            <span class="stock-currency">{stock['currency']}</span>
+          </div>
+          <div class="stock-price-row">
+            <span class="stock-price">{stock['price']}</span>
+            <span class="stock-change {up_class}">{arrow} {sign}{stock['change']} ({sign}{stock['change_pct']}%)</span>
+          </div>
+          <div class="stock-time">{stock['time']}</div>
+        </div>"""
+    else:
+        stock_html = ""
+
     # 热榜：成本相关优先展示
     cost_entries = [e for e in entries if e["cost_flag"]]
     other_entries = [e for e in entries if not e["cost_flag"]]
@@ -493,15 +629,24 @@ def render_html(entries, history=None):
         t_en = html.escape(e.get("title_en") or e["title"])
         brand = e.get("brand") or ""
         brand_domain = BRAND_DOMAINS.get(brand, brand) if brand else ""
-        brand_html = f'<img class="brand-logo" src="{html.escape(brand_logo_url(brand))}" data-domain="{html.escape(brand_domain)}" data-try="0" alt="{html.escape(brand)}" title="{html.escape(brand)}" loading="lazy" onerror="fixFavicon(this)">' if brand else ""
+        if brand:
+            # 品牌头像：有 logo 用 logo，没有就用首字母
+            initial = brand[0].upper() if brand else ""
+            brand_html = f"""
+          <div class="hot-brand-avatar" title="{html.escape(brand)}">
+            <img class="hot-brand-logo" src="{html.escape(brand_logo_url(brand))}" data-domain="{html.escape(brand_domain)}" data-try="0" alt="{html.escape(brand)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <span class="hot-brand-initial" style="display:none">{initial}</span>
+          </div>"""
+        else:
+            brand_html = '<div class="hot-brand-avatar hot-brand-default"><span>•</span></div>'
+        feed_id = "feed-" + hashlib.md5(e["link"].encode()).hexdigest()[:12]
         hot_html += f"""
-      <div class="hot-item">
+      <div class="hot-item" data-feed-id="{feed_id}" onclick="scrollToFeed('{feed_id}')">
         <div class="hot-rank {rank_class}">{i+1}</div>
         {brand_html}
-        {f'<a href="{html.escape(e["link"])}" target="_blank" rel="noopener" class="hot-thumb-link"><img class="hot-thumb" src="{html.escape(e.get("image") or "")}" alt="" loading="lazy" onerror="this.parentElement.remove()"></a>' if e.get("image") else ""}
         <div class="hot-content">
           <div class="hot-title">
-            <a href="{html.escape(e['link'])}" target="_blank" rel="noopener" class="hot-link">
+            <a href="{html.escape(e['link'])}" target="_blank" rel="noopener" class="hot-link" onclick="event.stopPropagation()">
               <span class="lang-zh">{t_zh}</span>
               <span class="lang-en" style="display:none">{t_en}</span>
             </a>
@@ -568,8 +713,9 @@ def render_html(entries, history=None):
             brand_domain = BRAND_DOMAINS.get(brand, brand) if brand else ""
             brand_html = f'<img class="brand-logo feed-brand" src="{html.escape(brand_logo_url(brand))}" data-domain="{html.escape(brand_domain)}" data-try="0" alt="{html.escape(brand)}" title="{html.escape(brand)}" loading="lazy" onerror="fixFavicon(this)">' if brand else ""
 
+            feed_item_id = "feed-" + hashlib.md5(e["link"].encode()).hexdigest()[:12]
             feed_sections += f"""
-      <article class="feed-item" data-cat="{html.escape(e['category'])}" data-title="{html.escape((title_zh + ' ' + title_en).lower())}" data-cost="{'1' if e['cost_flag'] else '0'}">
+      <article class="feed-item" id="{feed_item_id}" data-cat="{html.escape(e['category'])}" data-title="{html.escape((title_zh + ' ' + title_en).lower())}" data-cost="{'1' if e['cost_flag'] else '0'}">
         {brand_html}
         <div class="feed-main">
         <div class="feed-meta">
@@ -578,6 +724,7 @@ def render_html(entries, history=None):
           <span class="cat-tag" data-cat-key="{html.escape(e['category'])}">{html.escape(e['category'])}</span>
           {cost_badge}
           <span class="feed-heat">{heat} 热度</span>
+          <button class="copy-btn" onclick="copyLink(event, this)" data-link="{html.escape(e['link'])}" title="复制链接">🔗</button>
         </div>
         <div class="feed-title">
           <a href="{html.escape(e['link'])}" target="_blank" rel="noopener">
@@ -625,6 +772,33 @@ def render_html(entries, history=None):
       --shadow-hover: 0 10px 25px -5px rgba(0,0,0,.08), 0 4px 6px -2px rgba(0,0,0,.03);
       --radius: 14px;
     }}
+    [data-theme="dark"] {{
+      --bg: #0f172a;
+      --card: #1e293b;
+      --text: #f1f5f9;
+      --text2: #cbd5e1;
+      --muted: #64748b;
+      --border: #334155;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --hot: #f87171;
+      --cost: #fbbf24;
+      --cost-bg: #422006;
+      --shadow: 0 1px 3px rgba(0,0,0,.3), 0 1px 2px rgba(0,0,0,.2);
+      --shadow-hover: 0 10px 25px -5px rgba(0,0,0,.4), 0 4px 6px -2px rgba(0,0,0,.2);
+    }}
+    [data-theme="dark"] header {{ background: #0b1120; }}
+    [data-theme="dark"] .feed-reason {{
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    }}
+    [data-theme="dark"] .stats {{ background: var(--accent-soft); color: #93c5fd; }}
+    [data-theme="dark"] .hot-item:hover {{ background: #334155; }}
+    [data-theme="dark"] .tag-btn:hover {{ border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }}
+    [data-theme="dark"] .hot-brand-default {{ background: #334155; color: #64748b; }}
+    [data-theme="dark"] .brand-logo {{ background: #334155; }}
+    [data-theme="dark"] .feed-image {{ border-color: #334155; }}
+    [data-theme="dark"] .back-today-btn:hover {{ background: var(--accent-soft); }}
+    [data-theme="dark"] .no-data {{ color: #64748b; }}
     * {{ margin:0; padding:0; box-sizing:border-box; }}
     body {{
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
@@ -686,17 +860,114 @@ def render_html(entries, history=None):
       background-color: #111827;
     }}
 
-    main {{ max-width: 1100px; margin: 0 auto; padding: 24px 20px 60px; }}
+    main {{ max-width: 1400px; margin: 0 auto; padding: 24px 20px 60px; }}
     .layout {{ display: flex; gap: 24px; align-items: flex-start; }}
-    .sidebar {{ width: 180px; flex-shrink: 0; position: sticky; top: 80px; }}
+    .sidebar {{ width: 200px; flex-shrink: 0; position: sticky; top: 80px; }}
+    .sidebar-right {{ width: 260px; }}
     .sidebar-section {{ background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); margin-bottom: 16px; }}
     .sidebar-title {{ font-size: .78rem; font-weight: 700; color: var(--text2); margin-bottom: 12px; text-transform: uppercase; letter-spacing: .04em; }}
+    .sidebar-empty {{ font-size: .8rem; color: var(--muted); text-align: center; padding: 16px 0; }}
     .time-filters {{ display: flex; flex-direction: column; gap: 6px; }}
     .time-btn {{ background: transparent; border: 1px solid var(--border); padding: 9px 14px; border-radius: 8px; font-size: .85rem; cursor: pointer; color: var(--text2); text-align: left; transition: all .15s; font-weight: 500; }}
     .time-btn:hover {{ border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }}
     .time-btn.active {{ background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 2px 8px rgba(59,130,246,.3); }}
+    .cat-filters {{ display: flex; flex-direction: column; gap: 4px; }}
+    .cat-filters .tag-btn {{
+      width: 100%; justify-content: space-between; display: flex;
+      padding: 7px 12px; font-size: .82rem;
+    }}
     .content {{ flex: 1; min-width: 0; }}
     .no-data {{ text-align: center; padding: 48px 20px; color: var(--muted); font-size: .9rem; }}
+
+    /* ===== 品牌热度榜 ===== */
+    .brand-rank-list {{ display: flex; flex-direction: column; gap: 10px; }}
+    .brand-rank-item {{
+      display: flex; align-items: center; gap: 10px;
+    }}
+    .brand-rank-num {{
+      width: 18px; text-align: center; font-size: .75rem;
+      font-weight: 700; color: var(--muted); flex-shrink: 0;
+    }}
+    .brand-rank-num.brand-rank-top {{ color: var(--hot); font-size: .85rem; }}
+    .brand-rank-avatar {{
+      width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden; border: 1.5px solid #fff;
+      box-shadow: 0 1px 4px rgba(0,0,0,.1);
+    }}
+    .brand-rank-avatar img {{
+      width: 20px; height: 20px; object-fit: contain;
+      background: #fff; padding: 2px; border-radius: 50%;
+    }}
+    .brand-rank-initial {{
+      color: #fff; font-weight: 700; font-size: .75rem;
+      display: none; align-items: center; justify-content: center;
+      width: 100%; height: 100%;
+    }}
+    .brand-rank-info {{ flex: 1; min-width: 0; }}
+    .brand-rank-name {{
+      font-size: .8rem; font-weight: 600; color: var(--text);
+      margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }}
+    .brand-rank-bar {{
+      height: 4px; border-radius: 2px; background: #e2e8f0;
+      overflow: hidden;
+    }}
+    .brand-rank-bar-fill {{
+      height: 100%; border-radius: 2px;
+      background: linear-gradient(90deg, #667eea, #764ba2);
+    }}
+    .brand-rank-count {{
+      font-size: .75rem; font-weight: 600; color: var(--muted);
+      flex-shrink: 0; min-width: 18px; text-align: right;
+    }}
+
+    /* ===== 分类占比统计 ===== */
+    .cat-stat-list {{ display: flex; flex-direction: column; gap: 10px; }}
+    .cat-stat-item {{ cursor: pointer; }}
+    .cat-stat-label {{
+      display: flex; align-items: center; gap: 6px;
+      font-size: .8rem; margin-bottom: 4px;
+    }}
+    .cat-stat-dot {{
+      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+    }}
+    .cat-stat-label span:nth-child(2) {{ flex: 1; color: var(--text2); }}
+    .cat-stat-num {{ color: var(--muted); font-weight: 600; font-size: .75rem; }}
+    .cat-stat-bar {{
+      height: 6px; border-radius: 3px; background: #e2e8f0; overflow: hidden;
+    }}
+    .cat-stat-bar-fill {{ height: 100%; border-radius: 3px; transition: width .3s; }}
+    .cat-stat-item:hover .cat-stat-bar-fill {{ opacity: .8; }}
+
+    /* ===== 股价卡片 ===== */
+    .stock-card {{
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      border: 1px solid #bae6fd;
+    }}
+    [data-theme="dark"] .stock-card {{
+      background: linear-gradient(135deg, #0c4a6e 0%, #075985 100%);
+      border-color: #0369a1;
+    }}
+    .stock-header {{
+      display: flex; justify-content: space-between; align-items: flex-start;
+      margin-bottom: 8px;
+    }}
+    .stock-title {{ display: flex; flex-direction: column; }}
+    .stock-name {{ font-weight: 700; font-size: .95rem; color: var(--text); }}
+    .stock-symbol {{ font-size: .7rem; color: var(--muted); }}
+    .stock-currency {{ font-size: .7rem; color: var(--muted); }}
+    .stock-price-row {{
+      display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px;
+    }}
+    .stock-price {{ font-size: 1.5rem; font-weight: 800; color: var(--text); line-height: 1; }}
+    .stock-change {{ font-size: .78rem; font-weight: 600; padding: 2px 6px; border-radius: 4px; }}
+    .stock-up {{ color: #dc2626; background: #fee2e2; }}
+    .stock-down {{ color: #16a34a; background: #dcfce7; }}
+    [data-theme="dark"] .stock-up {{ color: #fca5a5; background: rgba(220,38,38,.2); }}
+    [data-theme="dark"] .stock-down {{ color: #86efac; background: rgba(22,163,74,.2); }}
+    .stock-time {{ font-size: .7rem; color: var(--muted); }}
 
     .section-header {{
       display: flex; align-items: baseline; justify-content: space-between;
@@ -706,6 +977,16 @@ def render_html(entries, history=None):
       font-size: 1.15rem; font-weight: 700; letter-spacing: -0.02em;
     }}
     .section-header .date {{ font-size: .85rem; color: var(--muted); }}
+    .back-today-btn {{
+      background: transparent; border: 1px solid var(--border);
+      padding: 6px 14px; border-radius: 8px;
+      font-size: .82rem; cursor: pointer; color: var(--text2);
+      transition: all .15s; font-weight: 500;
+    }}
+    .back-today-btn:hover {{
+      border-color: var(--accent); color: var(--accent);
+      background: var(--accent-soft);
+    }}
 
     /* Tags */
     .tags {{ display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }}
@@ -735,8 +1016,9 @@ def render_html(entries, history=None):
     .hot-item {{
       display: flex; align-items: flex-start; gap: 14px;
       padding: 12px 18px; transition: background .15s;
+      cursor: pointer;
     }}
-    .hot-item:hover {{ background: #f8fafc; }}
+    .hot-item:hover {{ background: #f1f5f9; }}
     .hot-rank {{
       font-weight: 800; font-size: 1.05rem; color: var(--muted);
       min-width: 24px; text-align: center; font-variant-numeric: tabular-nums;
@@ -750,10 +1032,27 @@ def render_html(entries, history=None):
     .hot-title {{ font-size: .95rem; font-weight: 550; line-height: 1.4; }}
     .hot-link {{ color: inherit; text-decoration: none; display: block; }}
     .hot-link:hover {{ color: var(--accent); }}
-    .hot-thumb-link {{ display: inline-flex; }}
-    .hot-thumb {{
-      width: 52px; height: 52px; border-radius: 8px; object-fit: cover;
-      flex-shrink: 0; border: 1px solid var(--border);
+    .hot-brand-avatar {{
+      width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden; border: 2px solid #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,.1);
+    }}
+    .hot-brand-logo {{
+      width: 28px; height: 28px; object-fit: contain;
+      background: #fff; padding: 2px; border-radius: 50%;
+    }}
+    .hot-brand-initial {{
+      color: #fff; font-weight: 700; font-size: 1rem;
+      display: none; align-items: center; justify-content: center;
+      width: 100%; height: 100%;
+    }}
+    .hot-brand-default {{
+      background: #e2e8f0; color: #94a3b8;
+    }}
+    .hot-brand-default span {{
+      font-size: 1.2rem; line-height: 1;
     }}
     .brand-logo {{
       width: 28px; height: 28px; border-radius: 6px; flex-shrink: 0;
@@ -793,6 +1092,14 @@ def render_html(entries, history=None):
       transform: translateY(-1px);
     }}
     .feed-item.hidden {{ display: none; }}
+    .feed-item.highlight-flash {{
+      animation: highlightFlash 1.5s ease-out;
+    }}
+    @keyframes highlightFlash {{
+      0%   {{ box-shadow: 0 0 0 0 rgba(59,130,246,.5); border-color: #3b82f6; }}
+      50%  {{ box-shadow: 0 0 0 8px rgba(59,130,246,0); border-color: #3b82f6; }}
+      100% {{ box-shadow: 0 0 0 0 rgba(59,130,246,0); }}
+    }}
     .feed-main {{ flex: 1; min-width: 0; }}
     .feed-brand {{ margin-top: 2px; }}
     .feed-meta {{
@@ -810,6 +1117,13 @@ def render_html(entries, history=None):
       padding: 2px 9px; border-radius: 6px; font-size: .74rem; font-weight: 600;
     }}
     .feed-heat {{ margin-left: auto; color: var(--hot); font-weight: 600; }}
+    .copy-btn {{
+      background: transparent; border: none; cursor: pointer;
+      font-size: .85rem; padding: 2px 6px; border-radius: 4px;
+      opacity: .5; transition: all .15s; margin-left: 4px;
+    }}
+    .copy-btn:hover {{ opacity: 1; background: var(--accent-soft); }}
+    .copy-btn.copied {{ opacity: 1; color: #10b981; }}
     .feed-title {{
       font-size: 1.02rem; font-weight: 650; margin-bottom: 8px;
       line-height: 1.45; letter-spacing: -0.01em;
@@ -845,6 +1159,14 @@ def render_html(entries, history=None):
       background: #3b82f6; color: #fff;
     }}
     .lang-toggle button:hover:not(.active) {{ color: #e5e7eb; }}
+    .theme-toggle {{
+      width: 36px; height: 36px; border-radius: 50%;
+      background: #374151; border: 1px solid #4b5563;
+      color: #fff; cursor: pointer; font-size: 1rem;
+      display: flex; align-items: center; justify-content: center;
+      transition: all .15s;
+    }}
+    .theme-toggle:hover {{ background: #4b5563; transform: scale(1.08); }}
 
     footer {{
       max-width: 920px; margin: 0 auto; padding: 28px 20px;
@@ -853,19 +1175,52 @@ def render_html(entries, history=None):
     }}
     footer p {{ margin-bottom: 4px; }}
     footer strong {{ color: var(--text2); }}
+    footer a {{ color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }}
+    footer a:hover {{ color: var(--accent); }}
+    .footer-sources {{ font-size: .75rem; line-height: 1.8; }}
+    .footer-sources a {{ margin: 0 2px; }}
+    .footer-links {{ margin-top: 8px; font-size: .78rem; }}
 
+    .back-to-top {{
+      position: fixed; right: 24px; bottom: 24px;
+      width: 44px; height: 44px; border-radius: 50%;
+      background: var(--accent); color: #fff;
+      border: none; cursor: pointer; font-size: 1.2rem;
+      box-shadow: 0 4px 16px rgba(59,130,246,.35);
+      opacity: 0; visibility: hidden;
+      transition: all .2s; z-index: 100;
+    }}
+    .back-to-top:hover {{
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(59,130,246,.45);
+    }}
+    .back-to-top.show {{ opacity: 1; visibility: visible; }}
+
+    @media (max-width: 1200px) {{
+      .sidebar-right {{ display: none; }}
+      main {{ max-width: 900px; }}
+    }}
     @media (max-width: 600px) {{
+      main {{ max-width: 100%; padding: 16px 12px 40px; }}
       .header-inner {{ flex-wrap: wrap; }}
       .search-box {{ max-width: 100%; order: 3; width: 100%; }}
       .hot-item {{ padding: 10px 14px; }}
       .feed-item {{ padding: 14px; }}
-      .layout {{ flex-direction: column; }}
+      .layout {{ flex-direction: column; gap: 16px; }}
       .sidebar {{ width: 100%; position: static; }}
+      .sidebar-right {{ display: none; }}
       .time-filters {{ flex-direction: row; flex-wrap: wrap; }}
       .time-btn {{ flex: 1; min-width: 80px; text-align: center; }}
+      .cat-filters {{ flex-direction: row; flex-wrap: wrap; gap: 6px; }}
+      .cat-filters .tag-btn {{
+        width: auto; padding: 5px 12px; font-size: .78rem;
+        flex: 1; min-width: calc(33.33% - 4px);
+      }}
       .feed-image {{ max-height: 200px; }}
-      .hot-thumb {{ width: 40px; height: 40px; }}
+      .hot-brand-avatar {{ width: 36px; height: 36px; }}
+      .hot-brand-logo {{ width: 24px; height: 24px; }}
       .brand-logo {{ width: 24px; height: 24px; }}
+      .back-to-top {{ right: 16px; bottom: 16px; width: 40px; height: 40px; }}
     }}
   </style>
 
@@ -882,6 +1237,7 @@ def render_html(entries, history=None):
       </div>
       <div style="display:flex;align-items:center;gap:12px;">
         <div class="search-box"><input type="text" id="searchInput" placeholder="搜索标题..." oninput="filterItems()" data-i18n-placeholder="search"></div>
+        <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()" title="切换主题">🌙</button>
         <div class="lang-toggle">
           <button type="button" id="btnZh" class="active" onclick="setLang('zh')">中文</button>
           <button type="button" id="btnEn" onclick="setLang('en')">EN</button>
@@ -891,7 +1247,8 @@ def render_html(entries, history=None):
   </header>
   <main>
     <div class="layout">
-    <aside class="sidebar">
+    <!-- 左栏 -->
+    <aside class="sidebar sidebar-left">
       <div class="sidebar-section">
         <h3 class="sidebar-title" data-i18n="timeRange">时间范围</h3>
         <div class="time-filters">
@@ -901,7 +1258,17 @@ def render_html(entries, history=None):
           <button class="time-btn" data-range="0" data-i18n="allHistory">全部历史</button>
         </div>
       </div>
+      <div class="sidebar-section">
+        <h3 class="sidebar-title" data-i18n="categories">分类筛选</h3>
+        <div class="cat-filters">
+          <button class="tag-btn active" data-filter="all" data-i18n="all">全部</button>
+          <button class="tag-btn cost-filter" data-filter="cost" data-i18n="costOnly">只看成本相关</button>
+          {cat_tags}
+        </div>
+      </div>
     </aside>
+
+    <!-- 中栏 -->
     <div class="content">
     <div id="todayView">
     <div class="section-header">
@@ -913,28 +1280,50 @@ def render_html(entries, history=None):
       本次聚合 <strong>{len(entries)}</strong> 条 · 其中成本/价格相关 <strong>{cost_count}</strong> 条 · 来自 {len(set(e['source'] for e in entries))} 个来源
       {' · 已用本地 Qwen 增强' if USE_OLLAMA else ''}
     </div>
-    <div class="tags" id="tagBar">
-      <button class="tag-btn active" data-filter="all" data-i18n="all">全部</button>
-      <button class="tag-btn cost-filter" data-filter="cost" data-i18n="costOnly">只看成本相关</button>
-      {cat_tags}
-    </div>
     <div class="section-header"><h2 data-i18n="latestTitle">最新精选</h2></div>
     {feed_sections}
     </div><!-- /todayView -->
     <div id="historyView" style="display:none">
       <div class="section-header">
         <h2 id="historyTitle" data-i18n="archiveTitle">历史归档</h2>
-        <span class="date" id="historyCount"></span>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span class="date" id="historyCount"></span>
+          <button class="back-today-btn" onclick="switchToToday()" data-i18n="backToday">← 返回今日</button>
+        </div>
       </div>
       <div id="historyContainer"></div>
     </div>
     </div><!-- /content -->
+
+    <!-- 右栏 -->
+    <aside class="sidebar sidebar-right">
+      {stock_html}
+      <div class="sidebar-section">
+        <h3 class="sidebar-title" data-i18n="brandRank">今日品牌热度</h3>
+        <div class="brand-rank-list">
+          {brand_rank_html}
+        </div>
+      </div>
+      <div class="sidebar-section">
+        <h3 class="sidebar-title" data-i18n="catStats">分类分布</h3>
+        <div class="cat-stat-list">
+          {cat_stat_html}
+        </div>
+      </div>
+    </aside>
+
     </div><!-- /layout -->
   </main>
   <footer>
     <p data-i18n="footer1"><strong>PC HOT</strong> — 聚焦笔记本电脑 · OEM / ODM · AI PC</p>
     <p>更新于 {now.strftime('%Y-%m-%d %H:%M')} (北京时间)</p>
+    <p class="footer-sources"><span data-i18n="footerSources">数据来源：</span>{source_list_html}</p>
+    <p class="footer-links">
+      <a href="https://github.com/xuzhenjiangwudi-create/PC-HOT" target="_blank" rel="noopener">GitHub</a>
+      · <span data-i18n="footerPowered">由 RSS + Qwen 驱动</span>
+    </p>
   </footer>
+  <button id="backToTop" class="back-to-top" onclick="window.scrollTo({{top:0,behavior:'smooth'}})" title="回到顶部">↑</button>
   <script>
     const I18N = {{
       zh: {{
@@ -945,9 +1334,14 @@ def render_html(entries, history=None):
         costOnly: "只看成本相关",
         reason: "推荐理由：",
         footer1: "PC HOT — 聚焦笔记本电脑 · OEM / ODM · AI PC",
+        footerSources: "数据来源：",
+        footerPowered: "由 RSS + Qwen 驱动",
         costBadge: "成本相关",
         heat: "热度",
         timeRange: "时间范围",
+        categories: "分类筛选",
+        brandRank: "今日品牌热度",
+        catStats: "分类分布",
         today: "今天",
         lastWeek: "近一周",
         lastMonth: "近一月",
@@ -955,6 +1349,7 @@ def render_html(entries, history=None):
         archiveTitle: "历史归档",
         noData: "暂无数据",
         items: "条",
+        backToday: "← 返回今日",
         cats: {{
           "AI与芯片": "AI与芯片", "OEM品牌": "OEM品牌", "ODM代工": "ODM代工",
           "成本价格": "成本价格", "市场出货": "市场出货", "产品发布": "产品发布", "综合": "综合"
@@ -968,17 +1363,23 @@ def render_html(entries, history=None):
         costOnly: "Cost only",
         reason: "Why it matters: ",
         footer1: "PC HOT — Laptop Industry · OEM / ODM · AI PC",
+        footerSources: "Sources:",
+        footerPowered: "Powered by RSS + Qwen",
         costBadge: "Cost",
         heat: "heat",
         timeRange: "Time Range",
+        categories: "Categories",
+        brandRank: "Brand Heat",
+        catStats: "Category Distribution",
         today: "Today",
         lastWeek: "Last Week",
         lastMonth: "Last Month",
         allHistory: "All History",
         archiveTitle: "Archive",
         noData: "No data",
-        items: "items",
-        cats: {{
+      items: "items",
+      backToday: "← Back to Today",
+      cats: {{
           "AI与芯片": "AI & Chips", "OEM品牌": "OEM Brands", "ODM代工": "ODM",
           "成本价格": "Cost & Price", "市场出货": "Shipments", "产品发布": "Launches", "综合": "General"
         }}
@@ -986,6 +1387,21 @@ def render_html(entries, history=None):
     }};
 
     let currentLang = localStorage.getItem("pc_hot_lang") || "zh";
+    let currentTheme = localStorage.getItem("pc_hot_theme");
+    if (!currentTheme) {{
+      currentTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    }}
+    function applyTheme() {{
+      document.documentElement.setAttribute("data-theme", currentTheme);
+      const btn = document.getElementById("themeToggle");
+      if (btn) btn.textContent = currentTheme === "dark" ? "☀️" : "🌙";
+    }}
+    function toggleTheme() {{
+      currentTheme = currentTheme === "dark" ? "light" : "dark";
+      localStorage.setItem("pc_hot_theme", currentTheme);
+      applyTheme();
+    }}
+    applyTheme();
 
     function setLang(lang) {{
       currentLang = lang;
@@ -1018,6 +1434,14 @@ def render_html(entries, history=None):
         el.setAttribute("data-cat-key", raw);
         if (t.cats && t.cats[raw]) el.textContent = t.cats[raw];
       }});
+      // 分类分布卡片的分类名
+      document.querySelectorAll(".cat-stat-item").forEach(el => {{
+        const key = el.getAttribute("data-cat-key");
+        const labelSpan = el.querySelector(".cat-stat-label span:nth-child(2)");
+        if (key && labelSpan && t.cats && t.cats[key]) {{
+          labelSpan.textContent = t.cats[key];
+        }}
+      }});
       document.documentElement.lang = currentLang === "zh" ? "zh-CN" : "en";
       const showZh = currentLang === "zh";
       document.querySelectorAll(".lang-zh").forEach(el => {{ el.style.display = showZh ? "" : "none"; }});
@@ -1041,9 +1465,71 @@ def render_html(entries, history=None):
       }}
     }}
 
+    function scrollToFeed(id) {{
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.scrollIntoView({{ behavior: 'smooth', block: 'center' }});
+      el.classList.add('highlight-flash');
+      setTimeout(() => el.classList.remove('highlight-flash'), 1500);
+    }}
+
+    function switchToToday() {{
+      document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+      document.querySelector('.time-btn[data-range="today"]').classList.add('active');
+      document.getElementById('todayView').style.display = '';
+      document.getElementById('historyView').style.display = 'none';
+      // 恢复今日分类计数
+      document.querySelectorAll('.tag-btn').forEach(btn => {{
+        const f = btn.dataset.filter;
+        if (f === 'all' || f === 'cost') return;
+        const orig = btn.dataset.origText;
+        if (orig) btn.textContent = orig;
+      }});
+      tagBtns.forEach(b => b.classList.remove('active'));
+      document.querySelector('.tag-btn[data-filter="all"]').classList.add('active');
+      currentFilter = 'all';
+      filterItems();
+      window.scrollTo({{ top: 0, behavior: 'smooth' }});
+    }}
+
+    function copyLink(e, btn) {{
+      e.stopPropagation();
+      const link = btn.dataset.link;
+      if (!link) return;
+      if (navigator.clipboard && navigator.clipboard.writeText) {{
+        navigator.clipboard.writeText(link).then(() => {{
+          showCopySuccess(btn);
+        }}).catch(() => fallbackCopy(link, btn));
+      }} else {{
+        fallbackCopy(link, btn);
+      }}
+    }}
+    function fallbackCopy(text, btn) {{
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try {{ document.execCommand('copy'); showCopySuccess(btn); }} catch(e) {{}}
+      document.body.removeChild(ta);
+    }}
+    function showCopySuccess(btn) {{
+      const orig = btn.textContent;
+      btn.textContent = '✓';
+      btn.classList.add('copied');
+      setTimeout(() => {{
+        btn.textContent = orig;
+        btn.classList.remove('copied');
+      }}, 1500);
+    }}
+
     const searchInput = document.getElementById("searchInput");
     const tagBtns = document.querySelectorAll(".tag-btn");
     let currentFilter = "all";
+    // 保存初始标签文本（今日计数）
+    tagBtns.forEach(btn => {{
+      if (btn.dataset.filter !== 'all' && btn.dataset.filter !== 'cost') {{
+        btn.dataset.origText = btn.textContent;
+      }}
+    }});
     tagBtns.forEach(btn => {{
       btn.addEventListener("click", () => {{
         tagBtns.forEach(b => b.classList.remove("active"));
@@ -1121,10 +1607,21 @@ def render_html(entries, history=None):
               '<span class="feed-time">' + timeStr + '</span>' +
               '<span class="feed-source">' + escapeHtml(item.source || '') + '</span>' +
               '<span class="cat-tag">' + escapeHtml(catLabel) + '</span>' +
+              '<span class="feed-heat">' + (item.heat || '') + '</span>' +
+              '<button class="copy-btn" onclick="copyLink(event, this)" data-link="' + escapeHtml(item.link || '#') + '" title="复制链接">🔗</button>' +
             '</div>' +
-            '<div class="feed-title"><a href="' + escapeHtml(item.link || '#') + '" target="_blank" rel="noopener">' + escapeHtml(item.title || '') + '</a></div>' +
-            '<div class="feed-summary">' + escapeHtml(item.summary || '') + '</div>' +
-            '<div class="feed-reason"><strong>' + reasonLabel + '</strong>' + escapeHtml(item.reason || '') + '</div>' +
+            '<div class="feed-title"><a href="' + escapeHtml(item.link || '#') + '" target="_blank" rel="noopener">' +
+              '<span class="lang-zh">' + escapeHtml(item.title || '') + '</span>' +
+              '<span class="lang-en" style="display:none">' + escapeHtml(item.title_en || item.title || '') + '</span>' +
+            '</a></div>' +
+            '<div class="feed-summary">' +
+              '<span class="lang-zh">' + escapeHtml(item.summary || '') + '</span>' +
+              '<span class="lang-en" style="display:none">' + escapeHtml(item.summary_en || item.summary || '') + '</span>' +
+            '</div>' +
+            '<div class="feed-reason"><strong class="lang-zh">推荐理由：</strong><strong class="lang-en" style="display:none">Why it matters: </strong>' +
+              '<span class="lang-zh">' + escapeHtml(item.reason || '') + '</span>' +
+              '<span class="lang-en" style="display:none">' + escapeHtml(item.reason_en || item.reason || '') + '</span>' +
+            '</div>' +
             (item.image ? '<div class="feed-image-wrap"><img class="feed-image" src="' + escapeHtml(item.image) + '" alt="" loading="lazy" onerror="this.parentElement.remove()"></div>' : '') +
             '</div>' +
           '</article>';
@@ -1133,6 +1630,20 @@ def render_html(entries, history=None):
       }}
       container.innerHTML = html || '<p class="no-data">' + (t.noData || '暂无数据') + '</p>';
       countEl.textContent = filtered.length + ' ' + t.items;
+
+      // 更新分类标签的计数（基于当前历史数据）
+      const catCounts = {{}};
+      filtered.forEach(item => {{
+        const c = item.category || '综合';
+        catCounts[c] = (catCounts[c] || 0) + 1;
+      }});
+      document.querySelectorAll('.tag-btn').forEach(btn => {{
+        const f = btn.dataset.filter;
+        if (f === 'all' || f === 'cost') return;
+        const count = catCounts[f] || 0;
+        const label = (t.cats && t.cats[f]) || f;
+        btn.textContent = label + ' (' + count + ')';
+      }});
     }}
 
     document.querySelectorAll('.time-btn').forEach(btn => {{
@@ -1143,6 +1654,13 @@ def render_html(entries, history=None):
         if (range === 'today') {{
           document.getElementById('todayView').style.display = '';
           document.getElementById('historyView').style.display = 'none';
+          // 恢复今日分类计数
+          document.querySelectorAll('.tag-btn').forEach(btn => {{
+            const f = btn.dataset.filter;
+            if (f === 'all' || f === 'cost') return;
+            const orig = btn.dataset.origText;
+            if (orig) btn.textContent = orig;
+          }});
         }} else {{
           tagBtns.forEach(b => b.classList.remove('active'));
           document.querySelector('.tag-btn[data-filter="all"]').classList.add('active');
@@ -1156,6 +1674,16 @@ def render_html(entries, history=None):
     }});
 
     setLang(currentLang);
+
+    // 回到顶部按钮
+    const backToTopBtn = document.getElementById('backToTop');
+    window.addEventListener('scroll', () => {{
+      if (window.scrollY > 400) {{
+        backToTopBtn.classList.add('show');
+      }} else {{
+        backToTopBtn.classList.remove('show');
+      }}
+    }});
   </script>
 </body>
 </html>"""
@@ -1186,14 +1714,17 @@ def save_history(entries):
             item = {
                 "id": hashlib.md5(e["link"].encode()).hexdigest()[:20],
                 "title": e.get("title_zh") or e["title"],
+                "title_en": e.get("title_en") or e["title"],
                 "summary": e.get("summary_zh") or e.get("summary") or "",
+                "summary_en": e.get("summary_en") or e.get("summary") or "",
                 "link": e["link"],
                 "source": e["source"],
                 "published_at": e["dt"].astimezone(timezone.utc).isoformat(),
                 "first_collected_at": now_iso,
                 "last_seen_at": now_iso,
                 "category": e["category"],
-                "reason": e.get("reason") or default_reason(e["category"], e["cost_flag"]),
+                "reason": e.get("reason_zh") or e.get("reason") or default_reason(e["category"], e["cost_flag"]),
+                "reason_en": e.get("reason_en") or e.get("reason") or default_reason(e["category"], e["cost_flag"]),
                 "ai_enhanced": USE_OLLAMA,
                 "image": e.get("image") or "",
                 "brand": e.get("brand") or "",
@@ -1263,9 +1794,9 @@ def main():
     cost_n = sum(1 for e in entries if e["cost_flag"])
     print(f"其中成本/价格相关: {cost_n} 条")
 
-    # 推荐理由 + 中英双语
+    # 推荐理由 + 中英双语（所有条目都生成双语字段，AI 增强仅限前 n 条）
     n = min(MAX_ENHANCE, len(entries)) if USE_OLLAMA else min(8, len(entries))
-    print(f"\n处理前 {n} 条（推荐理由 + 中英翻译）...")
+    print(f"\n处理前 {n} 条（AI 推荐理由），共 {len(entries)} 条生成双语字段...")
     for i, e in enumerate(entries):
         if i < n:
             print(f"  [{i+1}/{n}] {e['title'][:40]}...")
@@ -1273,24 +1804,17 @@ def main():
                 e["reason"] = enhance_reason(e["title"], e["summary"], e["category"], e["cost_flag"])
             else:
                 e["reason"] = default_reason(e["category"], e["cost_flag"])
-            tz, te, sz, se, rz, re_ = bilingual_fields(
-                e["title"], e["summary"], e["reason"], e["cost_flag"], e["category"]
-            )
-            e["title_zh"], e["title_en"] = tz, te
-            e["summary_zh"], e["summary_en"] = sz, se
-            e["reason_zh"], e["reason_en"] = rz, re_
-            print(f"      ZH: {tz[:36]}...")
         else:
-            # 未增强条目：尽量简单处理
             e["reason"] = e.get("reason") or default_reason(e["category"], e["cost_flag"])
-            if is_mostly_chinese(e["title"]):
-                e["title_zh"], e["title_en"] = e["title"], e["title"]
-            else:
-                e["title_zh"], e["title_en"] = e["title"], e["title"]
-            e["summary_zh"] = e["summary"]
-            e["summary_en"] = e["summary"]
-            e["reason_zh"] = e["reason"]
-            e["reason_en"] = e["reason"]
+        # 所有条目都生成双语字段
+        tz, te, sz, se, rz, re_ = bilingual_fields(
+            e["title"], e["summary"], e["reason"], e["cost_flag"], e["category"]
+        )
+        e["title_zh"], e["title_en"] = tz, te
+        e["summary_zh"], e["summary_en"] = sz, se
+        e["reason_zh"], e["reason_en"] = rz, re_
+        if i < n:
+            print(f"      ZH: {tz[:36]}...")
 
     html = render_html(entries, history=load_history())
     Path("index.html").write_text(html, encoding="utf-8")
