@@ -389,43 +389,101 @@ def brand_logo_fallback(brand: str) -> str:
 def fetch_stock_price() -> dict:
     """
     获取联想集团（00992.HK）股价，失败返回空 dict。
-    使用 Yahoo Finance chart API（无需 key）。
+    多源回退：Yahoo Finance → 新浪财经 → 腾讯财经
     """
+    from datetime import datetime as dt, timezone as tz, timedelta as td
+    now_cn = dt.now(tz(td(hours=8)))
+
+    # 1. Yahoo Finance（海外源，CI 环境好）
     try:
         url = "https://query1.finance.yahoo.com/v8/finance/chart/0992.HK"
         headers = {"User-Agent": "Mozilla/5.0"}
         resp = requests.get(url, headers=headers, timeout=8)
-        if resp.status_code != 200:
-            return {}
-        data = resp.json()
-        meta = data.get("chart", {}).get("result", [{}])[0].get("meta", {})
-        if not meta:
-            return {}
-        price = meta.get("regularMarketPrice")
-        prev_close = meta.get("chartPreviousClose") or meta.get("previousClose")
-        currency = meta.get("currency", "HKD")
-        if price is None:
-            return {}
-        change = price - prev_close if prev_close else 0
-        change_pct = (change / prev_close * 100) if prev_close else 0
-        ts = meta.get("regularMarketTime")
-        from datetime import datetime as dt, timezone as tz, timedelta as td
-        market_time = ""
-        if ts:
-            market_time = dt.fromtimestamp(ts, tz(td(hours=8))).strftime("%m-%d %H:%M")
-        return {
-            "price": round(price, 2),
-            "change": round(change, 2),
-            "change_pct": round(change_pct, 2),
-            "currency": currency,
-            "symbol": "00992.HK",
-            "name": "联想集团",
-            "time": market_time,
-            "up": change >= 0,
-        }
+        if resp.status_code == 200:
+            data = resp.json()
+            meta = data.get("chart", {}).get("result", [{}])[0].get("meta", {})
+            if meta:
+                price = meta.get("regularMarketPrice")
+                prev_close = meta.get("chartPreviousClose") or meta.get("previousClose")
+                currency = meta.get("currency", "HKD")
+                ts = meta.get("regularMarketTime")
+                if price and prev_close:
+                    change = price - prev_close
+                    change_pct = change / prev_close * 100
+                    market_time = dt.fromtimestamp(ts, tz(td(hours=8))).strftime("%m-%d %H:%M") if ts else ""
+                    return {
+                        "price": round(price, 2),
+                        "change": round(change, 2),
+                        "change_pct": round(change_pct, 2),
+                        "currency": currency,
+                        "symbol": "00992.HK",
+                        "name": "联想集团",
+                        "time": market_time,
+                        "up": change >= 0,
+                    }
     except Exception as e:
-        print(f"[WARN] 股价获取失败: {e}")
-        return {}
+        print(f"[WARN] 股价 Yahoo 源失败: {e}")
+
+    # 2. 新浪财经（国内源，格式：rt_hk00992）
+    try:
+        url = "https://hq.sinajs.cn/list=rt_hk00992"
+        headers = {"Referer": "https://finance.sina.com.cn", "User-Agent": "Mozilla/5.0"}
+        resp = requests.get(url, headers=headers, timeout=8)
+        resp.encoding = "gbk"
+        text = resp.text
+        if '="' in text:
+            parts = text.split('"')[1].split(",")
+            if len(parts) >= 7:
+                # 格式: 0-名称 1-今开 2-昨收 3-当前价 4-最高 5-最低 6-...
+                price = float(parts[3])
+                prev_close = float(parts[2])
+                change = price - prev_close
+                change_pct = (change / prev_close * 100) if prev_close else 0
+                market_time = now_cn.strftime("%m-%d %H:%M")
+                return {
+                    "price": round(price, 2),
+                    "change": round(change, 2),
+                    "change_pct": round(change_pct, 2),
+                    "currency": "HKD",
+                    "symbol": "00992.HK",
+                    "name": "联想集团",
+                    "time": market_time,
+                    "up": change >= 0,
+                }
+    except Exception as e:
+        print(f"[WARN] 股价新浪源失败: {e}")
+
+    # 3. 腾讯财经（国内备源）
+    try:
+        url = "https://qt.gtimg.cn/q=r_hk00992"
+        headers = {"User-Agent": "Mozilla/5.0"}
+        resp = requests.get(url, headers=headers, timeout=8)
+        resp.encoding = "gbk"
+        text = resp.text
+        if '~' in text:
+            parts = text.split('"')[1].split("~") if '"' in text else text.split("~")
+            if len(parts) >= 32:
+                # 腾讯港股格式: 3-当前价 4-昨收 5-今开 ...
+                price = float(parts[3])
+                prev_close = float(parts[4])
+                change = price - prev_close
+                change_pct = (change / prev_close * 100) if prev_close else 0
+                market_time = now_cn.strftime("%m-%d %H:%M")
+                return {
+                    "price": round(price, 2),
+                    "change": round(change, 2),
+                    "change_pct": round(change_pct, 2),
+                    "currency": "HKD",
+                    "symbol": "00992.HK",
+                    "name": "联想集团",
+                    "time": market_time,
+                    "up": change >= 0,
+                }
+    except Exception as e:
+        print(f"[WARN] 股价腾讯源失败: {e}")
+
+    print("[WARN] 所有股价数据源均失败")
+    return {}
 
 
 def fetch_entries(max_items: int = 55):
