@@ -225,6 +225,111 @@ def default_reason(category: str, cost_flag: bool = False) -> str:
     }.get(category, "笔记本电脑行业相关资讯。")
 
 
+def generate_daily_briefing(entries: list) -> dict:
+    """
+    用 Qwen 生成每日行业简报。
+    返回 {"zh": {"summary": "...", "highlights": [...]}, "en": {...}}
+    失败返回空 dict。
+    """
+    if not entries or not USE_OLLAMA:
+        return {}
+
+    # 取前 20 条作为输入素材（太多会超 token）
+    items_text = ""
+    for i, e in enumerate(entries[:20]):
+        items_text += f"{i+1}. [{e['category']}] {e['title']} - {e.get('summary','')[:120]}\n"
+
+    prompt_zh = f"""你是 PC 行业资深分析师。以下是今天抓取的 {len(entries[:20])} 条 PC/笔记本行业新闻，请生成一份中文简报。
+
+输出格式（严格按此格式）：
+===摘要===
+(200字以内的行业综述，串联今天最重要的动态，指出趋势和关注点)
+
+===要点===
+1. (第一点，25字以内)
+2. (第二点，25字以内)
+3. (第三点，25字以内)
+
+新闻列表：
+{items_text}"""
+
+    raw = call_qwen(prompt_zh, 500)
+    if not raw:
+        return {}
+
+    # 解析结果
+    summary = ""
+    highlights = []
+    try:
+        parts = raw.split("===摘要===")
+        if len(parts) > 1:
+            rest = parts[1].split("===要点===")
+            summary = rest[0].strip()
+            if len(rest) > 1:
+                for line in rest[1].strip().split("\n"):
+                    line = line.strip()
+                    if line and line[0].isdigit() and "." in line[:3]:
+                        h = line.split(".", 1)[1].strip()
+                        if h:
+                            highlights.append(h)
+    except Exception:
+        pass
+
+    if not summary:
+        summary = raw[:200]
+
+    # 生成英文版本（复用双语翻译逻辑）
+    _, summary_en, _, _, _, _ = bilingual_fields(
+        "", summary, "", False, "综合"
+    )
+    highlights_en = []
+    for h in highlights:
+        _, he, _, _, _, _ = bilingual_fields("", h, "", False, "综合")
+        highlights_en.append(he or h)
+
+    return {
+        "zh": {"summary": summary, "highlights": highlights[:3]},
+        "en": {"summary": summary_en or summary, "highlights": highlights_en or highlights[:3]},
+    }
+
+
+def default_briefing(entries: list) -> dict:
+    """无 AI 时的默认简报"""
+    if not entries:
+        return {}
+    cost_n = sum(1 for e in entries if e.get("cost_flag"))
+    cat_counts = {}
+    for e in entries:
+        c = e["category"]
+        cat_counts[c] = cat_counts.get(c, 0) + 1
+    top_cat = max(cat_counts.items(), key=lambda x: x[1])[0] if cat_counts else "综合"
+    brands = {}
+    for e in entries:
+        b = e.get("brand")
+        if b:
+            brands[b] = brands.get(b, 0) + 1
+    top_brand = max(brands.items(), key=lambda x: x[1])[0] if brands else "—"
+
+    summary_zh = f"今日共聚合 {len(entries)} 条 PC 行业资讯，其中成本价格相关 {cost_n} 条。{top_cat}类新闻最多，{top_brand}相关动态较为活跃。建议重点关注成本端变化与新品发布节奏。"
+    summary_en = f"Today we aggregated {len(entries)} PC industry news, including {cost_n} cost/price related items. {top_cat} leads by category, with {top_brand} being the most mentioned brand. Focus on cost changes and new product launches."
+
+    highlights_zh = [
+        f"共 {len(entries)} 条资讯，覆盖 {len(cat_counts)} 个分类",
+        f"成本价格相关 {cost_n} 条，占比 {round(cost_n/len(entries)*100, 1)}%",
+        f"热门品牌：{top_brand}",
+    ]
+    highlights_en = [
+        f"{len(entries)} news across {len(cat_counts)} categories",
+        f"{cost_n} cost/price related ({round(cost_n/len(entries)*100, 1)}%)",
+        f"Top brand: {top_brand}",
+    ]
+
+    return {
+        "zh": {"summary": summary_zh, "highlights": highlights_zh},
+        "en": {"summary": summary_en, "highlights": highlights_en},
+    }
+
+
 def is_mostly_chinese(s: str) -> bool:
     if not s:
         return False
@@ -577,7 +682,7 @@ def load_history(max_items=500):
     return items[:max_items]
 
 
-def render_html(entries, history=None):
+def render_html(entries, history=None, briefing=None, competitor_data=None, price_radar=None):
     now = datetime.now(timezone(timedelta(hours=8)))
     weekday = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"][now.weekday()]
     history_json = json.dumps(history or [], ensure_ascii=False)
@@ -676,6 +781,108 @@ def render_html(entries, history=None):
         </div>"""
     else:
         stock_html = ""
+
+    # AI 每日简报（中栏顶部）
+    briefing_html = ""
+    if briefing:
+        bz = briefing.get("zh", {})
+        be = briefing.get("en", {})
+        summary_zh = bz.get("summary", "")
+        summary_en = be.get("summary", "")
+        highlights_zh = bz.get("highlights", [])
+        highlights_en = be.get("highlights", [])
+        hl_html_zh = "".join(f'<li>{html.escape(h)}</li>' for h in highlights_zh)
+        hl_html_en = "".join(f'<li>{html.escape(h)}</li>' for h in highlights_en)
+        briefing_html = f"""
+        <div class="briefing-card">
+          <div class="briefing-header">
+            <span class="briefing-icon">📰</span>
+            <span class="briefing-title" data-i18n="dailyBriefing">今日行业简报</span>
+            <span class="briefing-badge" data-i18n="aiGenerated">AI 生成</span>
+          </div>
+          <div class="briefing-summary">
+            <span class="lang-zh">{html.escape(summary_zh)}</span>
+            <span class="lang-en">{html.escape(summary_en)}</span>
+          </div>
+          <ul class="briefing-highlights">
+            <span class="lang-zh">{hl_html_zh}</span>
+            <span class="lang-en">{hl_html_en}</span>
+          </ul>
+        </div>"""
+
+    # 价格雷达（右栏）
+    price_radar_html = ""
+    if price_radar and price_radar.get("by_brand"):
+        max_count = max(c for _, c in price_radar["by_brand"]) if price_radar["by_brand"] else 1
+        brand_items = ""
+        for brand, count in price_radar["by_brand"]:
+            bw = int(count / max_count * 100)
+            brand_items += f"""
+            <div class="price-radar-item">
+              <span class="price-radar-name">{html.escape(brand)}</span>
+              <div class="price-radar-bar"><div class="price-radar-bar-fill" style="width:{bw}%"></div></div>
+              <span class="price-radar-count">{count}</span>
+            </div>"""
+        price_radar_html = f"""
+        <div class="sidebar-section">
+          <h3 class="sidebar-title">
+            <span style="color:#ef4444">💰</span>
+            <span data-i18n="priceRadar">价格雷达</span>
+          </h3>
+          <div class="price-radar-meta">
+            <span data-i18n="priceToday">今日 {price_radar['today_count']} 条</span>
+            <span data-i18n="priceRecent">近7天 {price_radar['recent_count']} 条</span>
+          </div>
+          <div class="price-radar-list">
+            {brand_items}
+          </div>
+        </div>"""
+
+    # 竞品动态对比（右栏）
+    competitor_html = ""
+    if competitor_data and competitor_data.get("brands"):
+        comp_items = ""
+        max_total = max(b["total"] for b in competitor_data["brands"]) if competitor_data["brands"] else 1
+        for b in competitor_data["brands"]:
+            name = b["name"]
+            total = b["total"]
+            bw = int(total / max_total * 100)
+            domain = BRAND_DOMAINS.get(name, name)
+            initial = name[0].upper()
+            # 趋势小图：用 7 个 div 的高度表示
+            trend_bars = ""
+            max_t = max(b["trend7"]) if max(b["trend7"]) > 0 else 1
+            for v in b["trend7"]:
+                h = int(v / max_t * 100) if max_t > 0 else 0
+                trend_bars += f'<div class="comp-trend-bar" style="height:{max(10,h)}%"></div>'
+            comp_items += f"""
+            <div class="comp-item">
+              <div class="comp-brand-row">
+                <div class="comp-avatar">
+                  <img src="{html.escape(brand_logo_url(name))}" data-domain="{html.escape(domain)}" data-try="0" alt="{html.escape(name)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                  <span class="comp-avatar-init" style="display:none">{initial}</span>
+                </div>
+                <span class="comp-name">{html.escape(name)}</span>
+                <span class="comp-count">{total}</span>
+              </div>
+              <div class="comp-bar-row">
+                <div class="comp-bar"><div class="comp-bar-fill" style="width:{bw}%"></div></div>
+              </div>
+              <div class="comp-trend-row">
+                {trend_bars}
+              </div>
+            </div>"""
+        competitor_html = f"""
+        <div class="sidebar-section">
+          <h3 class="sidebar-title">
+            <span>🏢</span>
+            <span data-i18n="compCompare">竞品动态</span>
+            <span class="sidebar-subtitle" data-i18n="compDays">近30天</span>
+          </h3>
+          <div class="comp-list">
+            {comp_items}
+          </div>
+        </div>"""
 
     # 热榜：成本相关优先展示
     cost_entries = [e for e in entries if e["cost_flag"]]
@@ -1030,6 +1237,162 @@ def render_html(entries, history=None):
     [data-theme="dark"] .stock-down {{ color: #86efac; background: rgba(22,163,74,.2); }}
     .stock-time {{ font-size: .7rem; color: var(--muted); }}
 
+    /* ===== AI 每日简报 ===== */
+    .briefing-card {{
+      background: linear-gradient(135deg, #f0f9ff 0%, #f5f3ff 50%, #fdf4ff 100%);
+      border: 1px solid #c7d2fe;
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow);
+    }}
+    [data-theme="dark"] .briefing-card {{
+      background: linear-gradient(135deg, #0c4a6e 0%, #1e1b4b 50%, #4a044e 100%);
+      border-color: #4338ca;
+    }}
+    .briefing-header {{
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 12px;
+    }}
+    .briefing-icon {{ font-size: 1.4rem; }}
+    .briefing-title {{
+      font-size: 1.05rem; font-weight: 700; color: var(--text);
+    }}
+    .briefing-badge {{
+      margin-left: auto;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff;
+      font-size: .7rem;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-weight: 600;
+    }}
+    .briefing-summary {{
+      font-size: .9rem;
+      line-height: 1.7;
+      color: var(--text2);
+      margin-bottom: 12px;
+    }}
+    .briefing-highlights {{
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }}
+    .briefing-highlights li {{
+      font-size: .85rem;
+      padding-left: 18px;
+      position: relative;
+      color: var(--text2);
+    }}
+    .briefing-highlights li::before {{
+      content: "✦";
+      position: absolute;
+      left: 0;
+      color: #667eea;
+      font-size: .75rem;
+    }}
+
+    /* ===== 价格雷达 ===== */
+    .price-radar-meta {{
+      display: flex; justify-content: space-between;
+      font-size: .72rem; color: var(--muted);
+      margin-bottom: 10px;
+    }}
+    .price-radar-list {{ display: flex; flex-direction: column; gap: 8px; }}
+    .price-radar-item {{
+      display: flex; align-items: center; gap: 8px;
+    }}
+    .price-radar-name {{
+      font-size: .78rem; font-weight: 600; color: var(--text2);
+      width: 52px; flex-shrink: 0;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }}
+    .price-radar-bar {{
+      flex: 1; height: 6px; border-radius: 3px;
+      background: #fecaca; overflow: hidden;
+    }}
+    [data-theme="dark"] .price-radar-bar {{ background: #450a0a; }}
+    .price-radar-bar-fill {{
+      height: 100%; border-radius: 3px;
+      background: linear-gradient(90deg, #f87171, #ef4444);
+    }}
+    .price-radar-count {{
+      font-size: .72rem; font-weight: 700; color: #dc2626;
+      min-width: 20px; text-align: right;
+    }}
+
+    /* ===== 竞品动态对比 ===== */
+    .sidebar-subtitle {{
+      font-size: .65rem;
+      font-weight: 500;
+      color: var(--muted);
+      margin-left: auto;
+      text-transform: none;
+      letter-spacing: 0;
+    }}
+    .comp-list {{ display: flex; flex-direction: column; gap: 12px; }}
+    .comp-item {{
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }}
+    .comp-item:last-child {{ border-bottom: none; padding-bottom: 0; }}
+    .comp-brand-row {{
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 6px;
+    }}
+    .comp-avatar {{
+      width: 24px; height: 24px; border-radius: 50%;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden; border: 1.5px solid #fff;
+      flex-shrink: 0;
+      box-shadow: 0 1px 3px rgba(0,0,0,.1);
+    }}
+    .comp-avatar img {{
+      width: 18px; height: 18px; object-fit: contain;
+      background: #fff; padding: 2px; border-radius: 50%;
+    }}
+    .comp-avatar-init {{
+      color: #fff; font-weight: 700; font-size: .7rem;
+      display: none; align-items: center; justify-content: center;
+      width: 100%; height: 100%;
+    }}
+    .comp-name {{
+      font-size: .8rem; font-weight: 600; color: var(--text);
+      flex: 1; min-width: 0;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }}
+    .comp-count {{
+      font-size: .78rem; font-weight: 700; color: var(--accent);
+    }}
+    .comp-bar-row {{ margin-bottom: 6px; }}
+    .comp-bar {{
+      height: 4px; border-radius: 2px;
+      background: #e2e8f0; overflow: hidden;
+    }}
+    [data-theme="dark"] .comp-bar {{ background: #334155; }}
+    .comp-bar-fill {{
+      height: 100%; border-radius: 2px;
+      background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+      transition: width .3s;
+    }}
+    .comp-trend-row {{
+      display: flex; align-items: flex-end;
+      gap: 2px; height: 28px;
+    }}
+    .comp-trend-bar {{
+      flex: 1;
+      background: linear-gradient(180deg, #60a5fa, #3b82f6);
+      border-radius: 1px;
+      min-height: 3px;
+      opacity: .7;
+      transition: all .2s;
+    }}
+    .comp-trend-bar:hover {{ opacity: 1; }}
+
     .section-header {{
       display: flex; align-items: baseline; justify-content: space-between;
       margin-bottom: 14px;
@@ -1332,6 +1695,7 @@ def render_html(entries, history=None):
     <!-- 中栏 -->
     <div class="content">
     <div id="todayView">
+    {briefing_html}
     <div class="section-header">
       <h2 data-i18n="hotTitle">精选热榜（笔记本 / AI PC）</h2>
       <span class="date">{now.strftime('%m月%d日')} · {weekday}</span>
@@ -1359,6 +1723,8 @@ def render_html(entries, history=None):
     <!-- 右栏 -->
     <aside class="sidebar sidebar-right">
       {stock_html}
+      {price_radar_html}
+      {competitor_html}
       <div class="sidebar-section">
         <h3 class="sidebar-title" data-i18n="brandRank">今日品牌热度</h3>
         <div class="brand-rank-list">
@@ -1403,6 +1769,13 @@ def render_html(entries, history=None):
         categories: "分类筛选",
         brandRank: "今日品牌热度",
         catStats: "分类分布",
+        dailyBriefing: "今日行业简报",
+        aiGenerated: "AI 生成",
+        priceRadar: "价格雷达",
+        priceToday: "今日 {{n}} 条",
+        priceRecent: "近7天 {{n}} 条",
+        compCompare: "竞品动态",
+        compDays: "近30天",
         today: "今天",
         lastWeek: "近一周",
         lastMonth: "近一月",
@@ -1432,6 +1805,13 @@ def render_html(entries, history=None):
         categories: "Categories",
         brandRank: "Brand Heat",
         catStats: "Category Distribution",
+        dailyBriefing: "Daily Industry Briefing",
+        aiGenerated: "AI Generated",
+        priceRadar: "Price Radar",
+        priceToday: "{{n}} today",
+        priceRecent: "{{n}} in 7d",
+        compCompare: "Competitors",
+        compDays: "30d",
         today: "Today",
         lastWeek: "Last Week",
         lastMonth: "Last Month",
@@ -1502,6 +1882,15 @@ def render_html(entries, history=None):
         if (key && labelSpan && t.cats && t.cats[key]) {{
           labelSpan.textContent = t.cats[key];
         }}
+      }});
+      // 价格雷达 meta（带数字占位符）
+      document.querySelectorAll("[data-i18n='priceToday']").forEach(el => {{
+        const m = el.textContent.match(/(\d+)/);
+        if (m) el.textContent = t.priceToday.replace("{{n}}", m[1]);
+      }});
+      document.querySelectorAll("[data-i18n='priceRecent']").forEach(el => {{
+        const m = el.textContent.match(/(\d+)/);
+        if (m) el.textContent = t.priceRecent.replace("{{n}}", m[1]);
       }});
       document.documentElement.lang = currentLang === "zh" ? "zh-CN" : "en";
       const showZh = currentLang === "zh";
@@ -1836,6 +2225,116 @@ def cleanup_history(max_days=90, max_items=2000):
     return removed
 
 
+COMPETITOR_BRANDS = ["Lenovo", "Dell", "HP", "ASUS", "Acer", "Apple", "MSI"]
+_COMPETITOR_LOWER = {b.lower(): b for b in COMPETITOR_BRANDS}
+
+def get_competitor_data(history: list, days: int = 30) -> dict:
+    """
+    从历史数据中统计竞品动态：近 N 天各品牌新闻数、分类分布、趋势。
+    返回 {brands: {name: {total, categories: {}, trend: [...]}}, total_days}
+    """
+    from collections import defaultdict
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+    # 按天+品牌统计
+    daily = defaultdict(lambda: defaultdict(int))  # {date_str: {brand: count}}
+    brand_cats = defaultdict(lambda: defaultdict(int))  # {brand: {cat: count}}
+    brand_total = defaultdict(int)
+
+    for item in history:
+        dt_str = item.get("published_at", item.get("first_collected_at", ""))
+        if not dt_str:
+            continue
+        try:
+            dt = datetime.fromisoformat(dt_str)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+        except Exception:
+            continue
+        if dt < cutoff:
+            continue
+        brand = item.get("brand")
+        if not brand:
+            continue
+        brand_std = _COMPETITOR_LOWER.get(brand.lower())
+        if not brand_std:
+            continue
+        day_key = dt.strftime("%m-%d")
+        daily[day_key][brand_std] += 1
+        brand_total[brand_std] += 1
+        cat = item.get("category", "综合")
+        brand_cats[brand_std][cat] += 1
+
+    # 排序：按总数从多到少
+    sorted_brands = sorted(brand_total.items(), key=lambda x: -x[1])
+
+    # 生成最近 7 天的趋势数据
+    all_days = []
+    for i in range(6, -1, -1):
+        d = datetime.now(timezone.utc) - timedelta(days=i)
+        all_days.append(d.strftime("%m-%d"))
+
+    trend = {}
+    for brand, _ in sorted_brands[:6]:
+        trend[brand] = [daily.get(d, {}).get(brand, 0) for d in all_days]
+
+    return {
+        "days": days,
+        "brands": [
+            {
+                "name": b,
+                "total": brand_total[b],
+                "categories": dict(brand_cats[b]),
+                "trend7": trend.get(b, [0]*7),
+            }
+            for b, _ in sorted_brands[:6]
+        ],
+        "days_labels": all_days,
+    }
+
+
+def get_price_radar(entries: list, history: list, days: int = 7) -> dict:
+    """
+    价格雷达：聚合成本价格类新闻，按品牌/主题分类。
+    返回 {today: [...], recent: [...], total}
+    """
+    today_cost = [e for e in entries if e.get("cost_flag") or e.get("category") == "成本价格"]
+
+    # 最近 7 天历史中的成本相关
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+    recent_cost = []
+    for item in history:
+        dt_str = item.get("published_at", item.get("first_collected_at", ""))
+        if not dt_str:
+            continue
+        try:
+            dt = datetime.fromisoformat(dt_str)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+        except Exception:
+            continue
+        if dt < cutoff:
+            continue
+        if item.get("cost_flag") or item.get("category") == "成本价格":
+            recent_cost.append(item)
+
+    # 按品牌分组统计
+    by_brand = {}
+    for e in today_cost + recent_cost[:30]:
+        b = e.get("brand") or "其他"
+        if b not in by_brand:
+            by_brand[b] = 0
+        by_brand[b] += 1
+
+    sorted_brands = sorted(by_brand.items(), key=lambda x: -x[1])[:6]
+
+    return {
+        "today_count": len(today_cost),
+        "recent_count": len(recent_cost),
+        "days": days,
+        "by_brand": sorted_brands,
+    }
+
+
 def main():
     print("=" * 50)
     print("PC HOT · 聚焦 PC 行业 + 成本优先")
@@ -1877,7 +2376,27 @@ def main():
         if i < n:
             print(f"      ZH: {tz[:36]}...")
 
-    html = render_html(entries, history=load_history())
+    history = load_history()
+
+    # AI 每日行业简报
+    print("\n生成每日行业简报...")
+    briefing = generate_daily_briefing(entries) if USE_OLLAMA else {}
+    if not briefing:
+        briefing = default_briefing(entries)
+        print("  使用默认简报（无 AI）")
+    else:
+        print("  AI 简报生成完成")
+
+    # 竞品动态对比数据
+    competitor_data = get_competitor_data(history, days=30)
+    print(f"竞品对比: {len(competitor_data['brands'])} 个品牌，近 30 天")
+
+    # 价格雷达数据
+    price_radar = get_price_radar(entries, history, days=7)
+    print(f"价格雷达: 今日 {price_radar['today_count']} 条，近 7 天 {price_radar['recent_count']} 条")
+
+    html = render_html(entries, history=history, briefing=briefing,
+                       competitor_data=competitor_data, price_radar=price_radar)
     Path("index.html").write_text(html, encoding="utf-8")
     print(f"\n已生成 index.html")
 
