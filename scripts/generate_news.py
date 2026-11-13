@@ -2276,7 +2276,7 @@ def render_html(entries, history=None, briefing=None, competitor_data=None, pric
           let brandPill = '';
           if (item.brand && brandDomains[item.brand]) {{
             const bd = brandDomains[item.brand];
-            brandPill = '<span class="feed-meta-brand"><img src="https://favicon.im/' + bd + '?larger=true" data-domain="' + bd + '" data-try="0" alt="" loading="lazy" onerror="this.style.display=\'none\'"><span>' + escapeHtml(item.brand) + '</span></span>';
+            brandPill = '<span class="feed-meta-brand"><img src="https://favicon.im/' + bd + '?larger=true" data-domain="' + bd + '" data-try="0" alt="" loading="lazy" onerror="this.style.display=&#39;none&#39;"><span>' + escapeHtml(item.brand) + '</span></span>';
           }}
           const heat = item.heat || 0;
           let heatLevel = 5;
