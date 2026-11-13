@@ -191,14 +191,15 @@ def call_qwen(prompt: str, max_tokens: int = 120) -> str:
         return ""
 
 def enhance_reason(title: str, summary: str, category: str, cost_flag: bool) -> str:
-    cost_hint = "特别关注其对 PC 整机成本、显卡/内存价格或供应链的影响。" if cost_flag else "从 PC 用户和行业角度指出价值。"
-    prompt = f"""你是 PC 硬件与成本分析编辑。请为下面新闻写 1-2 句中文推荐理由。
+    angle = "成本与供应链角度" if cost_flag else "行业价值角度"
+    prompt = f"""你是 PC 硬件编辑。请为下面的新闻写 1 句中文推荐理由。
 
 要求：
+- 基于新闻内容本身，不要编造文中没有的信息
 - 不要复述标题
-- {cost_hint}
-- 客观、简洁，不超过 55 字
-- 直接输出，不要前缀
+- 从{angle}说明为什么值得关注
+- 客观、简洁，不超过 50 字
+- 直接输出理由，不要前缀
 
 标题：{title}
 摘要：{summary or '无'}
@@ -209,7 +210,32 @@ def enhance_reason(title: str, summary: str, category: str, cost_flag: bool) -> 
     if not result:
         return default_reason(category, cost_flag)
     result = result.replace("推荐理由：", "").replace("推荐理由", "").strip()
-    return result[:85] if result else default_reason(category, cost_flag)
+    result = result.strip('"').strip("'").strip()
+    if not result:
+        return default_reason(category, cost_flag)
+
+    # 方案 C：规则校验 — 防止幻觉
+    # 如果 AI 理由提到了成本/供应链/价格类词汇，但原文里完全没有相关关键词，
+    # 说明是强行关联的幻觉，降级为默认理由
+    cost_halluc_keywords = [
+        "成本", "供应链", "价格上涨", "涨价", "降价", "利润",
+        "整机成本", "代工成本", "出货成本", "采购成本",
+    ]
+    # 原文中真实出现的成本信号词
+    real_cost_keywords = [
+        "cost", "price", "pricing", "$", "€", "£", "¥", "rmb",
+        "涨价", "降价", "价格", "成本", "售价", "定价", "优惠",
+        "折扣", "dollar", "usd", "人民币", "供应链", "代工",
+    ]
+    text = (title + " " + (summary or "")).lower()
+    has_real_cost = any(k.lower() in text for k in real_cost_keywords)
+    mentions_cost_in_reason = any(k in result for k in cost_halluc_keywords)
+
+    if mentions_cost_in_reason and not has_real_cost and not cost_flag:
+        # AI 强行扯成本，但原文根本没提价格相关 → 用默认理由
+        return default_reason(category, cost_flag)
+
+    return result[:85]
 
 def default_reason(category: str, cost_flag: bool = False) -> str:
     if cost_flag or category == "成本价格":
@@ -791,8 +817,8 @@ def render_html(entries, history=None, briefing=None, competitor_data=None, pric
         summary_en = be.get("summary", "")
         highlights_zh = bz.get("highlights", [])
         highlights_en = be.get("highlights", [])
-        hl_html_zh = "".join(f'<li>{html.escape(h)}</li>' for h in highlights_zh)
-        hl_html_en = "".join(f'<li>{html.escape(h)}</li>' for h in highlights_en)
+        hl_html_zh = "".join(f'<li class="lang-zh">{html.escape(h)}</li>' for h in highlights_zh)
+        hl_html_en = "".join(f'<li class="lang-en" style="display:none">{html.escape(h)}</li>' for h in highlights_en)
         briefing_html = f"""
         <div class="briefing-card">
           <div class="briefing-header">
@@ -802,11 +828,11 @@ def render_html(entries, history=None, briefing=None, competitor_data=None, pric
           </div>
           <div class="briefing-summary">
             <span class="lang-zh">{html.escape(summary_zh)}</span>
-            <span class="lang-en">{html.escape(summary_en)}</span>
+            <span class="lang-en" style="display:none">{html.escape(summary_en)}</span>
           </div>
           <ul class="briefing-highlights">
-            <span class="lang-zh">{hl_html_zh}</span>
-            <span class="lang-en">{hl_html_en}</span>
+            {hl_html_zh}
+            {hl_html_en}
           </ul>
         </div>"""
 
@@ -891,27 +917,41 @@ def render_html(entries, history=None, briefing=None, competitor_data=None, pric
 
     hot_html = ""
     for i, e in enumerate(hot_candidates[:8]):
-        rank_class = "top3" if i < 3 else ""
-        cost_mark = " · 成本" if e["cost_flag"] else ""
+        # 奖牌等级
+        if i == 0:
+            medal_class = "medal-gold"
+        elif i == 1:
+            medal_class = "medal-silver"
+        elif i == 2:
+            medal_class = "medal-bronze"
+        else:
+            medal_class = ""
+        # 热度等级 (1-5)
+        hs = heat_score(i, e['cost_flag'])
+        if hs >= 200:
+            heat_level = 1
+        elif hs >= 150:
+            heat_level = 2
+        elif hs >= 100:
+            heat_level = 3
+        elif hs >= 60:
+            heat_level = 4
+        else:
+            heat_level = 5
+        heat_class = f"heat-{heat_level}"
         t_zh = html.escape(e.get("title_zh") or e["title"])
         t_en = html.escape(e.get("title_en") or e["title"])
         brand = e.get("brand") or ""
         brand_domain = BRAND_DOMAINS.get(brand, brand) if brand else ""
+        # 品牌胶囊
         if brand:
-            # 品牌头像：有 logo 用 logo，没有就用首字母
-            initial = brand[0].upper() if brand else ""
-            brand_html = f"""
-          <div class="hot-brand-avatar" title="{html.escape(brand)}">
-            <img class="hot-brand-logo" src="{html.escape(brand_logo_url(brand))}" data-domain="{html.escape(brand_domain)}" data-try="0" alt="{html.escape(brand)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-            <span class="hot-brand-initial" style="display:none">{initial}</span>
-          </div>"""
+            brand_pill = f"""<span class="hot-brand-pill"><img src="{html.escape(brand_logo_url(brand))}" data-domain="{html.escape(brand_domain)}" data-try="0" alt="" loading="lazy" onerror="this.style.display='none'">{html.escape(brand)}</span>"""
         else:
-            brand_html = '<div class="hot-brand-avatar hot-brand-default"><span>•</span></div>'
+            brand_pill = ""
         feed_id = "feed-" + hashlib.md5(e["link"].encode()).hexdigest()[:12]
         hot_html += f"""
       <div class="hot-item" data-feed-id="{feed_id}" onclick="scrollToFeed('{feed_id}')">
-        <div class="hot-rank {rank_class}">{i+1}</div>
-        {brand_html}
+        <div class="hot-rank {medal_class}">{i+1}</div>
         <div class="hot-content">
           <div class="hot-title">
             <a href="{html.escape(e['link'])}" target="_blank" rel="noopener" class="hot-link" onclick="event.stopPropagation()">
@@ -919,10 +959,13 @@ def render_html(entries, history=None, briefing=None, competitor_data=None, pric
               <span class="lang-en" style="display:none">{t_en}</span>
             </a>
           </div>
-        </div>
-        <div class="hot-heat">
-          <span class="lang-zh">{heat_score(i, e['cost_flag'])} 热度{cost_mark}</span>
-          <span class="lang-en" style="display:none">{heat_score(i, e['cost_flag'])} heat{" · Cost" if e["cost_flag"] else ""}</span>
+          <div class="hot-meta">
+            {brand_pill}
+            <span class="hot-heat {heat_class}">
+              <span class="lang-zh">{hs}°</span>
+              <span class="lang-en" style="display:none">{hs}°</span>
+            </span>
+          </div>
         </div>
       </div>"""
 
@@ -979,19 +1022,34 @@ def render_html(entries, history=None, briefing=None, competitor_data=None, pric
 
             brand = e.get("brand") or ""
             brand_domain = BRAND_DOMAINS.get(brand, brand) if brand else ""
-            brand_html = f'<img class="brand-logo feed-brand" src="{html.escape(brand_logo_url(brand))}" data-domain="{html.escape(brand_domain)}" data-try="0" alt="{html.escape(brand)}" title="{html.escape(brand)}" loading="lazy" onerror="fixFavicon(this)">' if brand else ""
+            # 热度等级
+            if heat >= 200:
+                heat_level = 1
+            elif heat >= 150:
+                heat_level = 2
+            elif heat >= 100:
+                heat_level = 3
+            elif heat >= 60:
+                heat_level = 4
+            else:
+                heat_level = 5
+            heat_class = f"heat-{heat_level}"
+            # 品牌胶囊（meta 行内）
+            brand_pill = ""
+            if brand:
+                brand_pill = f"""<span class="feed-meta-brand"><img src="{html.escape(brand_logo_url(brand))}" data-domain="{html.escape(brand_domain)}" data-try="0" alt="" loading="lazy" onerror="this.style.display='none'"><span>{html.escape(brand)}</span></span>"""
 
             feed_item_id = "feed-" + hashlib.md5(e["link"].encode()).hexdigest()[:12]
             feed_sections += f"""
       <article class="feed-item" id="{feed_item_id}" data-cat="{html.escape(e['category'])}" data-title="{html.escape((title_zh + ' ' + title_en).lower())}" data-cost="{'1' if e['cost_flag'] else '0'}">
-        {brand_html}
         <div class="feed-main">
         <div class="feed-meta">
           <span class="feed-time">{time_str}</span>
+          {brand_pill}
           <span class="feed-source">{html.escape(e['source'])}</span>
-          <span class="cat-tag" data-cat-key="{html.escape(e['category'])}">{html.escape(e['category'])}</span>
+          <span class="cat-tag" data-cat="{html.escape(e['category'])}">{html.escape(e['category'])}</span>
           {cost_badge}
-          <span class="feed-heat">{heat} 热度</span>
+          <span class="feed-heat {heat_class}">{heat}°</span>
           <button class="copy-btn" onclick="copyLink(event, this)" data-link="{html.escape(e['link'])}" title="复制链接">🔗</button>
         </div>
         <div class="feed-title">
@@ -1039,6 +1097,24 @@ def render_html(entries, history=None, briefing=None, competitor_data=None, pric
       --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
       --shadow-hover: 0 10px 25px -5px rgba(0,0,0,.08), 0 4px 6px -2px rgba(0,0,0,.03);
       --radius: 14px;
+      /* Heat levels */
+      --heat-1: #f87171;
+      --heat-2: #fb923c;
+      --heat-3: #fbbf24;
+      --heat-4: #60a5fa;
+      --heat-5: #94a3b8;
+      /* Category colors */
+      --cat-ai: #8b5cf6;
+      --cat-oem: #3b82f6;
+      --cat-odm: #06b6d4;
+      --cat-cost: #f59e0b;
+      --cat-market: #10b981;
+      --cat-product: #ec4899;
+      --cat-misc: #64748b;
+      /* Medal colors */
+      --gold: #f59e0b;
+      --silver: #94a3b8;
+      --bronze: #d97706;
     }}
     [data-theme="dark"] {{
       --bg: #0f172a;
@@ -1054,6 +1130,21 @@ def render_html(entries, history=None, briefing=None, competitor_data=None, pric
       --cost-bg: #422006;
       --shadow: 0 1px 3px rgba(0,0,0,.3), 0 1px 2px rgba(0,0,0,.2);
       --shadow-hover: 0 10px 25px -5px rgba(0,0,0,.4), 0 4px 6px -2px rgba(0,0,0,.2);
+      --heat-1: #fca5a5;
+      --heat-2: #fdba74;
+      --heat-3: #fcd34d;
+      --heat-4: #93c5fd;
+      --heat-5: #64748b;
+      --cat-ai: #a78bfa;
+      --cat-oem: #60a5fa;
+      --cat-odm: #22d3ee;
+      --cat-cost: #fbbf24;
+      --cat-market: #34d399;
+      --cat-product: #f472b6;
+      --cat-misc: #94a3b8;
+      --gold: #fbbf24;
+      --silver: #cbd5e1;
+      --bronze: #f59e0b;
     }}
     [data-theme="dark"] header {{ background: #0b1120; }}
     [data-theme="dark"] .feed-reason {{
@@ -1146,6 +1237,61 @@ def render_html(entries, history=None, briefing=None, competitor_data=None, pric
     }}
     .content {{ flex: 1; min-width: 0; }}
     .no-data {{ text-align: center; padding: 48px 20px; color: var(--muted); font-size: .9rem; }}
+
+    /* ===== Bento Grid 首屏 ===== */
+    .bento-top {{
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }}
+    .bento-top .briefing-card {{ margin-bottom: 0; }}
+    .bento-stats {{
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 12px;
+    }}
+    .bento-stats h3 {{
+      font-size: .78rem; font-weight: 700; color: var(--text2);
+      text-transform: uppercase; letter-spacing: .04em;
+      margin-bottom: 4px;
+    }}
+    .stat-row {{
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: .88rem;
+    }}
+    .stat-label {{ color: var(--text2); }}
+    .stat-value {{ font-weight: 700; color: var(--text); font-size: 1.05rem; }}
+    .stat-value.accent {{ color: var(--accent); }}
+    .stat-value.hot {{ color: var(--hot); }}
+    .stat-bar {{
+      height: 4px; border-radius: 2px; background: #e2e8f0;
+      overflow: hidden; margin-top: 4px;
+    }}
+    [data-theme="dark"] .stat-bar {{ background: #334155; }}
+    .stat-bar-fill {{
+      height: 100%; border-radius: 2px;
+      background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+    }}
+    .bento-hot {{
+      margin-bottom: 28px;
+    }}
+    .hot-grid {{
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px;
+      box-shadow: var(--shadow);
+    }}
 
     /* ===== 品牌热度榜 ===== */
     .brand-rank-list {{ display: flex; flex-direction: column; gap: 10px; }}
@@ -1431,69 +1577,76 @@ def render_html(entries, history=None, briefing=None, competitor_data=None, pric
       box-shadow: 0 2px 8px rgba(217,119,6,.3);
     }}
 
-    /* Hot list */
-    .hot-list {{
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 8px 0; margin-bottom: 28px;
+    /* Hot list (Bento Grid style) */
+    .hot-grid {{
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px;
       box-shadow: var(--shadow);
+      margin-bottom: 28px;
     }}
     .hot-item {{
-      display: flex; align-items: flex-start; gap: 14px;
-      padding: 12px 18px; transition: background .15s;
-      cursor: pointer;
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 12px; transition: all .15s;
+      cursor: pointer; border-radius: 10px;
+      background: transparent;
+      border: 1px solid transparent;
     }}
-    .hot-item:hover {{ background: #f1f5f9; }}
+    .hot-item:hover {{
+      background: #f1f5f9;
+      border-color: #e2e8f0;
+    }}
+    [data-theme="dark"] .hot-item:hover {{
+      background: #334155;
+      border-color: #475569;
+    }}
     .hot-rank {{
-      font-weight: 800; font-size: 1.05rem; color: var(--muted);
-      min-width: 24px; text-align: center; font-variant-numeric: tabular-nums;
+      font-weight: 800; font-size: .95rem; color: var(--muted);
+      min-width: 22px; text-align: center; font-variant-numeric: tabular-nums;
+      padding-top: 2px; flex-shrink: 0;
     }}
-    .hot-rank.top3 {{
-      background: linear-gradient(135deg, #ef4444, #f97316);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      background-clip: text;
+    .hot-rank.medal-gold {{
+      color: var(--gold);
+      text-shadow: 0 1px 2px rgba(245,158,11,.25);
     }}
+    .hot-rank.medal-silver {{ color: var(--silver); }}
+    .hot-rank.medal-bronze {{ color: var(--bronze); }}
     .hot-content {{ flex: 1; min-width: 0; }}
-    .hot-title {{ font-size: .95rem; font-weight: 550; line-height: 1.4; }}
+    .hot-title {{ font-size: .85rem; font-weight: 550; line-height: 1.4; }}
     .hot-link {{ color: inherit; text-decoration: none; display: block; }}
     .hot-link:hover {{ color: var(--accent); }}
-    .hot-brand-avatar {{
-      width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      display: flex; align-items: center; justify-content: center;
-      overflow: hidden; border: 2px solid #fff;
-      box-shadow: 0 2px 8px rgba(0,0,0,.1);
+    .hot-meta {{
+      display: flex; align-items: center; gap: 6px;
+      margin-top: 4px; font-size: .7rem; color: var(--muted);
+      flex-wrap: wrap;
     }}
-    .hot-brand-logo {{
-      width: 28px; height: 28px; object-fit: contain;
-      background: #fff; padding: 2px; border-radius: 50%;
+    .hot-brand-pill {{
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 1px 7px; border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 600; font-size: .68rem;
+      line-height: 1.5;
     }}
-    .hot-brand-initial {{
-      color: #fff; font-weight: 700; font-size: 1rem;
-      display: none; align-items: center; justify-content: center;
-      width: 100%; height: 100%;
-    }}
-    .hot-brand-default {{
-      background: #e2e8f0; color: #94a3b8;
-    }}
-    .hot-brand-default span {{
-      font-size: 1.2rem; line-height: 1;
-    }}
-    .brand-logo {{
-      width: 28px; height: 28px; border-radius: 6px; flex-shrink: 0;
-      object-fit: contain; background: #f8fafc; padding: 3px;
-      border: 1px solid var(--border);
+    .hot-brand-pill img {{
+      width: 12px; height: 12px; border-radius: 50%;
+      object-fit: contain; background: #fff;
     }}
     .hot-heat {{
-      font-size: .78rem; color: var(--hot); font-weight: 600;
-      white-space: nowrap; padding-top: 2px;
+      font-size: .7rem; font-weight: 700;
+      white-space: nowrap;
     }}
+    .hot-heat.heat-1 {{ color: var(--heat-1); }}
+    .hot-heat.heat-2 {{ color: var(--heat-2); }}
+    .hot-heat.heat-3 {{ color: var(--heat-3); }}
+    .hot-heat.heat-4 {{ color: var(--heat-4); }}
+    .hot-heat.heat-5 {{ color: var(--heat-5); }}
 
-    .stats {{
-      font-size: .82rem; color: var(--muted); margin-bottom: 18px;
-      padding: 10px 14px; background: var(--accent-soft);
-      border-radius: 10px; color: #1e40af;
-    }}
-    .stats strong {{ color: var(--accent); }}
+    .stats {{ display: none; }}
 
     /* Day blocks */
     .day-block {{ margin-bottom: 32px; }}
@@ -1508,7 +1661,6 @@ def render_html(entries, history=None, briefing=None, competitor_data=None, pric
       background: var(--card); border: 1px solid var(--border);
       border-radius: var(--radius); padding: 16px 18px; margin-bottom: 12px;
       box-shadow: var(--shadow); transition: all .2s;
-      display: flex; gap: 12px; align-items: flex-start;
     }}
     .feed-item:hover {{
       border-color: #c7d2fe;
@@ -1524,23 +1676,53 @@ def render_html(entries, history=None, briefing=None, competitor_data=None, pric
       50%  {{ box-shadow: 0 0 0 8px rgba(59,130,246,0); border-color: #3b82f6; }}
       100% {{ box-shadow: 0 0 0 0 rgba(59,130,246,0); }}
     }}
-    .feed-main {{ flex: 1; min-width: 0; }}
-    .feed-brand {{ margin-top: 2px; }}
+    .feed-main {{ width: 100%; }}
     .feed-meta {{
       display: flex; align-items: center; gap: 8px;
-      font-size: .78rem; color: var(--muted); margin-bottom: 8px; flex-wrap: wrap;
+      font-size: .78rem; color: var(--muted); margin-bottom: 10px; flex-wrap: wrap;
+    }}
+    .feed-meta-brand {{
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 2px 8px 2px 4px;
+      background: var(--accent-soft);
+      border-radius: 999px;
+    }}
+    .feed-meta-brand img {{
+      width: 16px; height: 16px; border-radius: 50%;
+      object-fit: contain; background: #fff;
+    }}
+    .feed-meta-brand span {{
+      font-size: .72rem; font-weight: 600; color: var(--accent);
     }}
     .feed-time {{ font-variant-numeric: tabular-nums; font-weight: 500; }}
     .feed-source {{ color: var(--accent); font-weight: 600; }}
     .cat-tag {{
-      background: var(--accent-soft); color: var(--accent);
       padding: 2px 9px; border-radius: 6px; font-size: .74rem; font-weight: 500;
     }}
+    .cat-tag[data-cat="AI与芯片"] {{ background: #f3e8ff; color: var(--cat-ai); }}
+    .cat-tag[data-cat="OEM品牌"] {{ background: #eff6ff; color: var(--cat-oem); }}
+    .cat-tag[data-cat="ODM代工"] {{ background: #ecfeff; color: var(--cat-odm); }}
+    .cat-tag[data-cat="成本价格"] {{ background: #fffbeb; color: var(--cat-cost); }}
+    .cat-tag[data-cat="市场出货"] {{ background: #ecfdf5; color: var(--cat-market); }}
+    .cat-tag[data-cat="产品发布"] {{ background: #fdf2f8; color: var(--cat-product); }}
+    .cat-tag[data-cat="综合"] {{ background: #f1f5f9; color: var(--cat-misc); }}
+    [data-theme="dark"] .cat-tag[data-cat="AI与芯片"] {{ background: rgba(139,92,246,.15); }}
+    [data-theme="dark"] .cat-tag[data-cat="OEM品牌"] {{ background: rgba(59,130,246,.15); }}
+    [data-theme="dark"] .cat-tag[data-cat="ODM代工"] {{ background: rgba(6,182,212,.15); }}
+    [data-theme="dark"] .cat-tag[data-cat="成本价格"] {{ background: rgba(245,158,11,.15); }}
+    [data-theme="dark"] .cat-tag[data-cat="市场出货"] {{ background: rgba(16,185,129,.15); }}
+    [data-theme="dark"] .cat-tag[data-cat="产品发布"] {{ background: rgba(236,72,153,.15); }}
+    [data-theme="dark"] .cat-tag[data-cat="综合"] {{ background: rgba(100,116,139,.15); }}
     .cost-badge {{
       background: var(--cost-bg); color: var(--cost);
       padding: 2px 9px; border-radius: 6px; font-size: .74rem; font-weight: 600;
     }}
-    .feed-heat {{ margin-left: auto; color: var(--hot); font-weight: 600; }}
+    .feed-heat {{ margin-left: auto; font-weight: 700; font-size: .78rem; }}
+    .feed-heat.heat-1 {{ color: var(--heat-1); }}
+    .feed-heat.heat-2 {{ color: var(--heat-2); }}
+    .feed-heat.heat-3 {{ color: var(--heat-3); }}
+    .feed-heat.heat-4 {{ color: var(--heat-4); }}
+    .feed-heat.heat-5 {{ color: var(--heat-5); }}
     .copy-btn {{
       background: transparent; border: none; cursor: pointer;
       font-size: .85rem; padding: 2px 6px; border-radius: 4px;
@@ -1555,18 +1737,30 @@ def render_html(entries, history=None, briefing=None, competitor_data=None, pric
     .feed-summary {{
       font-size: .9rem; color: var(--text2); margin-bottom: 10px; line-height: 1.55;
     }}
-    .feed-image-wrap {{ margin-top: 10px; }}
-    .feed-image {{
-      width: 100%; max-height: 280px; border-radius: 8px; object-fit: cover;
+    .feed-image-wrap {{
+      margin-top: 10px;
+      aspect-ratio: 16 / 9;
+      overflow: hidden;
+      border-radius: 10px;
       border: 1px solid var(--border);
+    }}
+    .feed-image {{
+      width: 100%; height: 100%; object-fit: cover;
     }}
     .feed-reason {{
       font-size: .84rem; color: var(--text2);
-      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-      border-radius: 10px; padding: 10px 12px;
+      font-style: italic;
       border-left: 3px solid var(--accent);
+      padding: 8px 14px;
+      margin-top: 10px;
+      background: transparent;
+      opacity: .9;
     }}
-    .feed-reason strong {{ color: var(--text); font-weight: 600; }}
+    .feed-reason strong {{
+      color: var(--accent);
+      font-weight: 600;
+      font-style: normal;
+    }}
 
 
     .lang-toggle {{
@@ -1628,7 +1822,9 @@ def render_html(entries, history=None, briefing=None, competitor_data=None, pric
       main {{ max-width: 100%; padding: 16px 12px 40px; }}
       .header-inner {{ flex-wrap: wrap; }}
       .search-box {{ max-width: 100%; order: 3; width: 100%; }}
-      .hot-item {{ padding: 10px 14px; }}
+      .bento-top {{ grid-template-columns: 1fr; }}
+      .hot-grid {{ grid-template-columns: 1fr; }}
+      .hot-item {{ padding: 10px 12px; }}
       .feed-item {{ padding: 14px; }}
       .layout {{ flex-direction: column; gap: 16px; }}
       .sidebar {{ width: 100%; position: static; }}
@@ -1640,10 +1836,7 @@ def render_html(entries, history=None, briefing=None, competitor_data=None, pric
         width: auto; padding: 5px 12px; font-size: .78rem;
         flex: 1; min-width: calc(33.33% - 4px);
       }}
-      .feed-image {{ max-height: 200px; }}
-      .hot-brand-avatar {{ width: 36px; height: 36px; }}
-      .hot-brand-logo {{ width: 24px; height: 24px; }}
-      .brand-logo {{ width: 24px; height: 24px; }}
+      .feed-image-wrap {{ aspect-ratio: 16 / 10; }}
       .back-to-top {{ right: 16px; bottom: 16px; width: 40px; height: 40px; }}
     }}
   </style>
@@ -1695,12 +1888,37 @@ def render_html(entries, history=None, briefing=None, competitor_data=None, pric
     <!-- 中栏 -->
     <div class="content">
     <div id="todayView">
-    {briefing_html}
+    <!-- Bento Top: 简报 + 指标卡 -->
+    <div class="bento-top">
+      {briefing_html}
+      <div class="bento-stats">
+        <h3 data-i18n="todayOverview">今日概览</h3>
+        <div class="stat-row">
+          <span class="stat-label" data-i18n="totalNews">总新闻数</span>
+          <span class="stat-value accent">{len(entries)}</span>
+        </div>
+        <div class="stat-bar"><div class="stat-bar-fill" style="width:100%"></div></div>
+        <div class="stat-row">
+          <span class="stat-label" data-i18n="costRelated">成本/价格相关</span>
+          <span class="stat-value hot">{cost_count}</span>
+        </div>
+        <div class="stat-bar"><div class="stat-bar-fill" style="width:{int(cost_count/len(entries)*100) if entries else 0}%;background:linear-gradient(90deg,#f87171,#ef4444)"></div></div>
+        <div class="stat-row">
+          <span class="stat-label" data-i18n="sources">数据来源</span>
+          <span class="stat-value">{len(set(e['source'] for e in entries))}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label" data-i18n="aiEnhanced">AI 增强</span>
+          <span class="stat-value" style="color:{'#10b981' if USE_OLLAMA else '#94a3b8'}">{'✓ 已启用' if USE_OLLAMA else '未启用'}</span>
+        </div>
+      </div>
+    </div>
+    <!-- 热榜双列网格 -->
     <div class="section-header">
       <h2 data-i18n="hotTitle">精选热榜（笔记本 / AI PC）</h2>
       <span class="date">{now.strftime('%m月%d日')} · {weekday}</span>
     </div>
-    <div class="hot-list">{hot_html}</div>
+    <div class="hot-grid">{hot_html}</div>
     <div class="stats">
       本次聚合 <strong>{len(entries)}</strong> 条 · 其中成本/价格相关 <strong>{cost_count}</strong> 条 · 来自 {len(set(e['source'] for e in entries))} 个来源
       {' · 已用本地 Qwen 增强' if USE_OLLAMA else ''}
@@ -1771,6 +1989,11 @@ def render_html(entries, history=None, briefing=None, competitor_data=None, pric
         catStats: "分类分布",
         dailyBriefing: "今日行业简报",
         aiGenerated: "AI 生成",
+        todayOverview: "今日概览",
+        totalNews: "总新闻数",
+        costRelated: "成本/价格相关",
+        sources: "数据来源",
+        aiEnhanced: "AI 增强",
         priceRadar: "价格雷达",
         priceToday: "今日 {{n}} 条",
         priceRecent: "近7天 {{n}} 条",
@@ -1807,6 +2030,11 @@ def render_html(entries, history=None, briefing=None, competitor_data=None, pric
         catStats: "Category Distribution",
         dailyBriefing: "Daily Industry Briefing",
         aiGenerated: "AI Generated",
+        todayOverview: "Today Overview",
+        totalNews: "Total News",
+        costRelated: "Cost/Price Related",
+        sources: "Sources",
+        aiEnhanced: "AI Enhanced",
         priceRadar: "Price Radar",
         priceToday: "{{n}} today",
         priceRecent: "{{n}} in 7d",
@@ -2045,19 +2273,25 @@ def render_html(entries, history=None, briefing=None, competitor_data=None, pric
           const catLabel = (t.cats && t.cats[cat]) || cat;
           const reasonLabel = currentLang === 'zh' ? '推荐理由：' : 'Why it matters: ';
           const brandDomains = JSON.parse('{brand_domains_json}');
-          let brandHtml = '';
+          let brandPill = '';
           if (item.brand && brandDomains[item.brand]) {{
             const bd = brandDomains[item.brand];
-            brandHtml = '<img class="brand-logo feed-brand" src="https://favicon.im/' + bd + '?larger=true" data-domain="' + bd + '" data-try="0" alt="' + escapeHtml(item.brand) + '" title="' + escapeHtml(item.brand) + '" loading="lazy" onerror="fixFavicon(this)">';
+            brandPill = '<span class="feed-meta-brand"><img src="https://favicon.im/' + bd + '?larger=true" data-domain="' + bd + '" data-try="0" alt="" loading="lazy" onerror="this.style.display=\'none\'"><span>' + escapeHtml(item.brand) + '</span></span>';
           }}
+          const heat = item.heat || 0;
+          let heatLevel = 5;
+          if (heat >= 200) heatLevel = 1;
+          else if (heat >= 150) heatLevel = 2;
+          else if (heat >= 100) heatLevel = 3;
+          else if (heat >= 60) heatLevel = 4;
           html += '<article class="feed-item" data-cat="' + escapeHtml(cat) + '" data-title="' + escapeHtml((item.title || '').toLowerCase()) + '" data-cost="0">' +
-            brandHtml +
             '<div class="feed-main">' +
             '<div class="feed-meta">' +
               '<span class="feed-time">' + timeStr + '</span>' +
+              brandPill +
               '<span class="feed-source">' + escapeHtml(item.source || '') + '</span>' +
-              '<span class="cat-tag">' + escapeHtml(catLabel) + '</span>' +
-              '<span class="feed-heat">' + (item.heat || '') + '</span>' +
+              '<span class="cat-tag" data-cat="' + escapeHtml(cat) + '">' + escapeHtml(catLabel) + '</span>' +
+              '<span class="feed-heat heat-' + heatLevel + '">' + (heat || '0') + '°</span>' +
               '<button class="copy-btn" onclick="copyLink(event, this)" data-link="' + escapeHtml(item.link || '#') + '" title="复制链接">🔗</button>' +
             '</div>' +
             '<div class="feed-title"><a href="' + escapeHtml(item.link || '#') + '" target="_blank" rel="noopener">' +
